@@ -3,8 +3,9 @@
 Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
-Status (2026-10-05): **Step 1 done** (headless trade computer in `src/trade/`,
-CLI in `examples/trade_cli.rs`). Next action: **Step 2**.
+Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
+CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
+Next action: **Step 3**.
 
 ## Step 1 result
 
@@ -133,7 +134,35 @@ is also the lesson the player learns.
 Put it in `src/trade/` as a library module (no Bevy) so Step 2 reuses it, plus
 a small `examples/trade_cli.rs` or a `src/main.rs` mode.
 
-## Step 2: Bevy laundromat scene (~1.5 h)
+## Step 2 result
+
+Run it: `cargo run --release`. Screenshot mode: `UPD_SHOT=1 cargo run --release`
+runs a fast cycle, writes `shots/*.png` and exits (handy for checking the
+look without watching the window).
+
+- Bevy **0.19.1** (latest stable; 0.20 was still rc) + `bevy_egui` **0.42.0**,
+  with Bevy's `area_light_luts` feature for the fluorescent `RectLight`s.
+- Code: `src/main.rs` + `src/game/{sim,scene,arrows,ui,shots}.rs`. The
+  `Laundromat` resource owns the `TradeComputer`, the CortenForge `Machine`
+  and the i9 `Latch`; `step_sim` advances `speed x frame time / dt` steps
+  per frame (cap 5,000) and feeds the latch once per time unit.
+- Scene: checker floor, a row of out-of-order washers, fluorescent tubes,
+  green neon "MONEY LAUNDERING (LEGALLY)" (text gizmos, flickers). The hero
+  washer shakes and its drum spins with the temperature; 14 slap-bit strips
+  on top arch up or sag down from live `qpos`; magnet pucks and Hall LEDs
+  glow green when on; the i9 on the front panel shows the latched set.
+- Overlay: portrait cards above each customer; every candidate trade is a
+  coloured arc with arrowheads, alpha from its strip, with the item riding
+  along when on. When the drum stops, the i9's trades become thick pulsing
+  HDR loops and the trade board prints the chain in words plus an AI line.
+- A **board cam** inset (second camera, bottom-left) shows the strips up
+  close.
+- egui: Spin Cycle window (Run spin cycle, New load, spin dial for manual
+  mode, sim-speed slider, at-rest vs i9 values) and a Trades board (ON/off/~
+  per trade, locked trades highlighted).
+- Default speed is 40 time units/s, so a cycle plays in ~25 s.
+
+## Step 2 plan (as written before building)
 
 - Pin the latest stable Bevy (check crates.io; avoid release candidates).
   `bevy_egui` matching that Bevy version.

@@ -52,6 +52,20 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   become metastable. That's expected soft-spin physics, but the crate doesn't
   warn about it (see friction log).
 
+### Step 2: Bevy game, CortenForge plays well with others
+
+- `Model`, `Data` and the installed `PassiveStack` are `Send + Sync`, so
+  the whole CortenForge machine dropped straight into a Bevy `Resource` with
+  no wrapper, channel or `NonSend`. Stepping it inside a Bevy system (up to
+  ~1,700 steps per frame at high sim speed) costs a few ms; reading
+  `data.qpos` each frame drives 140 strip segments, LEDs and the arrows.
+- No new CortenForge friction in Step 2: zero CF API changes were needed.
+- Other libraries, for the record: Bevy 0.19 `RectLight` silently needs the
+  `area_light_luts` feature (only a runtime WARN). `bevy_egui` attaches its
+  context to the first camera spawned; with a second (inset) camera you
+  must set `EguiGlobalSettings::auto_create_primary_context = false` and
+  tag the main camera `PrimaryEguiContext`.
+
 ## Friction log
 
 - The facade is easy: one crate, and `load_model` -> `make_data` -> `step` is a

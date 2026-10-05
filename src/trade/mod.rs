@@ -35,8 +35,26 @@ pub struct Latch {
     pub best_time: f64,
 }
 
+impl Default for Latch {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Latch {
-    fn observe(&mut self, m: &Machine, q: &Qubo) {
+    /// Nothing latched yet.
+    pub fn new() -> Self {
+        Self { final_bits: 0, best_bits: 0, best_energy: f64::INFINITY, best_time: 0.0 }
+    }
+
+    /// Whether anything has been latched.
+    pub fn has_best(&self) -> bool {
+        self.best_energy.is_finite()
+    }
+
+    /// One Hall-sensor read: latch the strips if they all sit in a well and
+    /// beat the best so far.
+    pub fn observe(&mut self, m: &Machine, q: &Qubo) {
         if !m.all_in_wells() {
             return;
         }
@@ -111,7 +129,7 @@ impl TradeComputer {
         let sample_steps = ((sample / dt).round() as usize).max(1);
         let tick_steps = if every.is_finite() { ((every / dt).round() as usize).max(1) } else { usize::MAX };
         let t0 = m.time();
-        let mut latch = Latch { final_bits: 0, best_bits: 0, best_energy: f64::INFINITY, best_time: 0.0 };
+        let mut latch = Latch::new();
         for k in 1..=steps {
             m.set_temperature(anneal.temperature(m.time() - t0));
             m.step()?;

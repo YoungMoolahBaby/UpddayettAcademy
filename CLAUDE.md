@@ -35,3 +35,5 @@ Read first:
   QUBO-to-Ising converter that Step 1 reuses.
 - Trade computer (Step 1): `cargo run --release --example trade_cli -- [run|bench|cycles] [--want upd:hub]`;
   library in `src/trade/`, unit tests via `cargo test --release --lib`.
+- The game (Step 2): `cargo run --release` (Bevy 0.19 + bevy_egui). `UPD_SHOT=1 cargo run --release`
+  plays a fast spin cycle, saves `shots/*.png` and exits; use it to check visuals.
