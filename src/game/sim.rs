@@ -25,14 +25,38 @@ pub struct Laundromat {
     pub mode: Mode,
     /// Manual-mode temperature multiplier (the spin dial).
     pub dial: f64,
-    /// Sim time units per real second.
-    pub speed: f64,
+    /// Index into [`PROGRAMS`].
+    pub program: usize,
+    /// Watch-speed multiplier (1x plays a program in its `watch_secs`).
+    pub watch: f64,
     pub seed: u64,
     /// The QUBO's best answer, for the scoreboard.
     pub ground: u32,
     /// Per-trade "on-ness" in 0..1, smoothed for display.
     pub activity: Vec<f32>,
 }
+
+/// A wash program: how long the drum takes to cool (the physics), and how
+/// many real seconds the player spends watching it at 1x.
+pub struct WashProgram {
+    pub name: &'static str,
+    /// Anneal length in sim time units.
+    pub duration: f64,
+    pub watch_secs: f64,
+    /// How often the i9 finds the best set, measured with
+    /// `trade_cli bench --runs 192 --time <duration>` (2026-10-05).
+    pub i9_rate: &'static str,
+}
+
+pub const PROGRAMS: [WashProgram; 4] = [
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "43%" },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "65%" },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "95%" },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "100%" },
+];
+
+/// Watch speed for the manual dial at 1x (sim time units per real second).
+const MANUAL_SPEED: f64 = 40.0;
 
 /// How often the i9 reads the Hall sensors (sim time units).
 const SAMPLE: f64 = 1.0;
@@ -43,7 +67,11 @@ impl Laundromat {
     pub fn new() -> Self {
         let tc = TradeComputer::new(world::laundromat_tuesday(), 5.0, 1.6);
         let physics = Physics::default();
-        let seed = 1;
+        // A different night every launch; `UPD_SEED=<n>` replays one exactly.
+        let seed = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
+        });
+        info!("laundromat open: seed {seed} (UPD_SEED={seed} replays this session)");
         let machine = tc.machine(physics, seed).expect("build the slap-bit board");
         let ground = tc.ground_state();
         let n = tc.cycles.len();
@@ -55,7 +83,8 @@ impl Laundromat {
             latch: Latch::new(),
             mode: Mode::Manual,
             dial: 1.5,
-            speed: 40.0,
+            program: 2,
+            watch: 1.0,
             seed,
             ground,
             activity: vec![0.0; n],
@@ -75,17 +104,34 @@ impl Laundromat {
         info!("new load: seed {}, strips re-randomized", self.seed);
     }
 
+    /// Load fresh laundry and run the selected program. Every cycle starts
+    /// from random strips, so it earns its answer.
     pub fn start_cycle(&mut self) {
-        self.latch = Latch::new();
+        self.new_load();
+        let p = &PROGRAMS[self.program];
+        self.anneal.duration = p.duration;
         self.mode = Mode::Cycle { start: self.machine.time() };
         info!(
-            "spin cycle started at sim t={:.0}: kT x{} -> x{} over {} units, speed {:.0} units/s",
-            self.machine.time(),
+            "spin cycle: {} (kT x{} -> x{} over {} units; i9 finds the best set {} of the time), watching at {:.0} units/s",
+            p.name,
             self.anneal.hot,
             self.anneal.cold,
-            self.anneal.duration,
-            self.speed
+            p.duration,
+            p.i9_rate,
+            self.speed()
         );
+    }
+
+    /// Sim time units per real second right now.
+    pub fn speed(&self) -> f64 {
+        let base = match self.mode {
+            Mode::Manual => MANUAL_SPEED,
+            Mode::Cycle { .. } | Mode::Done => {
+                let p = &PROGRAMS[self.program];
+                (p.duration + self.anneal.settle) / p.watch_secs
+            }
+        };
+        base * self.watch
     }
 
     /// Log what the drum settled on and what the i9 latched.
@@ -96,7 +142,8 @@ impl Laundromat {
         let (best, _) = self.tc.evaluate(self.latch.best_bits);
         let (ground, _) = self.tc.evaluate(self.ground);
         info!(
-            "drum stopped: at rest {} = {rest:.0} Goo{} | i9 latched {} = {best:.0} Goo at t={:.0} | best possible {} = {ground:.0} Goo -> {}",
+            "{} done: at rest {} = {rest:.0} Goo{} | i9 latched {} = {best:.0} Goo at t={:.0} | best possible {} = {ground:.0} Goo -> {}",
+            PROGRAMS[self.program].name,
             mask(self.latch.final_bits),
             if rest_clash { " (clash)" } else { "" },
             mask(self.latch.best_bits),
@@ -134,7 +181,7 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
     let lm = &mut *lm;
     let dt = lm.physics.dt;
     let real = time.delta_secs_f64().min(0.1);
-    let steps = ((lm.speed * real / dt).round() as usize).min(MAX_STEPS_PER_FRAME);
+    let steps = ((lm.speed() * real / dt).round() as usize).min(MAX_STEPS_PER_FRAME);
     let sample_steps = (SAMPLE / dt).round() as u64;
     for _ in 0..steps {
         match lm.mode {

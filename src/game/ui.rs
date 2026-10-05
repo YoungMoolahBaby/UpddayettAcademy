@@ -8,7 +8,7 @@ use cortenforge_play::trade::qubo;
 
 use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
-use super::sim::{Laundromat, Mode};
+use super::sim::{Laundromat, Mode, PROGRAMS};
 
 fn c32(c: Color) -> egui::Color32 {
     let s = c.to_srgba();
@@ -81,24 +81,38 @@ pub fn panels(
                     ui.add(egui::ProgressBar::new(0.0).text("manual: you hold the dial"));
                 }
             }
-            ui.horizontal(|ui| {
-                if ui.button("Run spin cycle").clicked() {
-                    lm.start_cycle();
-                }
-                if ui.button("New load").clicked() {
-                    lm.new_load();
-                }
-            });
-            ui.add_enabled_ui(!matches!(lm.mode, Mode::Cycle { .. }), |ui| {
+            let spinning = matches!(lm.mode, Mode::Cycle { .. });
+            ui.add_enabled_ui(!spinning, |ui| {
+                ui.label("Program (how slowly the drum cools):");
+                egui::Grid::new("programs").num_columns(2).spacing([10.0, 2.0]).show(ui, |ui| {
+                    for (k, p) in PROGRAMS.iter().enumerate() {
+                        ui.radio_value(&mut lm.program, k, p.name);
+                        ui.label(egui::RichText::new(format!("{:>4.0} units, i9 best {}", p.duration, p.i9_rate)).small().monospace());
+                        ui.end_row();
+                    }
+                });
+                ui.horizontal(|ui| {
+                    let run = format!("Run {}", PROGRAMS[lm.program].name);
+                    if ui.button(egui::RichText::new(run).strong()).clicked() {
+                        lm.start_cycle();
+                    }
+                    if ui.button("New load").on_hover_text("Fresh random strips, drum on the manual dial").clicked() {
+                        lm.new_load();
+                    }
+                });
                 let mut dial = lm.dial;
-                if ui.add(egui::Slider::new(&mut dial, 0.0..=6.0).text("spin dial (kT)")).changed() {
+                if ui.add(egui::Slider::new(&mut dial, 0.0..=6.0).text("manual dial (kT)")).changed() {
                     lm.dial = dial;
                     lm.mode = Mode::Manual;
                 }
             });
-            let mut speed = lm.speed;
-            if ui.add(egui::Slider::new(&mut speed, 5.0..=400.0).logarithmic(true).text("sim time / s")).changed() {
-                lm.speed = speed;
+            let mut watch = lm.watch;
+            if ui
+                .add(egui::Slider::new(&mut watch, 0.25..=8.0).logarithmic(true).text("watch speed x"))
+                .on_hover_text("How fast you watch. Doesn't change the physics; the program does.")
+                .changed()
+            {
+                lm.watch = watch;
             }
             ui.separator();
             let in_wells = (0..n).filter(|&i| lm.well(i).is_in_well()).count();
@@ -112,6 +126,7 @@ pub fn panels(
                 ui.label("i9 latched: nothing yet (it reads during a cycle)");
             }
             ui.small("Spin hot, cool slow. Too fast and the strips freeze before they agree.");
+            ui.small(format!("sim speed now: {:.0} time units per second", lm.speed()));
         });
 
     egui::Window::new("TRADES")

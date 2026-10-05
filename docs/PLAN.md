@@ -5,7 +5,7 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Next action: **Step 3**.
+Next action: **Step 3.1** (see the Step 3 plan below; 3.0 done).
 
 ## Step 1 result
 
@@ -185,12 +185,126 @@ look without watching the window).
 - Show both the at-rest state (arrows) and the i9's latched best (an LED
   readout on the i9).
 
-## Step 3: backward mode, voice, polish (as time allows)
+## Step 3: make it a lesson (plan, 2026-10-05)
 
-- "I want..." picker that clamps a want and reruns.
-- Two or three AI lines tied to results (froze too fast; found a 4-way chain).
-- `bevy_solari` lighting under laundromat fluorescents; scope trace of one bit;
-  one fake commercial card; Xbox-style title card.
+Work through these in order, one at a time: build, check (tests, CLI bench,
+`UPD_SHOT` screenshots, logs), show the user, then commit. Each item lists
+what it's for, how it works, and when it counts as done.
+
+### 3.0 Groundwork: wash programs and fresh loads
+
+Why: the user's first session showed two gaps. (a) After ~33,000 time units
+on the manual dial, the strips had already settled into the best set, so the
+i9 latched it 2 time units into the cycle: the cycle got credit for work
+done before it. (b) The sim-speed slider only changes how fast you watch;
+nothing lets the player spin too fast, and that failure is the lesson.
+
+- **Wash programs** set the anneal *length* (the physics), separate from the
+  watch speed: Quick Wash (~150 time units), Normal (1000), Delicates
+  (3000). Measure each with `trade_cli bench --time` and show the expected
+  hit rate next to the button, so the trade-off is honest and visible.
+- **Run = fresh load.** Starting a cycle re-randomizes the strips (new
+  laundry), so every cycle earns its answer. Manual mode stays a sandbox.
+- Watch speed auto-scales so every program takes ~15-30 s to watch.
+- Done when: Quick Wash visibly misses more often than Normal (matching
+  bench numbers); no latch earlier than a few time units after a fresh load
+  unless the random start happens to be best (log it); logs show the program.
+
+**3.0 done.** Bench, 192 fresh loads each (i9 latch / at rest finds the
+best set): Quick Wash 150 units 43% / 26%, Permanent Press 300 65% / 39%,
+Normal 1000 95% / 54%, Delicates 3000 100% / 66%. In-game (screenshot mode):
+Quick Wash 2 of 4 best (misses at 28-32 Goo), Delicates 2 of 2. The game
+now seeds from the clock (`UPD_SEED=<n>` replays a session; the seed is
+logged), so every launch is a different night. `UPD_PROGRAM=0..3` picks the
+program in screenshot mode, whose stages now follow cycle progress (it hung
+on short programs before).
+
+### 3.1 "I want..." picker (backward mode in the UI)
+
+- Picker: customer (default Upddayett) + item, listing only items some
+  candidate trade can deliver to them; the rest greyed out ("nobody's
+  trading that tonight"). A Clear button.
+- Choosing a want rebuilds the board (couplings can't change after
+  `install`, a known gotcha). Add `TradeComputer::clear_want` and a
+  `Machine` constructor that keeps the current strip positions, so the
+  strips don't jump.
+- Cycles that deliver the want get a gold outline on their arrows and a
+  "WANTED" tag on the trade board. The result says what the want cost: the
+  block's value vs the forward-mode best ("Got you the hub motor. Cost the
+  block 2 Goo.").
+- Done when: every deliverable want for every customer is selectable and
+  delivered (unit test over all wants: the ground state delivers and is
+  clash-free; spot-check a few with the CLI bench); the result line shows
+  the cost; logs show the want.
+
+### 3.2 The AI's voice
+
+- A pure `voice` module in the library (no Bevy, unit-testable): an
+  `Outcome` (program, want, at-rest bits, latched bits, best bits, latch
+  time, longest loop, clashes at rest, at-rest vs latched) -> a line. No
+  immediate repeats. Every line quotes a real number from the run.
+- Categories: perfect run, missed (froze too fast), at rest differs from
+  the i9 (the "I caught it, you didn't" line), found a 4-way, clash at rest,
+  want delivered/cost, fresh-load quips, a few live lines during the spin
+  (first latch, freeze-out as the drum cools past ~0.15 dV).
+- Upddayett gets replies ("...I'm still the pimp though."). Shown as a
+  Comedy Central-style caption bar at the bottom.
+- The user reviews and edits the line list before it ships (tone).
+- Done when: each category triggers in a deliberately provoked run (Quick
+  Wash for the misses), and unit tests cover selection and no-repeat.
+
+### 3.3 Altruistic chains (Karma)
+
+- Encoding: a donor gives an item away; the chain passes it along an open
+  path (each middle person gives something they value less than what they
+  get); the last person keeps. Every chain is one more bit; chains from the
+  same donation share the item, so at most one wins. Keep total bits <= 20
+  so the exact solver still checks it.
+- Who donates: the player picks something of Upddayett's to give away (a
+  "Give away" picker), and optionally a nightly food-rescue donor (a
+  taqueria's surplus bean burritos, plant-based, to people who want food).
+- Karma is its own meter, scored after the solve: relief (value delivered
+  to the people the chain reaches) plus a Flourishing bonus (design: more
+  for adding pleasure or purpose on top). **Decide the exact formula with
+  the user when we get here.**
+- Visual: open chains drawn from the donor in warm gold, with a heart
+  token; a Karma meter beside the Goo numbers.
+- Done when: unit tests for chain enumeration (gains > 0 in the middle,
+  last person gains, shared-donation conflicts); bench hit rate stays near
+  the forward-mode numbers; a donation visibly reaches 2-4 people.
+
+### 3.4 The laundry counter is the escrow
+
+- A folding counter in the scene. When a cycle starts, every customer's
+  items fly to the counter (small crates in the owner's color); when the
+  drum stops they fly to their new owners per the i9's call, and untraded
+  items go home.
+- One line of AI or tooltip explaining why: a 4-way swap only works if
+  everyone delivers or nobody does, which is also why loops stop at 4
+  (kidney exchanges cap loops for the same reason).
+- Done when: screenshots show items on the counter mid-cycle and delivered
+  after; item counts conserve (nothing duplicated or lost; assert it).
+
+### 3.5 Visual polish
+
+- **Layout:** the user's screenshot (narrower window) shows the trade board
+  covering the washer. Make it compact and collapsible; scale panels to the
+  window.
+- **Title card:** Xbox-style "Press Start": UPDDAYETT'S SCHOOL OF BIDDNESS,
+  Lesson 3, chunky type, then a "powered by CortenForge" splash (real name,
+  per the naming policy).
+- **Fake commercial card** between cycles now and then (Mtn Goo, or
+  Superintelligence for Dogs).
+- **Scope trace:** click a trade to watch its strip's `qpos` over time on a
+  little green scope ("the scope", Tentzhen's in-game nickname): you see
+  the Kramers hops.
+- **Ray tracing (`bevy_solari`), last and riskiest:** feature `bevy_solari`,
+  `RaytracingMesh3d` on meshes, camera with `Msaa::Off` and storage-texture
+  usage (see Bevy's `examples/3d/solari.rs`). A key toggles back to normal
+  PBR. If it fights gizmos/egui or tanks the frame rate, document why and
+  keep PBR.
+- Done when: screenshots of each; the frame rate is logged with and without
+  Solari.
 
 ## Gotchas (from the probes)
 
