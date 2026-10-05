@@ -33,3 +33,5 @@ Read first:
   and `cargo run --release --example probe_soft -- [drop|couple|grad|all]`.
   `examples/probe_therm.rs` holds the proven thermostat setup and the
   QUBO-to-Ising converter that Step 1 reuses.
+- Trade computer (Step 1): `cargo run --release --example trade_cli -- [run|bench|cycles] [--want upd:hub]`;
+  library in `src/trade/`, unit tests via `cargo test --release --lib`.

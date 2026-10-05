@@ -3,10 +3,57 @@
 Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
-Status (2026-10-04): design decided, feasibility probes done, nothing built yet.
-Next action: **Step 1**.
+Status (2026-10-05): **Step 1 done** (headless trade computer in `src/trade/`,
+CLI in `examples/trade_cli.rs`). Next action: **Step 2**.
 
-## Step 1: headless trade computer (~45 min)
+## Step 1 result
+
+Run it: `cargo run --release --example trade_cli -- [run|bench|cycles] [--want upd:hub] [--seed N]`.
+
+- The Tuesday-night laundromat (7 NPCs, 16 items) yields **14 candidate
+  trades** (2- to 4-way loops). The best set is 6 trades worth 35 Goo, and it
+  skips the single most valuable loop (10 Goo), so greedy picking loses.
+- One spin cycle takes 0.38 s wall on one thread (14 bits, 1020 time units,
+  dt 0.01), or about 0.8 s when 12 run in parallel.
+- **Two answers per spin.** *At rest* is where the strips physically settle.
+  The *i9 latch* is the lowest-energy configuration the i9 reads during the
+  spin (every time unit, only when every strip sits in a well). That's
+  standard p-bit practice and fits the fiction: the i9 watches through the
+  Hall sensors.
+- Defaults (tuned by sweep): `beta` 5, `delta_v` 5, penalty 1.6 x max
+  value, `gamma` 1, kT multiplier 4 -> 0.35 geometric over 1000, then 20
+  units with the drum stopped.
+
+| 192 seeded runs, forward mode | Best set | Clash-free |
+| --- | --- | --- |
+| At rest | 54% | 91% |
+| i9 latch | **95%** | 100% |
+
+Backward mode (96 runs each): the want is delivered in 100% of runs, and the
+i9 latch reaches the best set 89% (cells), 93% (hub motor), 98% (soldering
+iron) and 91% (Tamara wants the Ledger). Asking for the hub motor makes the
+machine drop the 3-way that sent it to Dave and do a direct Goo-for-hub swap.
+
+What tuning taught us (good in-game material):
+- **Soft spins.** A strip pushed by strong springs sits well past |x| = 1
+  (seen: -1.86). Then the linear compensation in `h` over-pushes its
+  neighbours, and clashes freeze in. Raising the penalty made clashes worse
+  (up to 100%). Keep couplings small next to the barrier.
+- **Freeze-out.** At a given barrier, strips stop flipping around kT ~ 0.1
+  to 0.2 x dV. Anneal time buys accuracy only logarithmically: 3x longer
+  moved the at-rest rate from 62% to 65%. Spinning too fast is the in-game
+  failure ("You spun it too fast, Daddy").
+- The i9 first latches the best set early (median t of about 70 of 1020),
+  but cutting the cycle to 300 or 500 units dropped the latch rate to 64% or
+  80%, because the early hot phase explores.
+- Backward-mode bias can exceed the well-flattening field (17.6 vs 7.7 for
+  "Upddayett wants the cells"). That clamps the strip on, which in fiction is
+  Upddayett holding it down with his thumb. It works; the field warning in
+  the plan is advisory.
+- Fixed bug: two cycles that both deliver the wanted item both get the bias,
+  so their conflict penalty must include it or the machine takes both.
+
+## Step 1 plan (as written before building)
 
 Goal: prove the magic before any graphics. A trade problem goes in, the
 thermostat sim spins up and winds down, and the bits settle on the best set of
@@ -76,12 +123,12 @@ is also the lesson the player learns.
 
 ### Acceptance
 
-- [ ] Final bits match the exact ground state (via `exact_distribution`) in at
-      least 80% of seeded runs.
-- [ ] One anneal finishes in under ~1-2 s wall time, single thread.
-- [ ] Terminal output: per-tick list of which trades are "on", then the final
+- [x] Final bits match the exact ground state (via `exact_distribution`) in at
+      least 80% of seeded runs. *Via the i9 latch, 95%; at rest, 54%.*
+- [x] One anneal finishes in under ~1-2 s wall time, single thread. *0.38 s.*
+- [x] Terminal output: per-tick list of which trades are "on", then the final
       chain in words ("Vape Lady gives battery to Shopping-Cart Guy ...").
-- [ ] Backward mode finds a chain delivering the wanted item.
+- [x] Backward mode finds a chain delivering the wanted item. *100% delivered.*
 
 Put it in `src/trade/` as a library module (no Bevy) so Step 2 reuses it, plus
 a small `examples/trade_cli.rs` or a `src/main.rs` mode.
@@ -98,7 +145,16 @@ a small `examples/trade_cli.rs` or a `src/main.rs` mode.
   state; chosen cycles lock and glow as the anneal finishes.
 - Spin-cycle dial (egui) for temperature, plus a "Run cycle" button that plays
   a full anneal.
-- Run the sim on a fixed timestep, several sim steps per frame.
+- Run the sim on a fixed timestep, several sim steps per frame. At 0.38 s per
+  102k steps, a 60 fps frame fits ~1,700 steps (17 time units), so a full
+  spin cycle plays in about 60 s of real time at 1x; offer a speed dial.
+- API to use: `TradeComputer::new(world, beta, penalty)`, `.want(npc, item)`,
+  `.machine(physics, seed)`, then drive `Machine::set_temperature` and
+  `step()` per frame and read `positions()` / `well(i)`. The latch logic is
+  `Latch::observe` (make it public or mirror it). `TradeComputer::spin`
+  runs a whole cycle in one call (headless only).
+- Show both the at-rest state (arrows) and the i9's latched best (an LED
+  readout on the i9).
 
 ## Step 3: backward mode, voice, polish (as time allows)
 

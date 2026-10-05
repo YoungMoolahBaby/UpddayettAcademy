@@ -40,6 +40,18 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   loads and pinned vertices. No soft-soft contact (self-contact listed as
   future). Friction exists but has no gradients.
 
+### Step 1: trade computer (sim-thermostat), works
+
+- 14-bit maximum-weight independent set (QUBO -> Ising -> coupled double
+  wells): the i9 latch finds the exact optimum in 95% of 192 seeded runs, at
+  0.38 s per anneal on one thread. Everything compiled first try from facade
+  paths; `with_ctrl_temperature` made the anneal a one-liner per step.
+- The Ising mapping holds only while couplings stay weak next to the
+  barrier. With |J| x degree comparable to 8 dV (the well stiffness), strips
+  deflect to |x| ~ 1.9, the `h` compensation over-shoots, and wrong states
+  become metastable. That's expected soft-spin physics, but the crate doesn't
+  warn about it (see friction log).
+
 ## Friction log
 
 - The facade is easy: one crate, and `load_model` -> `make_data` -> `step` is a
@@ -76,6 +88,18 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   batch methods, which blocks GPU or SIMD backends from helping. SAC/TD3 batch
   their critic gradients. The `Algorithm` docs tell Bevy users to write their
   own training loops, but no published example shows how.
+- `sim-thermostat`: `PairwiseCoupling` docs promise that a coupled bistable
+  array's "equilibrium statistics match the Ising model"
+  (pairwise_coupling.rs:8-10), validated only on a uniform-J 4-chain. They
+  never state the condition: couplings and fields small compared with dV
+  (positions stay near +-x0). In an antiferromagnetic QUBO with degree ~5,
+  following the naive mapping gave 100% wrong answers. A one-line rule of
+  thumb, or a helper that maps a QUBO/Ising problem to components and warns
+  when |h| + sum|J| nears the well-flattening tilt, would have saved an hour
+  of sweeps. A "latch the lowest-energy state seen" helper would also help:
+  every annealing user needs one.
+- `WellState::from_position` (well_state.rs:28) takes the threshold as a bare `f64` with no
+  suggested default; 0.5 x x0 (from the crate's tests) worked.
 - Windows 11 with Smart App Control enforcing: nothing builds (build scripts
   fail with os error 4551). Getting-started notes should say to turn it off.
   After that, the first release build of `cortenforge` took 2 min 18 s on a
