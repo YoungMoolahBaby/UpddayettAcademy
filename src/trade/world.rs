@@ -36,6 +36,9 @@ pub struct Item {
     pub owner_use: Use,
     /// The owner's value for it on a neutral night.
     pub base: f64,
+    /// Given away tonight: it can start a gift chain, and its owner asks
+    /// nothing for it.
+    pub gift: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -133,7 +136,7 @@ impl World {
 
     /// Adds an item held by `owner`, worth `base` to them on a neutral night.
     fn has(&mut self, owner: usize, name: &'static str, base: f64, owner_use: Use) -> usize {
-        self.items.push(Item { name, owner, owner_use, base });
+        self.items.push(Item { name, owner, owner_use, base, gift: false });
         self.items.len() - 1
     }
 
@@ -157,7 +160,7 @@ impl World {
                 }
                 _ => 1.0,
             };
-            value[it.owner][id] = whole_goo(it.base * scale);
+            value[it.owner][id] = if it.gift { 0.0 } else { whole_goo(it.base * scale) };
         }
         for w in &self.wants {
             let (scale, _) = rule(w.use_, &self.npcs[w.npc], w.npc, &self.night);
@@ -238,6 +241,7 @@ pub fn laundromat(seed: u64) -> World {
     let pigeon = w.npc("Pigeon Lady", true, true, true);
     let ray = w.npc("Sound Guy Ray", false, false, true);
     let tamara = w.npc("Librarian Tamara", false, true, true);
+    let amir = w.npc("Amir's Persian Kitchen", false, false, true);
 
     let goo = w.has(upd, "12-pack of Mtn Goo", 6.0, Use::Enjoy);
     let phone = w.has(upd, "cracked Android phone", 4.0, Use::Lifeline);
@@ -261,6 +265,9 @@ pub fn laundromat(seed: u64) -> World {
 
     let card = w.has(tamara, "laminated library card", 2.0, Use::Build);
     let wifi = w.has(tamara, "Wi-Fi password (staff network)", 3.0, Use::Build);
+
+    let polo = w.has(amir, "tray of day-old adas polo (lentil rice)", 0.0, Use::Eat);
+    w.items[polo].gift = true;
 
     // Upddayett wants to build a balance bot.
     w.wants(upd, hub, 9.0, Use::Build);
@@ -291,6 +298,12 @@ pub fn laundromat(seed: u64) -> World {
     w.wants(tamara, seed_sack, 5.0, Use::FeedAnimals); // the library courtyard pigeons
     w.wants(tamara, vinyl, 4.0, Use::Enjoy);
     w.wants(tamara, kale, 5.0, Use::Eat);
+
+    // Tonight's surplus from Amir's. It's a gift: nobody has to give anything
+    // back, and what it does for people counts as Karma.
+    for (npc, base) in [(upd, 6.0), (cart, 6.0), (vape, 5.0), (pigeon, 5.0), (ray, 4.0), (tamara, 4.0)] {
+        w.wants(npc, polo, base, Use::Eat);
+    }
 
     w.roll_night(seed);
     w

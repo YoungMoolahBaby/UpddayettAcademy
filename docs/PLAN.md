@@ -6,8 +6,8 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step; 3.3a done). Next: **3.3b Gifts**
-(Amir's Persian Kitchen, gift chains, Karma).
+deferred to a later voice-and-music step; 3.3a and 3.3b done). Next: adaptive
+want margin (costly wants), then **3.3c Game** (Karma meter, night banner).
 
 ## Step 1 result
 
@@ -293,7 +293,7 @@ The design below stands; the current two placeholder lines stay meanwhile.
 Decisions (user, 2026-10-05):
 - **A restaurant joins** as the eighth customer (named **Amir's Persian
   Kitchen** by the user): tonight's surplus adas polo
-  (plant-based) start a food-rescue gift chain every night.
+  (plant-based) starts a food-rescue gift every night.
 - **Tags go on the want, not the item** (the same plate of food is a need for
   someone hungry and a treat for someone fed): *need* (food, warmth,
   shelter, and feeding animals), *purpose* (tools and parts for making
@@ -370,6 +370,36 @@ Delicates 99%. Along the way:
 - The board caps at 20 trades (`MAX_BITS`, best kept); no night hits it yet.
 - `trade_cli night --night N` prints tonight's conditions and every want's
   value and tag; `trade_cli nights` summarizes 200 nights.
+
+**3.3b done (2026-10-05).** Amir's Persian Kitchen gives tonight's adas
+polo away; gift strips are scored by Karma (needs 1x, purpose/pleasure
+1.5x once needs are covered), trades by Goo. Results show both
+("41 Goo + 8.0 Karma") and who the gift reached ("Upddayett gets the
+adas polo (hungry)").
+- **Chain length 1 (direct gifts), user-approved on my recommendation.**
+  Pay-it-forward chains work but make a glassy problem (near-equal sets
+  many strip-flips apart): Normal / Delicates across 10 nights, 1
+  recipient 81% / 94%, 2: 54% / 86%, 3: 42% / 65% (trades only: 91% /
+  99%). Longer chains are a later unlock; `cycles::MAX_CHAIN` and
+  `trade_cli --chain N` keep them one number away.
+- Tried and rejected: higher beta (stiffer springs: 38% at 7, 28% at 9)
+  and normalizing by the biggest trade (gift strips overpowered conflict
+  springs: 28-46%).
+- Board: trades first (keeping >= 4 gift slots), gifts fill to 20, picking
+  the best gift per different recipient first, so the drum really chooses
+  who eats. Over 200 nights the food goes first to someone hungry on 187,
+  and never to a fed person while a hungry one wanted it.
+- Program odds re-measured with gift strips (480 runs each): Quick Wash
+  26%, Permanent Press 46%, Normal 81%, Delicates 95%.
+- **Known limitation, fix next:** costly wants (cost 4-10 Goo: Dave/cells,
+  Ray/derailleur, Tamara/kale, Pigeon Lady/charger, Vape Lady/Goo) deliver
+  58-85% on the bigger boards, down from ~99%; wants overall deliver
+  92-97%. Plan: let a want pull as hard as the strips can take without
+  pinning (largest margin that keeps the idle field under ~0.9x the
+  flattening tilt), instead of a fixed 1.0 margin.
+- Found a CortenForge bug: `ising::exact_distribution` overflows to NaN on
+  big boards at low temperature (FINDINGS).
+- Tests: 11, 1.6 s (brute-force cross-checks thinned from 84 s).
 
 Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
 (`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.

@@ -112,6 +112,14 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   when |h| + sum|J| nears the well-flattening tilt, would have saved an hour
   of sweeps. A "latch the lowest-energy state seen" helper would also help:
   every annealing user needs one.
+- **Bug, `sim-thermostat`: `ising::exact_distribution` overflows to NaN.**
+  It computes `exp(-E/kT)` for every state and normalizes by the sum
+  (ising.rs:83-90) with no max-energy shift (log-sum-exp). On a 20-spin
+  problem at low temperature (beta 7, kT 0.35 here) `-E/kT` passes ~709,
+  `exp` returns infinity, and every probability becomes `inf/inf = NaN`,
+  silently, with no error. Fix: subtract the minimum energy before
+  exponentiating. Workaround here: treat any non-finite probability as
+  "solver unavailable" (`TradeComputer::exact_ground_state`).
 - `WellState::from_position` (well_state.rs:28) takes the threshold as a bare `f64` with no
   suggested default; 0.5 x x0 (from the crate's tests) worked.
 - Windows 11 with Smart App Control enforcing: nothing builds (build scripts

@@ -11,7 +11,7 @@ pub mod machine;
 pub mod qubo;
 pub mod world;
 
-pub use cycles::{Cycle, Leg};
+pub use cycles::{Cycle, Kind, Leg};
 pub use machine::{Anneal, Error, Machine, Physics};
 pub use qubo::{Ising, Qubo, TradeProblem};
 pub use world::World;
@@ -102,12 +102,58 @@ pub struct TradeComputer {
 /// Most strips on the board. The crate's exact solver also stops here.
 pub const MAX_BITS: usize = MAX_EXACT_BITS;
 
+/// Strips kept free for gift chains even on a night full of trades.
+pub const MIN_GIFT_SLOTS: usize = 4;
+
+/// Up to `slots` gift chains: first the best chain for each different first
+/// recipient (so the drum really chooses *who* gets the gift, which is the
+/// routing), then the rest by Karma. `gifts` comes sorted by Karma.
+fn pick_gifts(gifts: Vec<Cycle>, slots: usize) -> Vec<Cycle> {
+    let mut picked: Vec<Cycle> = vec![];
+    let mut rest = vec![];
+    for g in gifts {
+        let first = (g.legs[0].item, g.legs[0].to);
+        if picked.len() < slots && !picked.iter().any(|p| (p.legs[0].item, p.legs[0].to) == first) {
+            picked.push(g);
+        } else {
+            rest.push(g);
+        }
+    }
+    let room = slots - picked.len();
+    picked.extend(rest.into_iter().take(room));
+    picked
+}
+
+/// What a set of trades and gifts does, for display.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Tally {
+    /// Goo everyone gains (trades and gift recipients alike).
+    pub goo: f64,
+    /// Karma from gifts: relief + flourishing.
+    pub karma: f64,
+    pub relief: f64,
+    pub flourishing: f64,
+}
+
 impl TradeComputer {
     pub fn new(world: World, beta: f64, penalty: f64) -> Self {
-        let mut cycles = cycles::enumerate(&world, MAX_LOOP);
-        // `enumerate` sorts by value, so a busy night keeps its best trades.
-        let dropped = cycles.len().saturating_sub(MAX_BITS);
-        cycles.truncate(MAX_BITS);
+        Self::with_board(world, beta, penalty, MAX_BITS, cycles::MAX_CHAIN)
+    }
+
+    /// Like [`TradeComputer::new`], with at most `max_gifts` gift chains of
+    /// at most `max_chain` recipients.
+    pub fn with_board(world: World, beta: f64, penalty: f64, max_gifts: usize, max_chain: usize) -> Self {
+        // Trades take the board first (best first), keeping at least
+        // MIN_GIFT_SLOTS strips for gifts; gifts fill the rest.
+        let all_gifts = cycles::enumerate_gifts(&world, max_chain);
+        let mut trades = cycles::enumerate(&world, MAX_LOOP);
+        let total = all_gifts.len() + trades.len();
+        trades.truncate(MAX_BITS - MIN_GIFT_SLOTS.min(all_gifts.len()).min(max_gifts));
+        let mut gifts = pick_gifts(all_gifts, (MAX_BITS - trades.len()).min(max_gifts));
+        let dropped = total - gifts.len() - trades.len();
+        let mut cycles = trades;
+        cycles.append(&mut gifts);
+        cycles.sort_by(|a, b| b.value().partial_cmp(&a.value()).unwrap());
         let masks = qubo::conflict_masks(&cycles);
         let values: Vec<f64> = cycles.iter().map(Cycle::value).collect();
         let forward_best = qubo::best_valid_set(&values, &masks).0;
@@ -243,23 +289,67 @@ impl TradeComputer {
     }
 
     /// Ground state according to the crate's exact Boltzmann solver, with
-    /// its probability at temperature `k_b_t`. `None` above 20 bits.
+    /// its probability at temperature `k_b_t`. `None` above 20 bits, or when
+    /// the crate's solver overflows: it exponentiates -E/kT without a
+    /// max-energy shift, so big boards at low temperature give NaN.
     pub fn exact_ground_state(&self, k_b_t: f64) -> Option<(u32, f64)> {
         if self.ising.n > MAX_EXACT_BITS {
             return None;
         }
         let i = &self.ising;
         let dist = exact_distribution(i.n, &i.edges, &i.j, &i.h, k_b_t);
-        dist.into_iter().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+        if dist.iter().any(|(_, p)| !p.is_finite()) {
+            return None;
+        }
+        dist.into_iter().max_by(|a, b| a.1.total_cmp(&b.1))
     }
 
-    /// Total value (world units) of a set of trades, and whether any two of
-    /// them try to move the same item.
+    /// The drum's score for a set (Goo from trades + Karma from gifts), and
+    /// whether any two of them try to move the same item.
     pub fn evaluate(&self, bits: u32) -> (f64, bool) {
         let on = qubo::chosen(bits, self.cycles.len());
         let value = on.iter().map(|&i| self.cycles[i].value()).sum();
         let clash = on.iter().enumerate().any(|(a, &i)| on[a + 1..].iter().any(|&k| self.cycles[i].conflicts(&self.cycles[k])));
         (value, clash)
+    }
+
+    /// "43 Goo + 8 Karma" (Karma left out when there is none).
+    pub fn score_text(&self, bits: u32) -> String {
+        let t = self.tally(bits);
+        if t.karma > 0.0 { format!("{:.0} Goo + {:.1} Karma", t.goo, t.karma) } else { format!("{:.0} Goo", t.goo) }
+    }
+
+    /// Who the chosen gifts reached and what it did for them:
+    /// ["Shopping-Cart Guy ate (hungry)", ...].
+    pub fn gift_lines(&self, bits: u32) -> Vec<String> {
+        let w = &self.world;
+        qubo::chosen(bits, self.cycles.len())
+            .into_iter()
+            .map(|i| &self.cycles[i])
+            .filter(|c| c.is_gift())
+            .flat_map(|c| c.legs.iter())
+            .map(|l| {
+                let why = match w.tag(l.to, l.item) {
+                    Some(world::Tag::Need) => w.conditions(l.to).first().copied().unwrap_or("need"),
+                    Some(world::Tag::Purpose) => "purpose",
+                    _ => "a treat",
+                };
+                format!("{} gets the {} ({why})", w.npcs[l.to].name, w.items[l.item].name)
+            })
+            .collect()
+    }
+
+    /// Goo and Karma a set of trades and gifts produces, for display.
+    pub fn tally(&self, bits: u32) -> Tally {
+        let mut t = Tally::default();
+        for i in qubo::chosen(bits, self.cycles.len()) {
+            let c = &self.cycles[i];
+            t.goo += c.goo();
+            t.relief += c.relief;
+            t.flourishing += c.flourishing;
+        }
+        t.karma = t.relief + t.flourishing;
+        t
     }
 
     /// Is `bits` a best answer? Judged by value, not by matching the
@@ -329,9 +419,12 @@ mod tests {
                     assert!(tc.delivers_want(best), "night {night}: {who} wants the {what}: best set doesn't deliver");
                     assert!(!tc.evaluate(best).1, "night {night}: {who} wants the {what}: best set clashes");
                     assert!(tc.want_cost(best) >= -1e-9, "a want can't beat the forward optimum");
-                    // The cached best set really is the QUBO's ground state.
-                    let q = &tc.problem.qubo;
-                    assert!((q.energy(best) - q.energy(tc.qubo_ground_state())).abs() < 1e-9, "night {night}: {who}/{what}");
+                    // The cached best set really is the QUBO's ground state
+                    // (brute force is ~1M states, so once per night).
+                    if checked % 7 == 0 {
+                        let q = &tc.problem.qubo;
+                        assert!((q.energy(best) - q.energy(tc.qubo_ground_state())).abs() < 1e-9, "night {night}: {who}/{what}");
+                    }
                     checked += 1;
                 }
             }
@@ -420,5 +513,58 @@ mod tests {
         assert_eq!(a.night, b.night, "same seed, same night");
         let distinct = (1..20u64).map(|s| format!("{:?}", world::laundromat(s).night.hungry)).collect::<std::collections::HashSet<_>>();
         assert!(distinct.len() > 5, "nights should vary");
+    }
+
+    #[test]
+    fn gifts_come_from_the_donor_and_score_karma() {
+        for night in NIGHTS {
+            let tc = tc(night);
+            let w = &tc.world;
+            for c in tc.cycles.iter().filter(|c| c.is_gift()) {
+                let first = c.legs[0];
+                assert!(w.items[first.item].gift, "a gift chain starts with a donated item");
+                assert_eq!(w.items[first.item].owner, first.from);
+                assert!(c.gains.iter().all(|&g| g > 0.0));
+                assert!((c.karma() - (c.relief + c.flourishing)).abs() < 1e-12);
+                assert_eq!(c.value(), c.karma(), "the drum weighs gifts by Karma");
+                // Direct gifts: relief iff the recipient is hungry tonight.
+                assert_eq!(c.relief > 0.0, w.night.hungry[first.to], "night {night}: {}", c.short(w));
+            }
+            assert!(tc.cycles.iter().filter(|c| !c.is_gift()).all(|c| c.relief == 0.0 && c.flourishing == 0.0));
+        }
+    }
+
+    #[test]
+    fn karma_puts_needs_first() {
+        use world::Night;
+        let mut w = world::laundromat(1);
+        let (cart, ray) = (w.find_npc("shopping-cart").unwrap(), w.find_npc("ray").unwrap());
+        let polo = w.find_item("adas polo").unwrap();
+        let mut night = Night::calm(w.npcs.len());
+        night.hungry[cart] = true;
+        w.set_night(night);
+        let gifts = cycles::enumerate_gifts(&w, 1);
+        let to = |npc: usize| gifts.iter().find(|c| c.legs[0].to == npc).unwrap();
+        // Fed and covered: pleasure counts 1.5x, but food is worth less to him.
+        assert!(w.needs_covered(ray));
+        assert_eq!(to(ray).flourishing, cycles::FLOURISH * w.value[ray][polo]);
+        // Hungry: relief, 1x, and it outweighs the treat.
+        assert_eq!(to(cart).relief, w.value[cart][polo]);
+        assert!(to(cart).karma() > to(ray).karma(), "feeding the hungry beats a treat for the fed");
+    }
+
+    #[test]
+    fn the_drum_routes_food_to_someone_hungry() {
+        for night in 1..60 {
+            let tc = tc(night);
+            let w = &tc.world;
+            let best = tc.forward_best;
+            let gift = qubo::chosen(best, tc.cycles.len()).into_iter().map(|i| &tc.cycles[i]).find(|c| c.is_gift());
+            let hungry_wants = (0..w.npcs.len()).any(|k| w.night.hungry[k] && w.items.iter().enumerate().any(|(i, it)| it.gift && w.value[k][i] > 0.0));
+            if hungry_wants {
+                let g = gift.expect("someone hungry wants the food, so it goes out");
+                assert!(w.night.hungry[g.legs[0].to], "night {night}: food went to {} while someone hungry wanted it", w.npcs[g.legs[0].to].name);
+            }
+        }
     }
 }

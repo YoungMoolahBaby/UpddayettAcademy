@@ -77,7 +77,6 @@ pub fn panels(
     );
 
     let n = lm.n();
-    let ground_value = lm.tc.evaluate(lm.ground).0;
 
     egui::Window::new("SPIN CYCLE")
         .anchor(egui::Align2::LEFT_TOP, [12.0, 12.0])
@@ -184,14 +183,14 @@ pub fn panels(
             }
             ui.separator();
             let in_wells = (0..n).filter(|&i| lm.well(i).is_in_well()).count();
-            let (rest_v, clash) = lm.tc.evaluate(lm.machine.bits());
+            let clash = lm.tc.evaluate(lm.machine.bits()).1;
             ui.label(format!("strips in a well: {in_wells}/{n}    sim t = {:.0}", lm.machine.time()));
-            ui.label(format!("strips say: {rest_v:.0} Goo{}", if clash { "  (two trades fight over an item)" } else { "" }));
+            ui.label(format!("strips say: {}{}", lm.tc.score_text(lm.machine.bits()), if clash { "  (two trades fight over an item)" } else { "" }));
             if lm.latch.has_best() {
-                let v = lm.tc.evaluate(lm.latch.best_bits).0;
-                ui.label(format!("i9 latched: {v:.0} Goo   (best possible: {ground_value:.0})"));
+                ui.label(format!("i9 latched: {}", lm.tc.score_text(lm.latch.best_bits)));
+                ui.small(format!("best possible: {}", lm.tc.score_text(lm.ground)));
                 if lm.tc.want.is_some() {
-                    ui.small(format!("(without the want: {:.0})", lm.tc.evaluate(lm.tc.forward_best).0));
+                    ui.small(format!("(without the want: {})", lm.tc.score_text(lm.tc.forward_best)));
                 }
             } else {
                 ui.label("i9 latched: nothing yet (it reads during a cycle)");
@@ -215,7 +214,11 @@ pub fn panels(
                         WellState::Barrier => egui::RichText::new(" ~ ").color(egui::Color32::from_rgb(255, 170, 0)),
                     };
                     ui.label(state.monospace());
-                    ui.label(format!("{:>2.0} Goo", cycle.value()));
+                    if cycle.is_gift() {
+                        ui.label(egui::RichText::new(format!("{:>2.0} Karma", cycle.karma())).color(GOLD));
+                    } else {
+                        ui.label(format!("{:>2.0} Goo", cycle.goo()));
+                    }
                     let mut text = egui::RichText::new(cycle.short(&lm.tc.world)).small();
                     if lm.locked(c) {
                         text = text.strong().color(egui::Color32::from_rgb(140, 200, 255));
@@ -233,13 +236,16 @@ Everyone gains: {}", cycle.describe(&lm.tc.world), cycle.gains_text(&lm.tc.world
             if lm.mode == Mode::Done {
                 ui.separator();
                 let best = lm.latch.best_bits;
-                let (v, _) = lm.tc.evaluate(best);
                 ui.label(egui::RichText::new("THE i9 CALLS IT").strong().size(16.0));
                 for c in qubo::chosen(best, n) {
                     let cy = &lm.tc.cycles[c];
                     ui.label(egui::RichText::new(format!("- {}. ({})", cy.describe(&lm.tc.world), cy.gains_text(&lm.tc.world))).small());
                 }
-                ui.label(format!("In total: +{v:.0} Goo, and nobody loses."));
+                let t = lm.tc.tally(best);
+                ui.label(format!("In total: +{:.0} Goo, and nobody loses.", t.goo));
+                for line in lm.tc.gift_lines(best) {
+                    ui.label(egui::RichText::new(format!("Gift: {line}. Karma +{:.1}", t.karma)).color(GOLD));
+                }
                 if let Some((npc, item)) = lm.tc.want {
                     let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);
                     let line = if lm.tc.delivers_want(best) {

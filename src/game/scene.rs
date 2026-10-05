@@ -19,6 +19,8 @@ const BOARD_Y: f32 = 1.64;
 const RAIL_H: f32 = 0.2;
 const STRIP_LEN: f32 = 0.62;
 const STRIP_PITCH: f32 = 0.085;
+/// Width the strips may span on the 1.25-wide PCB.
+const BOARD_SPAN: f32 = 1.15;
 /// Arch height per unit of `qpos` (a strip in a well sits near |x| = 1).
 const ARCH: f32 = 0.1;
 const SEGMENTS: usize = 10;
@@ -59,7 +61,7 @@ pub struct LedMaterials {
 }
 
 /// Look per customer: hoodie/coat color, head-wear color.
-pub const LOOKS: [(Color, Color); 7] = [
+pub const LOOKS: [(Color, Color); 8] = [
     (Color::srgb(0.35, 0.95, 0.05), Color::srgb(0.1, 0.1, 0.12)), // Upddayett: Mtn Goo green hoodie, black beanie
     (Color::srgb(0.55, 0.33, 0.15), Color::srgb(0.75, 0.2, 0.15)), // Shopping-Cart Guy
     (Color::srgb(0.55, 0.25, 0.75), Color::srgb(0.95, 0.5, 0.8)),  // Vape Lady
@@ -67,6 +69,7 @@ pub const LOOKS: [(Color, Color); 7] = [
     (Color::srgb(0.45, 0.47, 0.5), Color::srgb(0.6, 0.15, 0.25)),  // Pigeon Lady
     (Color::srgb(0.6, 0.12, 0.1), Color::srgb(0.12, 0.12, 0.14)),  // Sound Guy Ray (red flannel, black beanie)
     (Color::srgb(0.5, 0.1, 0.15), Color::srgb(0.35, 0.22, 0.12)),  // Librarian Tamara (cardigan, bun)
+    (Color::srgb(0.95, 0.95, 0.93), Color::srgb(0.08, 0.08, 0.09)), // Amir (white chef coat, black cap)
 ];
 
 pub fn npc_spots(n: usize) -> Vec<Vec3> {
@@ -203,7 +206,7 @@ pub fn setup(
                 p.spawn((Mesh3d(screw.clone()), MeshMaterial3d(steel.clone()), Transform::from_xyz(strip_x(bit, lm.n()), BOARD_Y + RAIL_H + 0.015, z)));
             }
         }
-        let seg = meshes.add(Cuboid::new(0.05, 0.006, STRIP_LEN / SEGMENTS as f32 * 1.08));
+        let seg = meshes.add(Cuboid::new(0.04, 0.006, STRIP_LEN / SEGMENTS as f32 * 1.08));
         let puck = meshes.add(Cylinder::new(0.02, 0.02));
         let led = meshes.add(Sphere::new(0.016));
         for bit in 0..lm.n() {
@@ -279,7 +282,9 @@ pub fn setup(
 }
 
 fn strip_x(bit: usize, n: usize) -> f32 {
-    (bit as f32 - (n as f32 - 1.0) / 2.0) * STRIP_PITCH
+    // Up to 20 strips: tighten the pitch so a full board still fits.
+    let pitch = STRIP_PITCH.min(BOARD_SPAN / n.max(1) as f32);
+    (bit as f32 - (n as f32 - 1.0) / 2.0) * pitch
 }
 
 /// The washer rattles harder (and the drum spins faster) the hotter it runs.

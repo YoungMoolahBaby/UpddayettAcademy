@@ -50,15 +50,15 @@ pub struct WashProgram {
     pub watch_secs: f64,
     /// How often the i9 finds the best set, measured with
     /// `trade_cli bench --runs 48 --time <duration> --night 1..=10` (480
-    /// runs per program across 10 nights, 2026-10-05).
+    /// runs per program across 10 nights, with gift strips, 2026-10-05).
     pub i9_rate: &'static str,
 }
 
 pub const PROGRAMS: [WashProgram; 4] = [
-    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "46%" },
-    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "68%" },
-    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%" },
-    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "99%" },
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%" },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%" },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%" },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%" },
 ];
 
 /// Watch speed for the manual dial at 1x (sim time units per real second).
@@ -201,11 +201,11 @@ impl Laundromat {
     fn log_result(&self) {
         let n = self.n();
         let mask = |b: u32| (0..n).map(|i| if (b >> i) & 1 == 1 { '#' } else { '.' }).collect::<String>();
-        let (rest, rest_clash) = self.tc.evaluate(self.latch.final_bits);
-        let (best, _) = self.tc.evaluate(self.latch.best_bits);
-        let (ground, _) = self.tc.evaluate(self.ground);
+        let rest_clash = self.tc.evaluate(self.latch.final_bits).1;
+        let (rest, best, ground) =
+            (self.tc.score_text(self.latch.final_bits), self.tc.score_text(self.latch.best_bits), self.tc.score_text(self.ground));
         info!(
-            "{} done: at rest {} = {rest:.0} Goo{} | i9 latched {} = {best:.0} Goo at t={:.0} | best possible {} = {ground:.0} Goo -> {}",
+            "{} done: at rest {} = {rest}{} | i9 latched {} = {best} at t={:.0} | best possible {} = {ground} -> {}",
             PROGRAMS[self.program].name,
             mask(self.latch.final_bits),
             if rest_clash { " (clash)" } else { "" },

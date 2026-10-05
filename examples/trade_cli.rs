@@ -26,6 +26,8 @@ struct Opts {
     mode: String,
     bench: bool,
     margin: Option<f64>,
+    gifts: usize,
+    chain: usize,
     want: Option<String>,
     seed: u64,
     night: u64,
@@ -41,6 +43,8 @@ fn parse() -> Opts {
         mode: "run".into(),
         bench: false,
         margin: None,
+        gifts: trade::MAX_BITS,
+        chain: trade::cycles::MAX_CHAIN,
         want: None,
         seed: 1,
         night: 1,
@@ -63,6 +67,8 @@ fn parse() -> Opts {
             "--want" => o.want = Some(val()),
             "--bench" => o.bench = true,
             "--margin" => o.margin = Some(num(val())),
+            "--gifts" => o.gifts = num(val()) as usize,
+            "--chain" => o.chain = num(val()) as usize,
             "--seed" => o.seed = num(val()) as u64,
             "--night" => o.night = num(val()) as u64,
             "--runs" => o.runs = num(val()) as usize,
@@ -84,7 +90,7 @@ fn parse() -> Opts {
 }
 
 fn setup(o: &Opts) -> TradeComputer {
-    let mut tc = TradeComputer::new(trade::world::laundromat(o.night), o.beta, o.penalty);
+    let mut tc = TradeComputer::with_board(trade::world::laundromat(o.night), o.beta, o.penalty, o.gifts, o.chain);
     if let Some(m) = o.margin {
         tc.want_margin = m;
     }
@@ -114,24 +120,41 @@ fn mask_string(bits: u32, n: usize) -> String {
     (0..n).map(|i| if (bits >> i) & 1 == 1 { '#' } else { '.' }).collect()
 }
 
+/// "+7 Goo" for a trade; "+14 Goo, 19.5 Karma" for a gift chain.
+fn worth(c: &trade::Cycle) -> String {
+    if c.is_gift() { format!("+{:.0} Goo, {:.1} Karma", c.goo(), c.karma()) } else { format!("+{:.0} Goo", c.goo()) }
+}
+
 fn print_cycles(tc: &TradeComputer) {
-    println!("{} candidate trades (bit: value, loop):", tc.cycles.len());
+    let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
+    println!(
+        "{} candidates on the board: {} trades, {gifts} gift chains ({} more left off). bit: drum score, who:",
+        tc.cycles.len(),
+        tc.cycles.len() - gifts,
+        tc.dropped
+    );
     for (i, c) in tc.cycles.iter().enumerate() {
         let biased = if tc.problem.bias[i] > 0.0 { "  <- wanted" } else { "" };
-        println!("  {i:>2}: {:>4.1} Goo  {}{biased}", c.value(), c.short(&tc.world));
+        let kind = if c.is_gift() { "gift " } else { "trade" };
+        println!("  {i:>2}: {:>5.1} {kind}  {}  ({}){biased}", c.value(), c.short(&tc.world), worth(c));
     }
 }
 
 fn print_chain(tc: &TradeComputer, bits: u32) {
-    let (value, clash) = tc.evaluate(bits);
+    let (_, clash) = tc.evaluate(bits);
     for i in qubo::chosen(bits, tc.cycles.len()) {
         let c = &tc.cycles[i];
-        println!("  * {}-way (+{:.0} Goo): {}.", c.len(), c.value(), tc.cycles[i].describe(&tc.world));
+        let kind = if c.is_gift() { format!("gift to {}", c.len()) } else { format!("{}-way", c.len()) };
+        println!("  * {kind} ({}): {}.", worth(c), c.describe(&tc.world));
     }
+    let t = tc.tally(bits);
     println!(
-        "  Total: everyone {:.0} Goo better off{}.",
-        value,
-        if clash { ", BUT two trades fight over the same item" } else { "" }
+        "  Total: +{:.0} Goo and nobody loses; Karma {:.1} (relief {:.1}, flourishing {:.1}){}.",
+        t.goo,
+        t.karma,
+        t.relief,
+        t.flourishing,
+        if clash { ", BUT two of them fight over the same item" } else { "" }
     );
 }
 
@@ -154,7 +177,7 @@ fn report_problem(tc: &TradeComputer, o: &Opts) -> u32 {
             if (tc.problem.qubo.energy(g) - tc.problem.qubo.energy(ground)).abs() < 1e-9 { "agrees with" } else { "DISAGREES with" },
             100.0 * p
         ),
-        None => println!("Exact solver skipped ({n} bits > {}).", trade::MAX_EXACT_BITS),
+        None => println!("Exact solver skipped: over {} bits, or it overflowed to NaN (no max-energy shift).", trade::MAX_EXACT_BITS),
     }
     ground
 }
@@ -282,9 +305,9 @@ fn main() -> Result<(), trade::Error> {
             // its bias pins a strip ("thumb clamp"), and with --bench, how
             // reliably the machine finds it.
             let mut tc = setup(&o);
-            let forward = tc.evaluate(tc.forward_best).0;
+            let forward = tc.score_text(tc.forward_best);
             let (mut bests, mut dels, mut fields) = (vec![], vec![], vec![]);
-            println!("Forward best: {forward:.0} Goo. Deliverable wants{}:", if o.bench { format!(" ({} runs each)", o.runs) } else { String::new() });
+            println!("Forward best: {forward}. Deliverable wants{}:", if o.bench { format!(" ({} runs each)", o.runs) } else { String::new() });
             for npc in 0..tc.world.npcs.len() {
                 for item in tc.deliverable(npc) {
                     tc.want(npc, item);
@@ -292,10 +315,10 @@ fn main() -> Result<(), trade::Error> {
                     let (field, flat) = tc.field_headroom(&o.physics);
                     fields.push(field);
                     let mut line = format!(
-                        "  {:<18} wants {:<38} best {:>2.0} Goo, costs {:>2.0}, field {field:>4.1}{}",
+                        "  {:<18} wants {:<38} best {}, costs {:>2.0}, field {field:>4.1}{}",
                         tc.world.npcs[npc].name,
                         tc.world.items[item].name,
-                        tc.evaluate(best).0,
+                        tc.score_text(best),
                         tc.want_cost(best),
                         if field > flat { " THUMB" } else { "" }
                     );
@@ -346,22 +369,40 @@ fn main() -> Result<(), trade::Error> {
             Ok(())
         }
         "nights" => {
-            // How much the nights vary: board size, best value, who's hungry.
-            let mut sizes = vec![];
+            // How much the nights vary, and where the gift goes.
+            let (mut trades, mut gifts, mut dropped, mut karma) = (vec![], vec![], vec![], vec![]);
+            let (mut gift_won, mut fed_hungry, mut gift_to_fed) = (0, 0, 0);
             for night in 1..=200u64 {
                 let mut oo = Opts { night, ..o.clone() };
                 oo.want = None;
                 let tc = setup(&oo);
-                sizes.push((tc.cycles.len() + tc.dropped, tc.dropped, tc.evaluate(tc.forward_best).0));
+                let g = tc.cycles.iter().filter(|c| c.is_gift()).count();
+                trades.push(tc.cycles.len() - g);
+                gifts.push(g);
+                dropped.push(tc.dropped);
+                let best = tc.forward_best;
+                karma.push(tc.tally(best).karma);
+                // Who got the food first, and were they hungry?
+                if let Some(c) = qubo::chosen(best, tc.cycles.len()).into_iter().map(|i| &tc.cycles[i]).find(|c| c.is_gift()) {
+                    gift_won += 1;
+                    if tc.world.night.hungry[c.legs[0].to] {
+                        fed_hungry += 1;
+                    } else if (0..tc.world.npcs.len()).any(|k| tc.world.night.hungry[k] && tc.world.value[k][c.legs[0].item] > 0.0) {
+                        gift_to_fed += 1;
+                    }
+                }
             }
-            let full = sizes.iter().filter(|s| s.1 > 0).count();
-            let (lo, hi) = (sizes.iter().map(|s| s.0).min().unwrap(), sizes.iter().map(|s| s.0).max().unwrap());
-            let mean = sizes.iter().map(|s| s.0).sum::<usize>() as f64 / sizes.len() as f64;
-            let best = |f: fn(f64, f64) -> f64, init| sizes.iter().map(|s| s.2).fold(init, f);
+            let range = |v: &[usize]| format!("{}-{}", v.iter().min().unwrap(), v.iter().max().unwrap());
+            let kmin = karma.iter().copied().fold(f64::INFINITY, f64::min);
+            let kmax = karma.iter().copied().fold(0.0, f64::max);
             println!(
-                "200 nights: candidate trades {lo}-{hi} (mean {mean:.1}); board full (some dropped) on {full}; best set {:.0}-{:.0} Goo",
-                best(f64::min, f64::INFINITY),
-                best(f64::max, 0.0)
+                "200 nights: board = {} trades + {} gift chains ({} candidates left off); best set uses a gift on {gift_won}, Karma {kmin:.0}-{kmax:.0}",
+                range(&trades),
+                range(&gifts),
+                range(&dropped)
+            );
+            println!(
+                "  the food goes first to someone hungry on {fed_hungry}; to someone fed while a hungry person wanted it on {gift_to_fed}"
             );
             Ok(())
         }
