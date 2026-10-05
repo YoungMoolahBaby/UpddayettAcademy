@@ -6,8 +6,8 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step). First: the Goo legend, per-person
-gains and the HOW IT WORKS card (3.3 step 1).
+deferred to a later voice-and-music step). Next: **3.3a Nights** (dynamic
+needs, level 1).
 
 ## Step 1 result
 
@@ -308,11 +308,46 @@ Decisions (user, 2026-10-05):
 - **The rules are front and center** (user: "high signal, low noise"): a
   short HOW IT WORKS card in the game and the same rules in DESIGN.md.
 
-Order:
-1. Goo legend, per-person gains on results ("Upddayett +4, Vape Lady +3"),
-   and the HOW IT WORKS card.
-2. Taqueria + want tags (table reviewed by the user).
-3. Gift chains in the solver, Karma scoring, Karma meter.
+**Dynamic needs (user, 2026-10-05): level 1 now, level 2 later.** Wants
+and needs aren't fixed: Ray isn't always full. Tags come from rules over
+tonight's conditions, not a hand-made table.
+- Each want (and each owned item) has a *use*: eat, warm up, feed
+  animals, lifeline (a phone), build (tools and parts), enjoy (treats).
+  Tags go on the want: Pigeon Lady wants kale to feed her pigeons; Tamara
+  wants it to eat.
+- Each night rolls conditions from a seed: weather (cold or mild), who's
+  hungry (more likely if sleeping out), whose animals need feeding.
+- Rules: eat = need if hungry, pleasure if fed; warm up = need on a cold
+  night if sleeping out, else pleasure; feed animals = need if they're
+  hungry, else pleasure; lifeline = need if you have no phone, else
+  purpose; build = purpose; enjoy = pleasure.
+- Value follows condition (a hungry person values burritos ~1.4x their
+  base, a fed one ~0.5x), and so does what owners ask for their own food
+  or warmth. So the drum sends food to whoever's hungry tonight, with no
+  special case.
+- "Needs covered" (for the 1.5x flourishing bonus) is per night: not
+  hungry, not cold outside, animals fed, has a phone. Same rule in the
+  solver and the Karma score.
+- Level 2 (later, its own step: the creative-to-survival shift): tonight's
+  outcome carries into tomorrow (fed tonight = not hungry tomorrow, items
+  that changed hands stay changed), plus Upddayett's hunger meter. That's
+  also where "feed them first" pays off across nights.
+
+Sub-steps (commit and push each):
+- **3.3a Nights (library):** uses, night roll, derived values and tags,
+  tests; `trade_cli` shows the night. No gifts yet.
+- **3.3b Gifts (library):** Lupe's Taqueria (eighth customer, fictional)
+  with tonight's surplus bean burritos; open gift chains; Karma scoring;
+  cap the board at 20 bits (keep the best gifts and trades); bench.
+- **3.3c Game:** a 20-slot strip board (unused slots parked), a night
+  banner with "Next night", condition tags on portraits (hungry, cold),
+  a Karma meter beside Goo, gift chains in warm gold with a heart token,
+  the Karma line on HOW IT WORKS, and tightened layout for small windows.
+- **3.3d Give-away picker:** Upddayett gives one of his things away and
+  it starts a chain too.
+
+Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
+(`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.
 
 Encoding (unchanged): a donor gives an item away; the chain passes it
 along an open path (each middle person gives something they value less
