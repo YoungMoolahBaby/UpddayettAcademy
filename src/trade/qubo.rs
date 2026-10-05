@@ -110,28 +110,45 @@ pub fn build(cycles: &[Cycle], bias: Option<&[f64]>, penalty: f64) -> TradeProbl
     TradeProblem { qubo: q, scale, penalty, bias }
 }
 
-/// Bias for backward mode: enough extra reward on every cycle that delivers
-/// `item` to `npc` that taking one always beats whatever it displaces.
-/// Returns `None` if no cycle delivers it.
-pub fn want_bias(cycles: &[Cycle], npc: usize, item: usize) -> Option<Vec<f64>> {
-    let hits: Vec<usize> = (0..cycles.len()).filter(|&i| cycles[i].delivers(npc, item)).collect();
-    if hits.is_empty() {
-        return None;
-    }
-    let displaced = |i: usize| -> f64 {
-        let lost: f64 = cycles.iter().filter(|d| d.conflicts(&cycles[i])).map(Cycle::value).sum();
-        // `conflicts` matches the cycle itself: take its value back out, then
-        // once more because the cycle's own value already pays for part.
-        lost - cycles[i].value() * 2.0
-    };
-    let need = hits.iter().map(|&i| displaced(i)).fold(0.0, f64::max);
-    let vmin = cycles.iter().map(Cycle::value).fold(f64::INFINITY, f64::min);
-    let b = need + vmin;
-    Some((0..cycles.len()).map(|i| if hits.contains(&i) { b } else { 0.0 }).collect())
-}
-
 pub fn chosen(bits: u32, n: usize) -> Vec<usize> {
     (0..n).filter(|&i| (bits >> i) & 1 == 1).collect()
+}
+
+/// `masks[i]` has bit k set when cycles i and k conflict (move the same item).
+pub fn conflict_masks(cycles: &[Cycle]) -> Vec<u32> {
+    assert!(cycles.len() <= 32, "trade sets are u32 masks");
+    (0..cycles.len())
+        .map(|i| (0..cycles.len()).filter(|&k| k != i && cycles[i].conflicts(&cycles[k])).fold(0, |m, k| m | 1 << k))
+        .collect()
+}
+
+/// Calls `f` with every valid trade set (no two trades share an item),
+/// including the empty set. There are far fewer of these than 2^n states:
+/// thousands, not a million, at 20 bits.
+pub fn for_each_valid_set(masks: &[u32], mut f: impl FnMut(u32)) {
+    fn go(i: usize, set: u32, banned: u32, masks: &[u32], f: &mut dyn FnMut(u32)) {
+        if i == masks.len() {
+            f(set);
+            return;
+        }
+        go(i + 1, set, banned, masks, f);
+        if banned & (1 << i) == 0 {
+            go(i + 1, set | 1 << i, banned | masks[i], masks, f);
+        }
+    }
+    go(0, 0, 0, masks, &mut f);
+}
+
+/// Best valid trade set for per-cycle `weights` (exact).
+pub fn best_valid_set(weights: &[f64], masks: &[u32]) -> (u32, f64) {
+    let mut best = (0u32, 0.0f64);
+    for_each_valid_set(masks, |s| {
+        let v: f64 = chosen(s, weights.len()).iter().map(|&i| weights[i]).sum();
+        if v > best.1 + 1e-12 {
+            best = (s, v);
+        }
+    });
+    best
 }
 
 #[cfg(test)]
@@ -148,7 +165,7 @@ mod tests {
 
     #[test]
     fn ising_is_beta_times_qubo_plus_constant() {
-        let w = world::laundromat_tuesday();
+        let w = world::laundromat(1);
         let c = cycles::enumerate(&w, 4);
         let p = build(&c, None, 2.4);
         let beta = 5.0;
@@ -162,7 +179,7 @@ mod tests {
 
     #[test]
     fn ground_state_is_a_clash_free_trade_set() {
-        let w = world::laundromat_tuesday();
+        let w = world::laundromat(1);
         let c = cycles::enumerate(&w, 4);
         assert!(c.iter().all(|cy| cy.gains.iter().all(|&g| g > 0.0)));
         let (bits, _) = build(&c, None, 2.4).qubo.brute_force();
@@ -171,21 +188,6 @@ mod tests {
             for &k in &on[a + 1..] {
                 assert!(!c[i].conflicts(&c[k]));
             }
-        }
-    }
-
-    #[test]
-    fn want_bias_makes_the_ground_state_deliver() {
-        let w = world::laundromat_tuesday();
-        let c = cycles::enumerate(&w, 4);
-        let upd = w.find_npc("upddayett").unwrap();
-        for item in ["hub motor", "18650", "soldering iron", "wi-fi"] {
-            let item = w.find_item(item).unwrap();
-            let bias = want_bias(&c, upd, item).unwrap();
-            let (bits, _) = build(&c, Some(&bias), 2.4).qubo.brute_force();
-            assert!(chosen(bits, c.len()).iter().any(|&i| c[i].delivers(upd, item)));
-            let on = chosen(bits, c.len());
-            assert!(on.iter().enumerate().all(|(a, &i)| on[a + 1..].iter().all(|&k| !c[i].conflicts(&c[k]))));
         }
     }
 }

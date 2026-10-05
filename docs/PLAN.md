@@ -6,8 +6,8 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step). Next: **3.3a Nights** (dynamic
-needs, level 1).
+deferred to a later voice-and-music step; 3.3a done). Next: **3.3b Gifts**
+(Amir's Persian Kitchen, gift chains, Karma).
 
 ## Step 1 result
 
@@ -291,9 +291,10 @@ The design below stands; the current two placeholder lines stay meanwhile.
 ### 3.3 Altruistic chains (Karma)
 
 Decisions (user, 2026-10-05):
-- **Taqueria joins** as the eighth customer: tonight's surplus bean burritos
+- **A restaurant joins** as the eighth customer (named **Amir's Persian
+  Kitchen** by the user): tonight's surplus adas polo
   (plant-based) start a food-rescue gift chain every night.
-- **Tags go on the want, not the item** (the same burrito is a need for
+- **Tags go on the want, not the item** (the same plate of food is a need for
   someone hungry and a treat for someone fed): *need* (food, warmth,
   shelter, and feeding animals), *purpose* (tools and parts for making
   things), *pleasure* (records, soda). Show the user the full tag table
@@ -321,7 +322,7 @@ tonight's conditions, not a hand-made table.
   night if sleeping out, else pleasure; feed animals = need if they're
   hungry, else pleasure; lifeline = need if you have no phone, else
   purpose; build = purpose; enjoy = pleasure.
-- Value follows condition (a hungry person values burritos ~1.4x their
+- Value follows condition (a hungry person values food ~1.4x their
   base, a fed one ~0.5x), and so does what owners ask for their own food
   or warmth. So the drum sends food to whoever's hungry tonight, with no
   special case.
@@ -336,8 +337,8 @@ tonight's conditions, not a hand-made table.
 Sub-steps (commit and push each):
 - **3.3a Nights (library):** uses, night roll, derived values and tags,
   tests; `trade_cli` shows the night. No gifts yet.
-- **3.3b Gifts (library):** Lupe's Taqueria (eighth customer, fictional)
-  with tonight's surplus bean burritos; open gift chains; Karma scoring;
+- **3.3b Gifts (library):** Amir's Persian Kitchen (eighth customer, fictional; user named it Amir's)
+  with tonight's surplus adas polo (lentil rice, plant-based); open gift chains; Karma scoring;
   cap the board at 20 bits (keep the best gifts and trades); bench.
 - **3.3c Game:** a 20-slot strip board (unused slots parked), a night
   banner with "Next night", condition tags on portraits (hungry, cold),
@@ -345,6 +346,30 @@ Sub-steps (commit and push each):
   the Karma line on HOW IT WORKS, and tightened layout for small windows.
 - **3.3d Give-away picker:** Upddayett gives one of his things away and
   it starts a chain too.
+
+**3.3a done.** `world::laundromat(seed)` rolls a night; values and tags
+come from the rules (`World::tag`, `needs_covered`, `conditions`). Over 200
+nights: 11-14 candidate trades, best sets 28-38 Goo. Program odds measured
+across 10 nights (480 runs each): Quick Wash 46%, Permanent Press 68%,
+Normal 88% (was 95% on the hand-tuned Tuesday; some nights are harder),
+Delicates 99%. Along the way:
+- **Exact structural solver.** Valid trade sets are independent sets of
+  the conflict graph (thousands, not 2^20 states). `qubo::best_valid_set`
+  gives the best set, cached on rebuild (brute force at 20 bits was ~40 ms,
+  and the UI called it every frame after a cycle). The minimum want bias
+  is now closed-form: (best set without the want) - (best set with it),
+  no bisection. Tests cross-check both against brute force on 24 nights.
+- **Whole Goo.** Night multipliers made fractional values and near-ties
+  (36.6 vs 36.7) the drum can't separate; values are rounded to whole Goo,
+  so those become exact ties (which count as optimal). A night went from
+  71% to 100%.
+- **Phones.** Shopping-Cart Guy and Pigeon Lady carry phones now (many
+  unhoused people do, e.g. the federal Lifeline program); otherwise "no
+  phone" locked them out of the flourishing bonus forever, since only Vape
+  Lady's phone want can be met. Her phone stays a need.
+- The board caps at 20 trades (`MAX_BITS`, best kept); no night hits it yet.
+- `trade_cli night --night N` prints tonight's conditions and every want's
+  value and tag; `trade_cli nights` summarizes 200 nights.
 
 Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
 (`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.
@@ -354,7 +379,7 @@ along an open path (each middle person gives something they value less
 than what they get); the last person keeps. Every chain is one more bit;
 chains from the same donation share the item, so at most one wins. Keep
 total bits <= 20 so the exact solver still checks it. Who donates: the
-taqueria every night, plus a "Give away" picker for Upddayett's things.
+Amir's Persian Kitchen every night, plus a "Give away" picker for Upddayett's things.
 
 - Visual: open chains drawn from the donor in warm gold, with a heart
   token; a Karma meter beside the Goo numbers.

@@ -6,6 +6,10 @@
 //!   bench            many seeded spin cycles vs the exact answer
 //!   cycles           list the candidate trades and the best set
 //!   wants [--bench]  every want the picker can offer, its cost and (bench) hit rate
+//!   night            tonight's conditions, and what every want is worth and means
+//!   nights           how much 200 nights vary (board size, best value)
+//!
+//!   --night N        which night (default 1)
 //!
 //!   --want WHO:WHAT  backward mode, e.g. --want upd:hub
 //!   --seed N  --runs N
@@ -17,12 +21,14 @@ use std::time::Instant;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::{self, Anneal, Latch, Machine, Physics, TradeComputer, qubo};
 
+#[derive(Clone)]
 struct Opts {
     mode: String,
     bench: bool,
     margin: Option<f64>,
     want: Option<String>,
     seed: u64,
+    night: u64,
     runs: usize,
     beta: f64,
     penalty: f64,
@@ -37,6 +43,7 @@ fn parse() -> Opts {
         margin: None,
         want: None,
         seed: 1,
+        night: 1,
         runs: 48,
         beta: 5.0,
         penalty: 1.6,
@@ -57,6 +64,7 @@ fn parse() -> Opts {
             "--bench" => o.bench = true,
             "--margin" => o.margin = Some(num(val())),
             "--seed" => o.seed = num(val()) as u64,
+            "--night" => o.night = num(val()) as u64,
             "--runs" => o.runs = num(val()) as usize,
             "--beta" => o.beta = num(val()),
             "--penalty" => o.penalty = num(val()),
@@ -76,7 +84,7 @@ fn parse() -> Opts {
 }
 
 fn setup(o: &Opts) -> TradeComputer {
-    let mut tc = TradeComputer::new(trade::world::laundromat_tuesday(), o.beta, o.penalty);
+    let mut tc = TradeComputer::new(trade::world::laundromat(o.night), o.beta, o.penalty);
     if let Some(m) = o.margin {
         tc.want_margin = m;
     }
@@ -315,6 +323,46 @@ fn main() -> Result<(), trade::Error> {
                     tc.want_margin, mean(&bests), min(&bests), mean(&dels), min(&dels), fields.iter().copied().fold(0.0, f64::max)
                 );
             }
+            Ok(())
+        }
+        "night" => {
+            // Tonight's conditions and what every want is worth and means.
+            let tc = setup(&o);
+            let w = &tc.world;
+            println!("Night {}: {}. {} trades on the board ({} left off).", o.night, w.weather(), tc.cycles.len(), tc.dropped);
+            for (k, npc) in w.npcs.iter().enumerate() {
+                let c = w.conditions(k);
+                let covered = if w.needs_covered(k) { "needs covered" } else { "needs NOT covered" };
+                println!("  {:<18} {:<34} {covered}", npc.name, if c.is_empty() { "fine".to_string() } else { c.join(", ") });
+                for want in w.wants.iter().filter(|x| x.npc == k) {
+                    println!(
+                        "      wants {:<40} {:>4.1} Goo  {:?}",
+                        w.items[want.item].name,
+                        w.value[k][want.item],
+                        w.tag(k, want.item).unwrap()
+                    );
+                }
+            }
+            Ok(())
+        }
+        "nights" => {
+            // How much the nights vary: board size, best value, who's hungry.
+            let mut sizes = vec![];
+            for night in 1..=200u64 {
+                let mut oo = Opts { night, ..o.clone() };
+                oo.want = None;
+                let tc = setup(&oo);
+                sizes.push((tc.cycles.len() + tc.dropped, tc.dropped, tc.evaluate(tc.forward_best).0));
+            }
+            let full = sizes.iter().filter(|s| s.1 > 0).count();
+            let (lo, hi) = (sizes.iter().map(|s| s.0).min().unwrap(), sizes.iter().map(|s| s.0).max().unwrap());
+            let mean = sizes.iter().map(|s| s.0).sum::<usize>() as f64 / sizes.len() as f64;
+            let best = |f: fn(f64, f64) -> f64, init| sizes.iter().map(|s| s.2).fold(init, f);
+            println!(
+                "200 nights: candidate trades {lo}-{hi} (mean {mean:.1}); board full (some dropped) on {full}; best set {:.0}-{:.0} Goo",
+                best(f64::min, f64::INFINITY),
+                best(f64::max, 0.0)
+            );
             Ok(())
         }
         "cycles" => {

@@ -90,47 +90,69 @@ pub struct TradeComputer {
     pub want: Option<(usize, usize)>,
     /// Best trade set with no want (forward mode), for pricing a want.
     pub forward_best: u32,
+    /// Candidate trades left out because the board holds [`MAX_BITS`].
+    pub dropped: usize,
+    /// `masks[i]`: the trades that conflict with trade i.
+    masks: Vec<u32>,
+    /// Best trade set for the current problem (want included), cached.
+    ground: u32,
     bias: Option<Vec<f64>>,
 }
 
+/// Most strips on the board. The crate's exact solver also stops here.
+pub const MAX_BITS: usize = MAX_EXACT_BITS;
+
 impl TradeComputer {
     pub fn new(world: World, beta: f64, penalty: f64) -> Self {
-        let cycles = cycles::enumerate(&world, MAX_LOOP);
+        let mut cycles = cycles::enumerate(&world, MAX_LOOP);
+        // `enumerate` sorts by value, so a busy night keeps its best trades.
+        let dropped = cycles.len().saturating_sub(MAX_BITS);
+        cycles.truncate(MAX_BITS);
+        let masks = qubo::conflict_masks(&cycles);
+        let values: Vec<f64> = cycles.iter().map(Cycle::value).collect();
+        let forward_best = qubo::best_valid_set(&values, &masks).0;
         let problem = qubo::build(&cycles, None, penalty * qubo::MAX_VALUE);
         let ising = problem.qubo.to_ising(beta);
-        let forward_best = problem.qubo.brute_force().0;
-        Self { world, cycles, problem, ising, beta, penalty, want_margin: WANT_MARGIN, want: None, forward_best, bias: None }
+        Self {
+            world,
+            cycles,
+            problem,
+            ising,
+            beta,
+            penalty,
+            want_margin: WANT_MARGIN,
+            want: None,
+            forward_best,
+            dropped,
+            masks,
+            ground: forward_best,
+            bias: None,
+        }
     }
 
-    /// `qubo::want_bias` is a worst-case bound and often pulls far harder
-    /// than needed (fields up to ~2.6x the well-flattening tilt, even for
-    /// wants the forward best already delivers). Strong fields distort the
-    /// soft spins, so bisect for the smallest bias whose exact ground state
-    /// delivers the want, then add a margin so the anneal sees a clear gap.
-    /// Delivery is monotone in the bias: it only lowers delivering sets.
-    fn gentlest_bias(&self, npc: usize, item: usize, upper: &[f64]) -> Vec<f64> {
-        let hits: Vec<bool> = upper.iter().map(|&b| b > 0.0).collect();
-        let with = |b: f64| -> Vec<f64> { hits.iter().map(|&h| if h { b } else { 0.0 }).collect() };
-        let delivers = |b: f64| {
-            let p = qubo::build(&self.cycles, Some(&with(b)), self.penalty * qubo::MAX_VALUE);
-            let g = p.qubo.brute_force().0;
-            qubo::chosen(g, self.cycles.len()).iter().any(|&i| self.cycles[i].delivers(npc, item))
-        };
-        let (mut lo, mut hi) = (0.0, upper.iter().copied().fold(0.0, f64::max));
-        if delivers(lo) {
-            hi = lo;
-        } else {
-            for _ in 0..24 {
-                let mid = 0.5 * (lo + hi);
-                if delivers(mid) {
-                    hi = mid;
-                } else {
-                    lo = mid;
-                }
+    /// The smallest want bias whose best set delivers the want, plus a margin
+    /// so the anneal sees a clear gap. Exact and cheap: every valid set
+    /// delivering the want contains exactly one delivering trade (they all
+    /// move the same item), so the bias lifts each of those sets by the same
+    /// amount, and the minimum is (best set without the want) - (best set with
+    /// it), or 0. The worst-case bound used before (Step 1) pulled up to
+    /// ~2.6x harder than the well-flattening tilt and distorted the soft spins.
+    fn gentlest_bias(&self, npc: usize, item: usize) -> Vec<f64> {
+        let hits: Vec<bool> = self.cycles.iter().map(|c| c.delivers(npc, item)).collect();
+        let (mut with, mut without) = (f64::NEG_INFINITY, 0.0f64);
+        qubo::for_each_valid_set(&self.masks, |s| {
+            let on = qubo::chosen(s, self.cycles.len());
+            let v: f64 = on.iter().map(|&i| self.cycles[i].value()).sum();
+            if on.iter().any(|&i| hits[i]) {
+                with = with.max(v);
+            } else {
+                without = without.max(v);
             }
-        }
+        });
+        let need = (without - with).max(0.0);
         let vmin = self.cycles.iter().map(Cycle::value).fold(f64::INFINITY, f64::min);
-        with(hi + self.want_margin * vmin)
+        let b = need + self.want_margin * vmin;
+        hits.iter().map(|&h| if h { b } else { 0.0 }).collect()
     }
 
     /// Forward mode again: no want.
@@ -154,16 +176,20 @@ impl TradeComputer {
     fn rebuild(&mut self) {
         self.problem = qubo::build(&self.cycles, self.bias.as_deref(), self.penalty * qubo::MAX_VALUE);
         self.ising = self.problem.qubo.to_ising(self.beta);
+        let weights: Vec<f64> = match &self.bias {
+            Some(b) => self.cycles.iter().zip(b).map(|(c, b)| c.value() + b).collect(),
+            None => self.cycles.iter().map(Cycle::value).collect(),
+        };
+        self.ground = qubo::best_valid_set(&weights, &self.masks).0;
     }
 
     /// Backward mode: make `npc` end up with `item`. Returns `false` (and
     /// changes nothing) if no candidate trade delivers it.
     pub fn want(&mut self, npc: usize, item: usize) -> bool {
-        let Some(upper) = qubo::want_bias(&self.cycles, npc, item) else {
+        if !self.cycles.iter().any(|c| c.delivers(npc, item)) {
             return false;
-        };
-        let bias = if self.cycles.len() <= MAX_EXACT_BITS { self.gentlest_bias(npc, item, &upper) } else { upper };
-        self.bias = Some(bias);
+        }
+        self.bias = Some(self.gentlest_bias(npc, item));
         self.want = Some((npc, item));
         self.rebuild();
         true
@@ -205,8 +231,14 @@ impl TradeComputer {
         Ok(latch)
     }
 
-    /// Best trade set by brute force over the QUBO.
+    /// Best trade set for the current problem (exact, cached on rebuild).
     pub fn ground_state(&self) -> u32 {
+        self.ground
+    }
+
+    /// Brute-force ground state of the QUBO itself (slow at 20 bits; for
+    /// cross-checks).
+    pub fn qubo_ground_state(&self) -> u32 {
         self.problem.qubo.brute_force().0
     }
 
@@ -265,41 +297,59 @@ impl TradeComputer {
 mod tests {
     use super::*;
 
-    fn tc() -> TradeComputer {
-        TradeComputer::new(world::laundromat_tuesday(), 5.0, 1.6)
+    /// Nights to sweep in tests.
+    const NIGHTS: std::ops::Range<u64> = 1..25;
+
+    fn tc(night: u64) -> TradeComputer {
+        TradeComputer::new(world::laundromat(night), 5.0, 1.6)
+    }
+
+    #[test]
+    fn exact_solver_matches_brute_force_every_night() {
+        for night in NIGHTS {
+            let tc = tc(night);
+            assert!(tc.cycles.len() <= MAX_BITS);
+            let fast = tc.evaluate(tc.ground_state());
+            let slow = tc.evaluate(tc.qubo_ground_state());
+            assert!(!fast.1 && !slow.1, "night {night}: a best set clashes");
+            assert!((fast.0 - slow.0).abs() < 1e-9, "night {night}: {} vs brute force {}", fast.0, slow.0);
+        }
     }
 
     #[test]
     fn every_deliverable_want_is_delivered_without_clashes() {
-        let mut tc = tc();
         let mut checked = 0;
-        for npc in 0..tc.world.npcs.len() {
-            for item in tc.deliverable(npc) {
-                assert!(tc.want(npc, item));
-                let best = tc.ground_state();
-                let (_, clash) = tc.evaluate(best);
-                let who = tc.world.npcs[npc].name;
-                let what = tc.world.items[item].name;
-                assert!(tc.delivers_want(best), "{who} wants the {what}: best set doesn't deliver");
-                assert!(!clash, "{who} wants the {what}: best set clashes");
-                assert!(tc.want_cost(best) >= -1e-9, "a want can't beat the forward optimum");
-                checked += 1;
+        for night in NIGHTS {
+            let mut tc = tc(night);
+            for npc in 0..tc.world.npcs.len() {
+                for item in tc.deliverable(npc) {
+                    assert!(tc.want(npc, item));
+                    let best = tc.ground_state();
+                    let (who, what) = (tc.world.npcs[npc].name, tc.world.items[item].name);
+                    assert!(tc.delivers_want(best), "night {night}: {who} wants the {what}: best set doesn't deliver");
+                    assert!(!tc.evaluate(best).1, "night {night}: {who} wants the {what}: best set clashes");
+                    assert!(tc.want_cost(best) >= -1e-9, "a want can't beat the forward optimum");
+                    // The cached best set really is the QUBO's ground state.
+                    let q = &tc.problem.qubo;
+                    assert!((q.energy(best) - q.energy(tc.qubo_ground_state())).abs() < 1e-9, "night {night}: {who}/{what}");
+                    checked += 1;
+                }
             }
         }
-        assert!(checked >= 10, "only {checked} deliverable wants in the test world");
+        assert!(checked >= 100, "only {checked} deliverable wants across the test nights");
     }
 
     #[test]
     fn undeliverable_wants_are_refused_and_clear_restores_forward_mode() {
-        let mut tc = tc();
+        let mut tc = tc(1);
         let upd = tc.world.find_npc("upddayett").unwrap();
         let owned = tc.world.find_item("Mtn Goo").unwrap();
         assert!(!tc.deliverable(upd).contains(&owned));
         assert!(!tc.want(upd, owned));
         assert!(tc.want.is_none());
 
-        let hub = tc.world.find_item("hub motor").unwrap();
-        assert!(tc.want(upd, hub));
+        let (npc, item) = (0..tc.world.npcs.len()).find_map(|n| tc.deliverable(n).first().map(|&i| (n, i))).unwrap();
+        assert!(tc.want(npc, item));
         tc.clear_want();
         assert!(tc.want.is_none());
         assert_eq!(tc.ground_state(), tc.forward_best);
@@ -307,20 +357,68 @@ mod tests {
 
     #[test]
     fn rewiring_keeps_the_strips_where_they_were() {
-        let mut tc = tc();
+        let mut tc = tc(1);
         let physics = Physics::default();
         let mut old = tc.machine(physics, 7).unwrap();
         old.set_temperature(1.5);
         for _ in 0..500 {
             old.step().unwrap();
         }
-        let hub = tc.world.find_item("hub motor").unwrap();
-        assert!(tc.want(0, hub));
+        let (npc, item) = (0..tc.world.npcs.len()).find_map(|n| tc.deliverable(n).first().map(|&i| (n, i))).unwrap();
+        assert!(tc.want(npc, item));
         let mut new = tc.machine(physics, 8).unwrap();
         new.take_state_from(&old).unwrap();
         assert_eq!(new.positions(), old.positions());
         assert_eq!(new.velocities(), old.velocities());
         assert_eq!(new.time(), old.time());
         assert_eq!(new.temperature(), old.temperature());
+    }
+
+    #[test]
+    fn nights_change_values_and_tags_by_the_rules() {
+        use world::{Night, Tag};
+        let mut w = world::laundromat(1);
+        let tamara = w.find_npc("tamara").unwrap();
+        let cart = w.find_npc("shopping-cart").unwrap();
+        let vape = w.find_npc("vape").unwrap();
+        let ray = w.find_npc("ray").unwrap();
+        let kale = w.find_item("kale").unwrap();
+        let bag = w.find_item("sleeping bag").unwrap();
+        let phone = w.find_item("phone").unwrap();
+        let card = w.find_item("library card").unwrap();
+
+        let calm = Night::calm(w.npcs.len());
+        let mut hungry_cold = calm.clone();
+        hungry_cold.hungry[tamara] = true;
+        hungry_cold.cold = true;
+
+        w.set_night(calm.clone());
+        let (kale_fed, bag_mild) = (w.value[tamara][kale], w.value[cart][bag]);
+        assert_eq!(w.tag(tamara, kale), Some(Tag::Pleasure));
+        assert_eq!(w.tag(cart, bag), Some(Tag::Pleasure));
+        assert!(w.needs_covered(tamara));
+
+        w.set_night(hungry_cold);
+        assert!(w.value[tamara][kale] > 2.0 * kale_fed, "hunger raises what food is worth");
+        assert!(w.value[cart][bag] > 2.0 * bag_mild, "a cold night raises what warmth is worth to someone outside");
+        assert_eq!(w.tag(tamara, kale), Some(Tag::Need));
+        assert_eq!(w.tag(cart, bag), Some(Tag::Need));
+        assert!(!w.needs_covered(tamara));
+
+        // No phone: a phone is a need (and stays one on any night).
+        assert_eq!(w.tag(vape, phone), Some(Tag::Need));
+        assert!(!w.needs_covered(vape));
+        // Tools and parts are purpose, whatever the night.
+        assert_eq!(w.tag(ray, card), Some(Tag::Purpose));
+        assert_eq!(w.tag(ray, kale), None);
+    }
+
+    #[test]
+    fn nights_differ_and_replay() {
+        let a = world::laundromat(3);
+        let b = world::laundromat(3);
+        assert_eq!(a.night, b.night, "same seed, same night");
+        let distinct = (1..20u64).map(|s| format!("{:?}", world::laundromat(s).night.hungry)).collect::<std::collections::HashSet<_>>();
+        assert!(distinct.len() > 5, "nights should vary");
     }
 }

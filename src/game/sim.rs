@@ -49,15 +49,16 @@ pub struct WashProgram {
     pub duration: f64,
     pub watch_secs: f64,
     /// How often the i9 finds the best set, measured with
-    /// `trade_cli bench --runs 192 --time <duration>` (2026-10-05).
+    /// `trade_cli bench --runs 48 --time <duration> --night 1..=10` (480
+    /// runs per program across 10 nights, 2026-10-05).
     pub i9_rate: &'static str,
 }
 
 pub const PROGRAMS: [WashProgram; 4] = [
-    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "43%" },
-    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "65%" },
-    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "95%" },
-    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "100%" },
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "46%" },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "68%" },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%" },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "99%" },
 ];
 
 /// Watch speed for the manual dial at 1x (sim time units per real second).
@@ -70,13 +71,18 @@ const MAX_STEPS_PER_FRAME: usize = 5_000;
 
 impl Laundromat {
     pub fn new() -> Self {
-        let tc = TradeComputer::new(world::laundromat_tuesday(), 5.0, 1.6);
         let physics = Physics::default();
         // A different night every launch; `UPD_SEED=<n>` replays one exactly.
         let seed = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        info!("laundromat open: seed {seed} (UPD_SEED={seed} replays this session)");
+        let tc = TradeComputer::new(world::laundromat(seed), 5.0, 1.6);
+        info!(
+            "laundromat open: seed {seed} (UPD_SEED={seed} replays this session), {}, {} trades{}",
+            tc.world.weather(),
+            tc.cycles.len(),
+            if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
+        );
         let machine = tc.machine(physics, seed).expect("build the slap-bit board");
         let ground = tc.ground_state();
         let n = tc.cycles.len();
