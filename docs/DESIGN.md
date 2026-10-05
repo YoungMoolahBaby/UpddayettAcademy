@@ -3,7 +3,9 @@
 *From 0 to Pimpin'. From the Tenderloin to Shenzhen.*
 
 Living copy with diagrams: https://claude.ai/code/artifact/bcf97f8d-fc64-4549-bf76-72fb6b728e6c
-This file is the repo snapshot as of 2026-10-04. If the two disagree, ask which is newer.
+This file is the repo snapshot as of 2026-10-05 (the Claude Doc above was last
+synced 2026-10-04 and is behind: no nights, gifts or Amir yet). If the two
+disagree, this file is newer.
 
 ## Why this project exists
 
@@ -131,6 +133,12 @@ scavenge again.
 | Scrap car (scooter motors on a shopping-cart frame) | New scavenging zones | `sim::core` vehicle, CAN bus between subsystems |
 | Helicopter (scrap coaxial) | Flight to the container port | `sim::core` free body, rotor thrust, IMU, LQR hover |
 
+**Creative to survival shift (decided, later step).** In the slice, every
+night is independent (level 1). Later, tonight's outcome carries into
+tomorrow: whoever got fed isn't hungry in the morning, items that changed
+hands stay changed, and Upddayett gets his hunger meter. That's also where
+"feed them first" pays off across nights.
+
 ## Karma
 
 A second meter beside Biddness. Relief karma for reducing the suffering of any
@@ -143,7 +151,7 @@ possible.
 | Aeroponic tower feeds the block | Plant-based meals replace dumpster meat | Economy |
 | Humane rat trap replaces glue traps | Rats caught alive and relocated | `sim::core` peak impact force |
 | Stringfoot pigeons | String untangled from pigeons' feet | Contact force on a fragile foot |
-| Food-rescue routing | Restaurant surplus to shelters | Lesson 3 laundromat computer |
+| Food-rescue routing | Amir's surplus to whoever's hungry tonight (built, Lesson 3) | Lesson 3 laundromat computer |
 | Treating the bots well | Bossing them like a pimp costs karma | Story |
 | Colonoscopy probe (late) | Gentler screening | Wall contact force per step |
 
@@ -176,12 +184,32 @@ business cards.
 4. **A want** ("Upddayett wants the hub motor") makes the drum deliver it
    the cheapest way it can. The price is shown: what everyone else gives up
    in total Goo.
-5. **Gifts earn Karma** (decided, building in Step 3.3). A gift chain
-   passes a donation along to people who want it. *Needs* (food, warmth,
-   shelter, feeding animals) count 1x as relief. *Purpose* and *pleasure*
-   count 1.5x as flourishing, but only for people whose needs are covered:
-   feed them first. The drum routes each gift where it earns the most Karma.
+5. **Gifts earn Karma** (built, Step 3.3b). Amir's Persian Kitchen gives
+   tonight's surplus adas polo away. *Needs* (food when hungry, warmth on a
+   cold night outside, feeding hungry animals, a phone if you have none)
+   count 1x as relief. *Purpose* (tools, parts) and *pleasure* (treats, food
+   when fed) count 1.5x as flourishing, but only for people whose needs are
+   covered tonight: feed them first. The drum routes the gift where it earns
+   the most Karma, and maximizes Goo from trades + Karma from gifts.
+6. **Every night is different** (built, Step 3.3a). Weather, who's hungry and
+   whose pigeons need feeding are rolled per night; values and tags follow
+   from rules, not a fixed table. Ray isn't always full.
 
+
+### The regulars (Suds & Duds, Turk Street)
+
+| Customer | Sleeps out | Notes |
+| --- | --- | --- |
+| Upddayett | yes (tent) | Wants balance-bot parts (hub motor, cells, soldering iron), the library Wi-Fi |
+| Shopping-Cart Guy | yes | Has the hub motor and casters; wants Mtn Goo, a sleeping bag |
+| Vape Lady | yes | Cells from dead vapes; no phone, so a phone is a real need |
+| Bike Kitchen Dave | no | Soldering iron, derailleur; wants motors and casters |
+| Pigeon Lady | yes | Sleeping bag, birdseed; feeds her pigeons (animal Karma) |
+| Sound Guy Ray | no (van) | Seattle grunge sound tech: dead RTX 3090, crate of 90s vinyl |
+| Librarian Tamara | no | Library card, staff Wi-Fi; feeds the courtyard pigeons |
+| Amir's Persian Kitchen | no | Gives tonight's surplus adas polo (lentil rice, plant-based) away |
+
+No crypto characters or jokes, by the user's choice.
 **Required visual:** NPC portraits around the machine; trade arrows flicker
 between them while it spins and lock into a glowing chain as it winds down.
 Watching the trade settle is the payoff, like gradient descent you can see.
@@ -215,7 +243,9 @@ for energy, and whether they win there is still debated.
   a loop has to happen at once) and why we cap loops at 4. A distributed
   ledger can't help with this, because it can't see a hub motor change hands;
   a counter can.
-- **Altruistic chains as a Karma mechanic.** Kidney exchanges get past the
+- **Altruistic chains as a Karma mechanic** (direct gifts built in Step
+  3.3b; pay-it-forward chains are a later unlock: they work, but 2-3
+  recipients drop Normal from 81% to 54% / 42%). Kidney exchanges get past the
   all-at-once limit with chains started by an altruistic donor. In the game,
   a customer (or Upddayett) gives something away for nothing and starts an
   open-ended chain instead of a closed loop. The machine can solve it with a

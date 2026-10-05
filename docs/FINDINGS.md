@@ -66,6 +66,21 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   must set `EguiGlobalSettings::auto_create_primary_context = false` and
   tag the main camera `PrimaryEguiContext`.
 
+### Step 3 so far: lessons from a real workload
+
+- The thermostat holds up as the problem grows: 17-20 strip boards with
+  ~80 springs still anneal in under a second, and the physics behaves like
+  physics. Longer gift chains (2-3 recipients) make a glassy landscape and
+  the hit rate falls (81% to 54% / 42% on Normal), and slower cooling buys
+  it back (86% / 65% on Delicates). That trade-off is the lesson the game
+  teaches, which is a good sign for the crate.
+- Coupled-board design rules learned the hard way: keep fields under the
+  well-flattening tilt (stiffer springs or stronger biases made results
+  worse every time), round values so near-ties become exact ties, and
+  judge answers by value, not by bits.
+- The exact-solver NaN bug (below) is the only CortenForge defect found in
+  Step 3; everything else was problem design on our side.
+
 ## Friction log
 
 - The facade is easy: one crate, and `load_model` -> `make_data` -> `step` is a
