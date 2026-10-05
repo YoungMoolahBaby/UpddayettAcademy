@@ -63,7 +63,7 @@ pub fn laundromat_tuesday() -> World {
     let vape = w.npc("Vape Lady");
     let dave = w.npc("Bike Kitchen Dave");
     let pigeon = w.npc("Pigeon Lady");
-    let bro = w.npc("Ex-Crypto Bro");
+    let ray = w.npc("Sound Guy Ray");
     let tamara = w.npc("Librarian Tamara");
 
     let goo = w.has(upd, "12-pack of Mtn Goo", 6.0);
@@ -83,8 +83,8 @@ pub fn laundromat_tuesday() -> World {
     let bag = w.has(pigeon, "zero-degree sleeping bag", 7.0);
     let seed = w.has(pigeon, "50 lb sack of birdseed", 3.0);
 
-    let gpu = w.has(bro, "dead RTX 3090", 3.0);
-    let ledger = w.has(bro, "Ledger with forgotten PIN", 2.0);
+    let gpu = w.has(ray, "dead RTX 3090", 3.0);
+    let vinyl = w.has(ray, "crate of 90s Seattle vinyl", 2.0);
 
     let card = w.has(tamara, "laminated library card", 2.0);
     let wifi = w.has(tamara, "Wi-Fi password (staff network)", 3.0);
@@ -111,12 +111,12 @@ pub fn laundromat_tuesday() -> World {
     w.wants(pigeon, tube, 2.0);
     w.wants(pigeon, usbc, 4.0);
 
-    w.wants(bro, derailleur, 5.0);
-    w.wants(bro, card, 4.0);
-    w.wants(bro, usbc, 5.0);
+    w.wants(ray, derailleur, 5.0);
+    w.wants(ray, card, 4.0);
+    w.wants(ray, usbc, 5.0);
 
     w.wants(tamara, seed, 5.0);
-    w.wants(tamara, ledger, 4.0);
+    w.wants(tamara, vinyl, 4.0);
     w.wants(tamara, kale, 5.0);
 
     w

@@ -32,7 +32,7 @@ Run it: `cargo run --release --example trade_cli -- [run|bench|cycles] [--want u
 
 Backward mode (96 runs each): the want is delivered in 100% of runs, and the
 i9 latch reaches the best set 89% (cells), 93% (hub motor), 98% (soldering
-iron) and 91% (Tamara wants the Ledger). Asking for the hub motor makes the
+iron) and 91% (Tamara wants the vinyl). Asking for the hub motor makes the
 machine drop the 3-way that sent it to Dave and do a direct Goo-for-hub swap.
 
 What tuning taught us (good in-game material):

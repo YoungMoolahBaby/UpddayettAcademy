@@ -65,7 +65,7 @@ pub const LOOKS: [(Color, Color); 7] = [
     (Color::srgb(0.55, 0.25, 0.75), Color::srgb(0.95, 0.5, 0.8)),  // Vape Lady
     (Color::srgb(0.15, 0.4, 0.85), Color::srgb(0.95, 0.85, 0.1)),  // Bike Kitchen Dave (helmet)
     (Color::srgb(0.45, 0.47, 0.5), Color::srgb(0.6, 0.15, 0.25)),  // Pigeon Lady
-    (Color::srgb(0.08, 0.08, 0.1), Color::srgb(0.85, 0.85, 0.9)),  // Ex-Crypto Bro (vest, AirPods-white cap)
+    (Color::srgb(0.6, 0.12, 0.1), Color::srgb(0.12, 0.12, 0.14)),  // Sound Guy Ray (red flannel, black beanie)
     (Color::srgb(0.5, 0.1, 0.15), Color::srgb(0.35, 0.22, 0.12)),  // Librarian Tamara (cardigan, bun)
 ];
 

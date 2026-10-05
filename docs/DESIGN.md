@@ -176,6 +176,38 @@ i9 without biasing it. Rejected: FDM-printed springs (creep, fatigue) and
 microswitches (momentary not bistable, built to resist vibration). Design rule:
 when practicality and demonstrability clash, physical correctness breaks the tie.
 
+**What's real about it.** The machine solves the "double coincidence of wants",
+the textbook reason barter fails. The same problem is solved in production by
+kidney exchange (2- and 3-way donor swaps picked by max-weight cycle packing),
+multilateral obligation clearing (Slovenia's decades-old debt set-off), and
+batch-auction "solvers" that look for ring trades. The thermodynamic
+hardware is real too: p-bit research (Purdue) and thermodynamic-computing
+startups (Extropic, Normal Computing) build chips that behave like the
+simulated slap bits. Honest caveat: at 14 bits a laptop brute-forces the
+answer in microseconds; physical annealers only matter at large scale and
+for energy, and whether they win there is still debated.
+
+### Candidate ideas (not decided)
+
+- **The laundry counter is the escrow.** A 4-way swap only works if everyone
+  delivers or nobody does. Customers drop items off with their laundry, the
+  machine runs, everyone picks up, so the swap settles atomically.
+  It's the same reason kidney exchanges cap cycle length (every surgery in
+  a loop has to happen at once) and why we cap loops at 4. A distributed
+  ledger can't help with this, because it can't see a hub motor change hands;
+  a counter can.
+- **Altruistic chains as a Karma mechanic.** Kidney exchanges get past the
+  all-at-once limit with chains started by an altruistic donor. In the game,
+  a customer (or Upddayett) gives something away for nothing and starts an
+  open-ended chain instead of a closed loop. The machine can solve it with a
+  small encoding change: open paths from a donor, ending in someone who keeps
+  the last item. Starting chains earns Karma; how far the chain reaches
+  scales it. It also fits the food-rescue mission: restaurant surplus is a
+  donation that starts chains to shelters.
+- **Thermodynamic hardware as lore.** The slap-bit board is a scrap-built
+  version of a real p-bit chip; a later lesson (or the endgame credits) can
+  point at the real field.
+
 ## Tech stack
 
 | Layer | Choice | Notes |
