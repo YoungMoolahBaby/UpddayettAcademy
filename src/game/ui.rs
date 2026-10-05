@@ -221,7 +221,8 @@ pub fn panels(
                         text = text.strong().color(egui::Color32::from_rgb(140, 200, 255));
                     }
                     ui.horizontal(|ui| {
-                        ui.label(text);
+                        ui.label(text).on_hover_text(format!("{}.
+Everyone gains: {}", cycle.describe(&lm.tc.world), cycle.gains_text(&lm.tc.world)));
                         if lm.carries_want(c) {
                             ui.label(egui::RichText::new("WANTED").small().strong().color(GOLD));
                         }
@@ -235,9 +236,10 @@ pub fn panels(
                 let (v, _) = lm.tc.evaluate(best);
                 ui.label(egui::RichText::new("THE i9 CALLS IT").strong().size(16.0));
                 for c in qubo::chosen(best, n) {
-                    ui.label(egui::RichText::new(format!("- {}.", lm.tc.cycles[c].describe(&lm.tc.world))).small());
+                    let cy = &lm.tc.cycles[c];
+                    ui.label(egui::RichText::new(format!("- {}. ({})", cy.describe(&lm.tc.world), cy.gains_text(&lm.tc.world))).small());
                 }
-                ui.label(format!("Everybody ends up {v:.0} Goo better off."));
+                ui.label(format!("In total: +{v:.0} Goo, and nobody loses."));
                 if let Some((npc, item)) = lm.tc.want {
                     let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);
                     let line = if lm.tc.delivers_want(best) {
@@ -256,6 +258,29 @@ pub fn panels(
                 };
                 ui.label(egui::RichText::new(line).italics().color(egui::Color32::from_rgb(255, 150, 220)));
             }
+        });
+
+    // The rules, one glance away.
+    let example = lm.tc.cycles.iter().find(|c| c.len() == 2).and_then(|c| Some((c.swap_text(&lm.tc.world)?, c.gains_text(&lm.tc.world))));
+    egui::Window::new("HOW IT WORKS")
+        .anchor(egui::Align2::RIGHT_BOTTOM, [-12.0, -12.0])
+        .resizable(false)
+        .default_width(430.0)
+        .show(ctx, |ui| {
+            let rule = |ui: &mut egui::Ui, head: &str, body: &str| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing.x = 4.0;
+                    ui.label(egui::RichText::new(head).strong().color(GOLD));
+                    ui.label(body);
+                });
+            };
+            rule(ui, "Goo", "is how much someone personally values a thing. 1 Goo = a can of Mtn Goo to them.");
+            rule(ui, "Trades", "only happen if everyone in them gains Goo. Nobody loses.");
+            if let Some((swap, gains)) = &example {
+                ui.label(egui::RichText::new(format!("   e.g. {swap}: {gains}")).small().italics());
+            }
+            rule(ui, "The drum", "picks the trades that make the most Goo in total. No item moves twice.");
+            rule(ui, "A want", "gets delivered the cheapest way. Its price is what everyone else gives up.");
         });
     Ok(())
 }

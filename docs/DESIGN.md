@@ -163,6 +163,25 @@ routes restaurant surplus to shelters (Karma). Running gag, AI: "It's not money
 laundering, it's a Boltzmann machine." He keeps printing MONEY LAUNDERING
 business cards.
 
+### How the machine decides
+
+1. **Goo** is how much someone personally values a thing. One Goo is what
+   a can of Mtn Goo is worth to them. The same item is worth different
+   Goo to different people.
+2. **A trade only happens if everyone in it gains.** Upddayett's phone
+   (4 Goo to him, 7 to Vape Lady) for her vape cells (4 to her, 8 to him):
+   he's +4, she's +3. Nobody loses, so the trade makes 7 Goo out of nothing.
+3. **The drum picks the set of trades that makes the most Goo in total**,
+   and no item can move twice.
+4. **A want** ("Upddayett wants the hub motor") makes the drum deliver it
+   the cheapest way it can. The price is shown: what everyone else gives up
+   in total Goo.
+5. **Gifts earn Karma** (decided, building in Step 3.3). A gift chain
+   passes a donation along to people who want it. *Needs* (food, warmth,
+   shelter, feeding animals) count 1x as relief. *Purpose* and *pleasure*
+   count 1.5x as flourishing, but only for people whose needs are covered:
+   feed them first. The drum routes each gift where it earns the most Karma.
+
 **Required visual:** NPC portraits around the machine; trade arrows flicker
 between them while it spins and lock into a glowing chain as it winds down.
 Watching the trade settle is the payoff, like gradient descent you can see.

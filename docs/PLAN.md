@@ -5,7 +5,9 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Next action: **Step 3.2** (see the Step 3 plan below; 3.0 and 3.1 done).
+Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
+deferred to a later voice-and-music step). First: the Goo legend, per-person
+gains and the HOW IT WORKS card (3.3 step 1).
 
 ## Step 1 result
 
@@ -266,7 +268,11 @@ on short programs before).
 - Layout note for 3.5: the Spin Cycle panel is now tall enough to cover
   Sound Guy Ray's portrait card.
 
-### 3.2 The AI's voice
+### 3.2 The AI's voice (DEFERRED: later, together with generated music)
+
+Deferred 2026-10-05 at the user's call: the voice lines, their delivery and
+music we generate belong together, so this moves to its own later step.
+The design below stands; the current two placeholder lines stay meanwhile.
 
 - A pure `voice` module in the library (no Bevy, unit-testable): an
   `Outcome` (program, want, at-rest bits, latched bits, best bits, latch
@@ -284,23 +290,44 @@ on short programs before).
 
 ### 3.3 Altruistic chains (Karma)
 
-- Encoding: a donor gives an item away; the chain passes it along an open
-  path (each middle person gives something they value less than what they
-  get); the last person keeps. Every chain is one more bit; chains from the
-  same donation share the item, so at most one wins. Keep total bits <= 20
-  so the exact solver still checks it.
-- Who donates: the player picks something of Upddayett's to give away (a
-  "Give away" picker), and optionally a nightly food-rescue donor (a
-  taqueria's surplus bean burritos, plant-based, to people who want food).
-- Karma is its own meter, scored after the solve: relief (value delivered
-  to the people the chain reaches) plus a Flourishing bonus (design: more
-  for adding pleasure or purpose on top). **Decide the exact formula with
-  the user when we get here.**
+Decisions (user, 2026-10-05):
+- **Taqueria joins** as the eighth customer: tonight's surplus bean burritos
+  (plant-based) start a food-rescue gift chain every night.
+- **Tags go on the want, not the item** (the same burrito is a need for
+  someone hungry and a treat for someone fed): *need* (food, warmth,
+  shelter, and feeding animals), *purpose* (tools and parts for making
+  things), *pleasure* (records, soda). Show the user the full tag table
+  before wiring it in.
+- **Karma = relief + flourishing, needs first.** Need gains count 1x
+  (relief). Purpose and pleasure gains count 1.5x (flourishing) only for
+  people whose needs are covered tonight; otherwise 1x.
+- **The machine routes gifts by Karma**: a gift chain's value in the QUBO
+  uses these weights, so the drum sends the gift where it does the most
+  good (the food-rescue mission from the design). Trades stay in Goo.
+- **Keep "Goo"**, and explain it.
+- **The rules are front and center** (user: "high signal, low noise"): a
+  short HOW IT WORKS card in the game and the same rules in DESIGN.md.
+
+Order:
+1. Goo legend, per-person gains on results ("Upddayett +4, Vape Lady +3"),
+   and the HOW IT WORKS card.
+2. Taqueria + want tags (table reviewed by the user).
+3. Gift chains in the solver, Karma scoring, Karma meter.
+
+Encoding (unchanged): a donor gives an item away; the chain passes it
+along an open path (each middle person gives something they value less
+than what they get); the last person keeps. Every chain is one more bit;
+chains from the same donation share the item, so at most one wins. Keep
+total bits <= 20 so the exact solver still checks it. Who donates: the
+taqueria every night, plus a "Give away" picker for Upddayett's things.
+
 - Visual: open chains drawn from the donor in warm gold, with a heart
   token; a Karma meter beside the Goo numbers.
 - Done when: unit tests for chain enumeration (gains > 0 in the middle,
-  last person gains, shared-donation conflicts); bench hit rate stays near
-  the forward-mode numbers; a donation visibly reaches 2-4 people.
+  last person gains, shared-donation conflicts) and for Karma scoring
+  (needs-first rule); bench hit rate stays near the forward-mode numbers;
+  a donation visibly reaches 2-4 people; the HOW IT WORKS card states the
+  rules in a few lines.
 
 ### 3.4 The laundry counter is the escrow
 

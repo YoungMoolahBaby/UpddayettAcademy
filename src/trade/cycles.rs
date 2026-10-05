@@ -49,6 +49,25 @@ impl Cycle {
         parts.join(", ")
     }
 
+    /// What each person comes out ahead, in Goo: "Upddayett +4, Vape Lady +3".
+    pub fn gains_text(&self, w: &World) -> String {
+        let parts: Vec<String> =
+            self.legs.iter().zip(&self.gains).map(|(l, g)| format!("{} +{g:.0}", w.npcs[l.to].name)).collect();
+        parts.join(", ")
+    }
+
+    /// "Upddayett's cracked Android phone for Vape Lady's six 18650 cells"
+    /// (2-way swaps only; longer loops use [`Cycle::describe`]).
+    pub fn swap_text(&self, w: &World) -> Option<String> {
+        let [a, b] = self.legs.as_slice() else {
+            return None;
+        };
+        Some(format!(
+            "{}'s {} for {}'s {}",
+            w.npcs[a.from].name, w.items[a.item].name, w.npcs[b.from].name, w.items[b.item].name
+        ))
+    }
+
     /// "Upddayett -> Vape Lady -> Upddayett"
     pub fn short(&self, w: &World) -> String {
         let mut s = w.npcs[self.legs[0].from].name.to_string();
