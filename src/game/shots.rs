@@ -1,5 +1,6 @@
 //! `UPD_SHOT=1`: run a fast spin cycle, save screenshots to `shots/`, exit.
-//! `UPD_PROGRAM=0..3` picks the wash program (default Normal).
+//! `UPD_PROGRAM=0..3` picks the wash program (default Normal);
+//! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
 //! For checking the look without sitting in front of the window.
 
 use bevy::prelude::*;
@@ -25,6 +26,14 @@ pub fn drive(
         lm.watch = 4.0;
         if let Some(p) = std::env::var("UPD_PROGRAM").ok().and_then(|s| s.parse::<usize>().ok()) {
             lm.program = p.min(super::sim::PROGRAMS.len() - 1);
+        }
+        if let Some((who, what)) = std::env::var("UPD_WANT").ok().as_deref().and_then(|w| w.split_once(':')) {
+            let npc = lm.tc.world.find_npc(who);
+            let item = lm.tc.world.find_item(what);
+            match (npc, item) {
+                (Some(n), Some(i)) => lm.set_want(Some((n, i))),
+                _ => error!("UPD_WANT: no customer like {who:?} or item like {what:?}"),
+            }
         }
         lm.start_cycle();
         *since = f;

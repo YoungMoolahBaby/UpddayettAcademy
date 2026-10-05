@@ -34,6 +34,11 @@ pub struct Laundromat {
     pub ground: u32,
     /// Per-trade "on-ness" in 0..1, smoothed for display.
     pub activity: Vec<f32>,
+    /// Per customer: the items some trade can deliver to them, with what
+    /// granting that want costs the block (Goo).
+    pub want_menu: Vec<Vec<(usize, f64)>>,
+    /// Whose wants the picker is showing.
+    pub picker_npc: usize,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -75,7 +80,22 @@ impl Laundromat {
         let machine = tc.machine(physics, seed).expect("build the slap-bit board");
         let ground = tc.ground_state();
         let n = tc.cycles.len();
+        // Price every want once, up front, so the picker can show costs.
+        let mut scratch = tc.clone();
+        let want_menu = (0..tc.world.npcs.len())
+            .map(|npc| {
+                tc.deliverable(npc)
+                    .into_iter()
+                    .map(|item| {
+                        scratch.want(npc, item);
+                        (item, scratch.want_cost(scratch.ground_state()))
+                    })
+                    .collect()
+            })
+            .collect();
         Self {
+            want_menu,
+            picker_npc: 0,
             tc,
             machine,
             physics,
@@ -104,6 +124,40 @@ impl Laundromat {
         info!("new load: seed {}, strips re-randomized", self.seed);
     }
 
+    /// Set or clear the want. That rewires the springs, and couplings can't
+    /// change after `install`, so the board is rebuilt; the strips carry
+    /// over so nothing jumps. The next Run spins with the want in place.
+    pub fn set_want(&mut self, want: Option<(usize, usize)>) {
+        if matches!(self.mode, Mode::Cycle { .. }) || want == self.tc.want {
+            return;
+        }
+        match want {
+            Some((npc, item)) => {
+                if !self.tc.want(npc, item) {
+                    return;
+                }
+            }
+            None => self.tc.clear_want(),
+        }
+        let mut board = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
+        board.take_state_from(&self.machine).expect("carry the strips over");
+        self.machine = board;
+        self.ground = self.tc.ground_state();
+        self.latch = Latch::new();
+        self.mode = Mode::Manual;
+        info!("want: {}", self.want_text().unwrap_or_else(|| "none (forward mode)".into()));
+    }
+
+    /// "Upddayett wants the 350 W scooter hub motor"
+    pub fn want_text(&self) -> Option<String> {
+        self.tc.want.map(|(npc, item)| format!("{} wants the {}", self.tc.world.npcs[npc].name, self.tc.world.items[item].name))
+    }
+
+    /// Does trade `c` move the wanted item to the person who wants it?
+    pub fn carries_want(&self, c: usize) -> bool {
+        self.tc.want.is_some_and(|(npc, item)| self.tc.cycles[c].delivers(npc, item))
+    }
+
     /// Load fresh laundry and run the selected program. Every cycle starts
     /// from random strips, so it earns its answer.
     pub fn start_cycle(&mut self) {
@@ -120,6 +174,9 @@ impl Laundromat {
             p.i9_rate,
             self.speed()
         );
+        if let Some(w) = self.want_text() {
+            info!("  with want: {w}");
+        }
     }
 
     /// Sim time units per real second right now.
@@ -149,8 +206,16 @@ impl Laundromat {
             mask(self.latch.best_bits),
             self.latch.best_time,
             mask(self.ground),
-            if self.latch.best_bits == self.ground { "BEST" } else { "missed" }
+            if self.tc.is_optimal(self.latch.best_bits) { "BEST" } else { "missed" }
         );
+        if let Some(w) = self.want_text() {
+            let got = self.tc.delivers_want(self.latch.best_bits);
+            info!(
+                "  want ({w}): {}, cost the block {:.0} Goo",
+                if got { "delivered" } else { "NOT delivered" },
+                self.tc.want_cost(self.latch.best_bits)
+            );
+        }
     }
 
     /// Drum temperature multiplier right now.

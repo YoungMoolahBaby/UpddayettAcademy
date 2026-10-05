@@ -15,6 +15,13 @@ fn c32(c: Color) -> egui::Color32 {
     egui::Color32::from_rgba_unmultiplied((s.red * 255.0) as u8, (s.green * 255.0) as u8, (s.blue * 255.0) as u8, (s.alpha * 255.0) as u8)
 }
 
+const GOLD: egui::Color32 = egui::Color32::from_rgb(255, 205, 60);
+
+/// "costs the block 2 Goo" / "free"
+fn cost_text(cost: f64) -> String {
+    if cost < 0.5 { "free: already in the best set".into() } else { format!("costs the block {cost:.0} Goo") }
+}
+
 fn initials(name: &str) -> String {
     name.split([' ', '-']).filter_map(|w| w.chars().next()).take(2).collect()
 }
@@ -44,6 +51,17 @@ pub fn panels(
         let rect = egui::Rect::from_center_size(label, galley.size() + egui::vec2(10.0, 4.0));
         painter.rect_filled(rect, 4.0, egui::Color32::from_black_alpha(170));
         painter.galley(rect.min + egui::vec2(5.0, 2.0), galley, egui::Color32::WHITE);
+        // Whoever has a want gets a gold ring and a tag.
+        if let Some((who, item)) = lm.tc.want
+            && who == k
+        {
+            painter.circle_stroke(at, 21.0, egui::Stroke::new(2.5, GOLD));
+            let tag = format!("wants: {}", lm.tc.world.items[item].name);
+            let galley = painter.layout_no_wrap(tag, egui::FontId::proportional(12.0), GOLD);
+            let rect = egui::Rect::from_center_size(label + egui::vec2(0.0, 19.0), galley.size() + egui::vec2(10.0, 4.0));
+            painter.rect_filled(rect, 4.0, egui::Color32::from_black_alpha(200));
+            painter.galley(rect.min + egui::vec2(5.0, 2.0), galley, GOLD);
+        }
     }
 
     // Caption above the board-cam inset.
@@ -105,6 +123,56 @@ pub fn panels(
                     lm.dial = dial;
                     lm.mode = Mode::Manual;
                 }
+
+                // Backward mode: pick a customer and something they could get.
+                ui.separator();
+                ui.label(egui::RichText::new("I WANT...").strong());
+                let mut choice = lm.tc.want;
+                ui.horizontal(|ui| {
+                    let npcs = &lm.tc.world.npcs;
+                    let mut who = lm.picker_npc;
+                    egui::ComboBox::from_id_salt("want_who").width(130.0).selected_text(npcs[who].name).show_ui(ui, |ui| {
+                        for (k, npc) in npcs.iter().enumerate() {
+                            ui.selectable_value(&mut who, k, npc.name);
+                        }
+                    });
+                    let current = choice.filter(|&(n, _)| n == who).map(|(_, item)| lm.tc.world.items[item].name);
+                    egui::ComboBox::from_id_salt("want_what")
+                        .width(200.0)
+                        .selected_text(current.unwrap_or("pick an item..."))
+                        .show_ui(ui, |ui| {
+                            for (item, it) in lm.tc.world.items.iter().enumerate() {
+                                if it.owner == who {
+                                    continue;
+                                }
+                                match lm.want_menu[who].iter().find(|(i, _)| *i == item) {
+                                    Some(&(_, cost)) => {
+                                        let picked = choice == Some((who, item));
+                                        if ui.selectable_label(picked, it.name).on_hover_text(cost_text(cost)).clicked() {
+                                            choice = Some((who, item));
+                                        }
+                                    }
+                                    None => {
+                                        ui.add_enabled(false, egui::Button::selectable(false, it.name))
+                                            .on_disabled_hover_text("nobody's trading that tonight");
+                                    }
+                                }
+                            }
+                        });
+                    lm.picker_npc = who;
+                    if choice.is_some() && ui.button("Clear").clicked() {
+                        choice = None;
+                    }
+                });
+                if choice != lm.tc.want {
+                    lm.set_want(choice);
+                }
+                if let Some((npc, item)) = lm.tc.want {
+                    let cost = lm.want_menu[npc].iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
+                    ui.label(egui::RichText::new(format!("{}: {}", lm.want_text().unwrap_or_default(), cost_text(cost))).small().color(GOLD));
+                } else {
+                    ui.small("No want: the machine just finds the best trades for everyone.");
+                }
             });
             let mut watch = lm.watch;
             if ui
@@ -122,6 +190,9 @@ pub fn panels(
             if lm.latch.has_best() {
                 let v = lm.tc.evaluate(lm.latch.best_bits).0;
                 ui.label(format!("i9 latched: {v:.0} Goo   (best possible: {ground_value:.0})"));
+                if lm.tc.want.is_some() {
+                    ui.small(format!("(without the want: {:.0})", lm.tc.evaluate(lm.tc.forward_best).0));
+                }
             } else {
                 ui.label("i9 latched: nothing yet (it reads during a cycle)");
             }
@@ -149,7 +220,12 @@ pub fn panels(
                     if lm.locked(c) {
                         text = text.strong().color(egui::Color32::from_rgb(140, 200, 255));
                     }
-                    ui.label(text);
+                    ui.horizontal(|ui| {
+                        ui.label(text);
+                        if lm.carries_want(c) {
+                            ui.label(egui::RichText::new("WANTED").small().strong().color(GOLD));
+                        }
+                    });
                     ui.end_row();
                 }
             });
@@ -162,7 +238,18 @@ pub fn panels(
                     ui.label(egui::RichText::new(format!("- {}.", lm.tc.cycles[c].describe(&lm.tc.world))).small());
                 }
                 ui.label(format!("Everybody ends up {v:.0} Goo better off."));
-                let line = if best == lm.ground {
+                if let Some((npc, item)) = lm.tc.want {
+                    let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);
+                    let line = if lm.tc.delivers_want(best) {
+                        let cost = lm.tc.want_cost(best);
+                        let price = if cost < 0.5 { "Cost the block nothing.".to_string() } else { format!("Cost the block {cost:.0} Goo.") };
+                        format!("Got {who} the {what}. {price}")
+                    } else {
+                        format!("Nobody handed {who} the {what}.")
+                    };
+                    ui.label(egui::RichText::new(line).strong().color(GOLD));
+                }
+                let line = if lm.tc.is_optimal(best) {
                     "AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\""
                 } else {
                     "AI: \"You spun it too fast. The strips froze before they could agree.\""

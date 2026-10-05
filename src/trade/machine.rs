@@ -137,6 +137,25 @@ impl Machine {
         &self.data.qpos.as_slice()[..self.n]
     }
 
+    pub fn velocities(&self) -> &[f64] {
+        &self.data.qvel.as_slice()[..self.n]
+    }
+
+    /// Carry the strips over from another board (same bit count), e.g.
+    /// after rewiring the springs, which means building a new board because
+    /// couplings can't change after `install`. Time and drum setting come too.
+    pub fn take_state_from(&mut self, other: &Machine) -> Result<(), Error> {
+        assert_eq!(self.n, other.n, "boards differ in size");
+        for i in 0..self.n {
+            self.data.qpos[i] = other.data.qpos[i];
+            self.data.qvel[i] = other.data.qvel[i];
+        }
+        self.data.time = other.data.time;
+        self.data.ctrl[0] = other.data.ctrl[0];
+        self.data.forward(&self.model)?;
+        Ok(())
+    }
+
     pub fn well(&self, i: usize) -> WellState {
         WellState::from_position(self.data.qpos[i], 0.5)
     }

@@ -37,4 +37,5 @@ Read first:
   library in `src/trade/`, unit tests via `cargo test --release --lib`.
 - The game (Step 2): `cargo run --release` (Bevy 0.19 + bevy_egui). `UPD_SHOT=1 cargo run --release`
   plays a fast spin cycle, saves `shots/*.png` and exits; use it to check visuals.
-  `UPD_PROGRAM=0..3` picks the wash program; `UPD_SEED=<n>` replays a logged session.
+  `UPD_PROGRAM=0..3` picks the wash program; `UPD_WANT=upd:hub` sets a want; `UPD_SEED=<n>` replays a logged session.
+- `trade_cli wants [--bench]` lists every want the picker offers, with cost, field strength and hit rate.

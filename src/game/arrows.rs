@@ -47,6 +47,8 @@ fn leg_curve(a: Vec3, b: Vec3, c: usize) -> impl Fn(f32) -> Vec3 {
     }
 }
 
+const GOLD: Color = Color::srgb(1.0, 0.8, 0.2);
+
 pub fn trade_color(c: usize, n: usize) -> Color {
     Color::hsl(360.0 * c as f32 / n as f32, 0.9, 0.6)
 }
@@ -66,15 +68,17 @@ pub fn draw(
         let token_at = (t_now * 0.45 + c as f32 * 0.17).fract();
         for leg in &cycle.legs {
             let f = leg_curve(spots.0[leg.from], spots.0[leg.to], c);
+            // The leg that hands the wanted item over is gold.
+            let leg_base = if lm.tc.want == Some((leg.to, leg.item)) { GOLD } else { base };
             if lm.locked(c) {
                 let pulse = 3.0 + 1.5 * (t_now * 3.0 + c as f32).sin();
-                let color = Color::LinearRgba((LinearRgba::from(base) * pulse).with_alpha(1.0));
+                let color = Color::LinearRgba((LinearRgba::from(leg_base) * pulse).with_alpha(1.0));
                 draw_leg(&mut fat, &f, color, Some(token_at));
             } else if lm.mode == Mode::Done {
-                draw_leg(&mut thin, &f, base.with_alpha(0.03), None);
+                draw_leg(&mut thin, &f, leg_base.with_alpha(0.03), None);
             } else {
                 let token = (a > 0.6).then_some(token_at);
-                draw_leg(&mut thin, &f, base.with_alpha(0.04 + 0.9 * a * a), token);
+                draw_leg(&mut thin, &f, leg_base.with_alpha(0.04 + 0.9 * a * a), token);
             }
         }
     }

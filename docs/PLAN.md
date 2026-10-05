@@ -5,7 +5,7 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Next action: **Step 3.1** (see the Step 3 plan below; 3.0 done).
+Next action: **Step 3.2** (see the Step 3 plan below; 3.0 and 3.1 done).
 
 ## Step 1 result
 
@@ -236,6 +236,35 @@ on short programs before).
   delivered (unit test over all wants: the ground state delivers and is
   clash-free; spot-check a few with the CLI bench); the result line shows
   the cost; logs show the want.
+
+**3.1 done.** 20 deliverable wants in the Tuesday world (7 cost the block
+2-10 Goo; the rest are free because the best set already delivers them).
+`trade_cli wants --bench` benches every one. What it took:
+- **Gentlest bias.** The worst-case want bias pinned strips on 14 of 20
+  wants (fields up to 20 vs a 7.7 flattening limit). Now the bias is
+  bisected to the smallest value whose exact ground state delivers, plus
+  a margin of 1.0 x the smallest cycle value (swept 0.5/1/2/3: 1.0 is the
+  best before fields reach the limit). Max field now 7.1, no clamps.
+- **Optimal by value, not bits.** Several trade sets can tie (Tamara
+  wanting the kale: ~70% of runs found an equally good set that wasn't the
+  brute-force one). `TradeComputer::is_optimal` judges by value + clash-free
+  + delivered; the CLI, the logs and the AI line all use it (the game would
+  otherwise have roasted perfect runs).
+- Result over all 20 wants, 96 Normal runs each: delivered mean 100%, min
+  99%; i9 optimal mean 93%, min 75% (Dave wants the cells / Ray wants the
+  derailleur, both cost 5 Goo and compete for the same chain). Forward mode
+  unchanged at 95%.
+- In-game: picker (customer, then item; undeliverable items greyed out with
+  "nobody's trading that tonight"; cost on hover and in the caption), gold
+  ring + "wants:" tag on the portrait, WANTED tag on the trade board, gold
+  arrow for the leg that hands the item over, result line with the cost.
+  Picking a want rewires the board keeping the strips (`take_state_from`).
+  `UPD_WANT=who:what` sets a want in screenshot mode.
+- Seen in-game: the hot phase (kT 4 vs dV 5) isn't very hot next to the
+  problem's energy scale, so the i9 sometimes latches the best set within
+  the first ~10 time units. Not a bug; worth remembering if we tune.
+- Layout note for 3.5: the Spin Cycle panel is now tall enough to cover
+  Sound Guy Ray's portrait card.
 
 ### 3.2 The AI's voice
 
