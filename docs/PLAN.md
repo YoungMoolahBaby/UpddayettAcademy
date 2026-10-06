@@ -18,7 +18,7 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: 3.5 polish.
+Next: 3.5 polish (layout done; see 3.5 so far).
 
 ## Step 1 result
 
@@ -632,6 +632,19 @@ went home.
   keep PBR.
 - Done when: screenshots of each; the frame rate is logged with and without
   Solari.
+
+**3.5 so far (2026-10-06):**
+- **Layout done.**
+  - HOW IT WORKS folds into sections. "The basics" (Goo, trades, the drum,
+    the counter) starts open; the rest start folded. The Salties section
+    opens itself on a night the dumb ones brag.
+  - THE i9 CALLS IT scrolls on its own and takes at most the room minus a
+    few board rows, so a long call no longer runs over HOW IT WORKS.
+  - Panel widths scale with the window (SPIN CYCLE 19%, TRADES 24%, HOW IT
+    WORKS 26%, each clamped).
+  - Tab hides every panel but the name cards.
+  - Checked at 1600x900 and 960x600 on night 1 (6 trades): the washer stays
+    in sight at both sizes.
 
 ### 3.6 The Salties (sabotage nights)
 

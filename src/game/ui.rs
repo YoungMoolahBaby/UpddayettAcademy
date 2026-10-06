@@ -95,6 +95,8 @@ pub fn panels(
     spots: Res<NpcSpots>,
     camera: Single<(&Camera, &GlobalTransform), With<MainCam>>,
     window: Single<&Window, With<bevy::window::PrimaryWindow>>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut hidden: Local<bool>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (cam, cam_tf) = *camera;
@@ -140,6 +142,17 @@ pub fn panels(
         egui::FontId::monospace(12.0),
         egui::Color32::from_rgb(120, 255, 140),
     );
+
+    // Tab hides the panels, to just watch the laundromat.
+    if keys.just_pressed(KeyCode::Tab) && !ctx.egui_wants_keyboard_input() {
+        *hidden = !*hidden;
+    }
+    if *hidden {
+        egui::Area::new("tab_hint".into()).anchor(egui::Align2::RIGHT_TOP, [-12.0, 12.0]).show(ctx, |ui| {
+            ui.label(egui::RichText::new("Tab: panels").small().color(egui::Color32::from_white_alpha(160)));
+        });
+        return Ok(());
+    }
 
     // Tonight, top center.
     egui::Area::new("night_banner".into()).anchor(egui::Align2::CENTER_TOP, [0.0, 10.0]).show(ctx, |ui| {
@@ -187,11 +200,14 @@ pub fn panels(
     let n = lm.n();
     let side = |big: f32, compact: f32| if small { compact } else { big };
     let board_cam_top = y - 22.0;
+    // Panels scale with the window, so the washer stays in sight between them.
+    let trades_w = (screen.x * 0.24).clamp(250.0, 400.0);
+    let bragging = lm.sabotage().and_then(|s| s.brag()).is_some();
 
     egui::Window::new("SPIN CYCLE")
         .anchor(egui::Align2::LEFT_TOP, [12.0, 12.0])
         .resizable(false)
-        .default_width(side(300.0, 250.0))
+        .default_width((screen.x * 0.19).clamp(240.0, 330.0))
         .default_height(board_cam_top - 24.0)
         .show(ctx, |ui| {
             // Scrolls rather than run under the board cam. (A fixed-size window
@@ -427,6 +443,7 @@ pub fn panels(
                 if !small {
                     ui.small("Spin hot, cool slow. Too fast and the strips freeze before they agree.");
                     ui.small(format!("sim speed now: {:.0} time units per second", lm.speed()));
+                    ui.small("Tab hides the panels.");
                 }
             });
         });
@@ -439,7 +456,7 @@ pub fn panels(
         .anchor(egui::Align2::RIGHT_BOTTOM, [-12.0, -12.0])
         .resizable(false)
         .default_open(!small)
-        .default_width(side(430.0, 340.0))
+        .default_width((screen.x * 0.26).clamp(300.0, 440.0))
         .show(ctx, |ui| {
             let rule = |ui: &mut egui::Ui, head: &str, color: egui::Color32, body: &str| {
                 ui.horizontal_wrapped(|ui| {
@@ -449,109 +466,75 @@ pub fn panels(
                 })
                 .inner
             };
-            rule(ui, "Goo", GOLD, "is how much someone personally values a thing. 1 Goo = a can of Mtn Goo to them.");
-            rule(ui, "Trades", GOLD, "only happen if everyone in them gains Goo. Nobody loses.");
-            if let Some((swap, gains)) = &example {
-                ui.label(egui::RichText::new(format!("   e.g. {swap}: {gains}")).small().italics());
-            }
-            rule(ui, "The drum", GOLD, "picks the trades that make the most Goo in total. No item moves twice.");
-            rule(ui, "The counter", COUNTER, "holds every item during the spin, then hands each trade over whole, or not at all.")
-                .on_hover_text(ESCROW_WHY);
-            rule(ui, "Tonight", GOLD, "sets the values: who's hungry, who's out in the cold. Food means more to someone hungry.");
-            rule(
-                ui,
-                "Karma",
-                GIFT_EGUI,
-                "scores a gift by what it does. A need met (food when hungry, warmth on a cold night) counts 1x; \
-                 a treat or a tool counts 1.5x, once that person's needs are covered. The drum sends the gift where it does the most good.",
-            );
-            rule(ui, "A want", GOLD, "gets delivered the cheapest way. Its price is what everyone else gives up.");
-            rule(ui, "A give-away", GIFT_EGUI, "costs the giver its Goo and leaves the trades. It earns Karma wherever the drum sends it.");
-            rule(
-                ui,
-                "The Salties",
-                SALT,
-                "come dumb or smart. Dumb ones brag about big physics; only the honest kind works. A magnet really pushes the strips \
-                 (find it with the idle check, cover it with the shield). A \"solar flare\" is them flipping the breaker (the battery \
-                 finishes the cycle). The \"EMP\" does nothing.",
-            );
-            rule(
-                ui,
-                "Smart Salties",
-                SALT,
-                "never brag, so a quiet night isn't a safe one. They aim a coil that only runs while the drum spins (the idle check \
-                 sees nothing; the spin check after a cycle does), or trip the breaker early with no flicker. Lose a spin, read the \
-                 numbers, defend, spin again.",
-            );
+            // The basics stay open; the rest fold, so the board keeps its room.
+            let section = |ui: &mut egui::Ui, title: &str, open: bool, body: &mut dyn FnMut(&mut egui::Ui)| {
+                egui::CollapsingHeader::new(egui::RichText::new(title).strong()).default_open(open).show(ui, |ui| body(ui));
+            };
+            section(ui, "The basics", true, &mut |ui| {
+                rule(ui, "Goo", GOLD, "is how much someone personally values a thing. 1 Goo = a can of Mtn Goo to them.");
+                rule(ui, "Trades", GOLD, "only happen if everyone in them gains Goo. Nobody loses.");
+                if let Some((swap, gains)) = &example {
+                    ui.label(egui::RichText::new(format!("   e.g. {swap}: {gains}")).small().italics());
+                }
+                rule(ui, "The drum", GOLD, "picks the trades that make the most Goo in total. No item moves twice.");
+                rule(ui, "The counter", COUNTER, "holds every item during the spin, then hands each trade over whole, or not at all.")
+                    .on_hover_text(ESCROW_WHY);
+            });
+            section(ui, "Tonight and Karma", false, &mut |ui| {
+                rule(ui, "Tonight", GOLD, "sets the values: who's hungry, who's out in the cold. Food means more to someone hungry.");
+                rule(
+                    ui,
+                    "Karma",
+                    GIFT_EGUI,
+                    "scores a gift by what it does. A need met (food when hungry, warmth on a cold night) counts 1x; \
+                     a treat or a tool counts 1.5x, once that person's needs are covered. The drum sends the gift where it does the most good.",
+                );
+            });
+            section(ui, "Wants and give-aways", false, &mut |ui| {
+                rule(ui, "A want", GOLD, "gets delivered the cheapest way. Its price is what everyone else gives up.");
+                rule(ui, "A give-away", GIFT_EGUI, "costs the giver its Goo and leaves the trades. It earns Karma wherever the drum sends it.");
+            });
+            // Opens itself on a night the dumb ones brag.
+            egui::CollapsingHeader::new(egui::RichText::new("The Salties").strong().color(SALT))
+                .id_salt(("salties", lm.night))
+                .default_open(bragging)
+                .show(ui, |ui| {
+                    rule(
+                        ui,
+                        "Dumb Salties",
+                        SALT,
+                        "brag about big physics; only the honest kind works. A magnet really pushes the strips \
+                         (find it with the idle check, cover it with the shield). A \"solar flare\" is them flipping the breaker (the battery \
+                         finishes the cycle). The \"EMP\" does nothing.",
+                    );
+                    rule(
+                        ui,
+                        "Smart Salties",
+                        SALT,
+                        "never brag, so a quiet night isn't a safe one. They aim a coil that only runs while the drum spins (the idle check \
+                         sees nothing; the spin check after a cycle does), or trip the breaker early with no flicker. Lose a spin, read the \
+                         numbers, defend, spin again.",
+                    );
+                });
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());
 
     egui::Window::new("TRADES")
         .anchor(egui::Align2::RIGHT_TOP, [-12.0, 12.0])
         .resizable(false)
-        .default_width(side(380.0, 260.0))
+        .default_width(trades_w)
         .default_height(rules_top - 24.0)
         .show(ctx, |ui| {
-            // The i9's call first, so it never scrolls out of sight.
+            // The i9's call first, in its own scroll that takes most of the room
+            // (at least half), leaving the board below a few rows.
+            let room = rules_top - 24.0 - ui.cursor().min.y;
             if lm.mode == Mode::Done {
-                let best = lm.latch.best_bits;
-                ui.label(egui::RichText::new("THE i9 CALLS IT").strong().size(16.0));
-                for c in qubo::chosen(best, n) {
-                    let cy = &lm.tc.cycles[c];
-                    if cy.is_gift() {
-                        continue;
-                    }
-                    let w = &lm.tc.world;
-                    let (said, gains) = (cy.describe(w), cy.gains_text(w));
-                    if small {
-                        ui.label(egui::RichText::new(format!("- {}: +{:.0} Goo", initials_chain(cy, w), cy.goo())).small())
-                            .on_hover_text(format!("{said}. ({gains})"));
-                    } else {
-                        ui.label(egui::RichText::new(format!("- {said}. ({gains})")).small());
-                    }
-                }
-                let t = lm.tc.tally(best);
-                ui.label(format!("In total: +{:.0} Goo, and nobody loses.", t.goo));
-                for (line, karma) in lm.tc.gift_lines(best) {
-                    ui.label(egui::RichText::new(format!("♥ Gift: {line}. Karma +{karma:.1}")).color(GIFT_EGUI));
-                }
-                for line in lm.counter_lines() {
-                    ui.label(egui::RichText::new(line).small().color(COUNTER)).on_hover_text(ESCROW_WHY);
-                }
-                if let Some((npc, item)) = lm.tc.want {
-                    let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);
-                    let line = if lm.tc.delivers_want(best) {
-                        let cost = lm.tc.want_cost(best);
-                        let price = if cost < 0.5 { "Cost the block nothing.".to_string() } else { format!("Cost the block {cost:.0} Goo.") };
-                        format!("Got {who} the {what}. {price}")
-                    } else {
-                        format!("Nobody handed {who} the {what}.")
-                    };
-                    ui.label(egui::RichText::new(line).strong().color(GOLD));
-                }
-                let ai = egui::Color32::from_rgb(255, 150, 220);
-                let salty = lm.salty_lines();
-                for (brag, roast) in &salty {
-                    if !brag.is_empty() {
-                        ui.label(egui::RichText::new(format!("Salties: {brag}")).italics().color(SALT));
-                    }
-                    ui.label(egui::RichText::new(format!("AI: \"{roast}\"")).italics().color(ai));
-                }
-                // A miss on a sabotaged night has its own explanation above.
-                let line = if lm.tc.is_optimal(best) {
-                    Some("AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\"")
-                } else if matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
-                    Some("AI: \"You spun it too fast. The strips froze before they could agree.\"")
-                } else {
-                    None
-                };
-                if let Some(line) = line {
-                    ui.label(egui::RichText::new(line).italics().color(ai));
-                }
+                let call = (room - 140.0).max(room * 0.55).max(80.0);
+                egui::ScrollArea::vertical().id_salt("i9_call").max_height(call).show(ui, |ui| i9_call(ui, &lm, small));
                 ui.separator();
             }
             let room = (rules_top - 24.0 - ui.cursor().min.y).max(80.0);
-            egui::ScrollArea::vertical().max_height(room).min_scrolled_height(room).show(ui, |ui| {
+            egui::ScrollArea::vertical().id_salt("board").max_height(room).min_scrolled_height(room).show(ui, |ui| {
                 egui::Grid::new("trades").num_columns(4).spacing([8.0, 3.0]).show(ui, |ui| {
                     for (c, cycle) in lm.tc.cycles.iter().enumerate() {
                         let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
@@ -588,4 +571,63 @@ pub fn panels(
             });
         });
     Ok(())
+}
+
+/// THE i9 CALLS IT: the trades it latched, the totals, and the AI's lines.
+fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
+    let n = lm.n();
+    let best = lm.latch.best_bits;
+    ui.label(egui::RichText::new("THE i9 CALLS IT").strong().size(16.0));
+    for c in qubo::chosen(best, n) {
+        let cy = &lm.tc.cycles[c];
+        if cy.is_gift() {
+            continue;
+        }
+        let w = &lm.tc.world;
+        let (said, gains) = (cy.describe(w), cy.gains_text(w));
+        if small {
+            ui.label(egui::RichText::new(format!("- {}: +{:.0} Goo", initials_chain(cy, w), cy.goo())).small())
+                .on_hover_text(format!("{said}. ({gains})"));
+        } else {
+            ui.label(egui::RichText::new(format!("- {said}. ({gains})")).small());
+        }
+    }
+    let t = lm.tc.tally(best);
+    ui.label(format!("In total: +{:.0} Goo, and nobody loses.", t.goo));
+    for (line, karma) in lm.tc.gift_lines(best) {
+        ui.label(egui::RichText::new(format!("♥ Gift: {line}. Karma +{karma:.1}")).color(GIFT_EGUI));
+    }
+    for line in lm.counter_lines() {
+        ui.label(egui::RichText::new(line).small().color(COUNTER)).on_hover_text(ESCROW_WHY);
+    }
+    if let Some((npc, item)) = lm.tc.want {
+        let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);
+        let line = if lm.tc.delivers_want(best) {
+            let cost = lm.tc.want_cost(best);
+            let price = if cost < 0.5 { "Cost the block nothing.".to_string() } else { format!("Cost the block {cost:.0} Goo.") };
+            format!("Got {who} the {what}. {price}")
+        } else {
+            format!("Nobody handed {who} the {what}.")
+        };
+        ui.label(egui::RichText::new(line).strong().color(GOLD));
+    }
+    let ai = egui::Color32::from_rgb(255, 150, 220);
+    let salty = lm.salty_lines();
+    for (brag, roast) in &salty {
+        if !brag.is_empty() {
+            ui.label(egui::RichText::new(format!("Salties: {brag}")).italics().color(SALT));
+        }
+        ui.label(egui::RichText::new(format!("AI: \"{roast}\"")).italics().color(ai));
+    }
+    // A miss on a sabotaged night has its own explanation above.
+    let line = if lm.tc.is_optimal(best) {
+        Some("AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\"")
+    } else if matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
+        Some("AI: \"You spun it too fast. The strips froze before they could agree.\"")
+    } else {
+        None
+    };
+    if let Some(line) = line {
+        ui.label(egui::RichText::new(line).italics().color(ai));
+    }
 }
