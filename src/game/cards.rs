@@ -73,9 +73,9 @@ const ADS: [Ad; 3] = [
         bg: egui::Color32::from_rgb(8, 22, 10),
     },
     Ad {
-        name: "SUPERINTELLIGENCE FOR DOGS",
-        pitch: "Finally, a dog smart enough to stop shitting on the floor.",
-        tag: "HE USES THE TOILET NOW. HE STILL CAN'T FLUSH.",
+        name: "SUPER INTELLIGENCE FOR DOGS",
+        pitch: "So they will stop shitting on the floor.",
+        tag: "THEY USE THE TOILET NOW. THEY STILL CAN'T FLUSH.",
         fine: "Flushing needs opposable thumbs, sold separately. Intelligence is free now; thumbs are physics. Not available for cats (they declined).",
         face: egui::Color32::from_rgb(120, 200, 255),
         side: egui::Color32::from_rgb(20, 40, 90),
