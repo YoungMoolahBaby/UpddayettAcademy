@@ -7,6 +7,7 @@
 //! strips that CortenForge's thermostat shakes and cools ([`machine`]).
 
 pub mod cycles;
+pub mod drum;
 pub mod escrow;
 pub mod machine;
 pub mod qubo;

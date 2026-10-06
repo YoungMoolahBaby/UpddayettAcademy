@@ -265,6 +265,7 @@ fn main() {
         "res" => res(),
         "info" => info(),
         "build" => build_time(),
+        "pool" => pool(),
         "all" => {
             drop();
             tumble();
@@ -325,4 +326,32 @@ fn build_time() {
         n,
         per * n as f64
     );
+}
+
+/// The game's tumbler (`src/trade/drum.rs`): build time with every world
+/// item in the pool, then step speed with 5 in the drum.
+fn pool() {
+    use cortenforge_play::trade::{drum, world};
+    let w = world::laundromat(1);
+    let pool_n = env("POOL", 17.0) as usize;
+    let names: Vec<&str> = w.items.iter().map(|i| i.name).take(pool_n).collect();
+    let t = Instant::now();
+    let mut tb = drum::Tumbler::with_cell(&names, env("CELL", drum::CELL)).expect("build");
+    println!("  pool of {} items built in {:.1} s", names.len(), t.elapsed().as_secs_f64());
+    let pick: Vec<usize> = std::env::var("ITEMS").unwrap_or("0,1,2,3,13".into()).split(',').filter_map(|s| s.parse().ok()).map(|k: usize| k.min(pool_n - 1)).collect();
+    tb.set_items(&pick);
+    tb.set_step(env("DT", drum::DT), env("SOLREF", drum::SOLREF));
+    if std::env::var_os("NOII").is_some() {
+        tb.items_collide(false);
+    }
+    for (label, f, secs) in [("drop + tumble", 0.6, 4.0), ("spin (pinned)", 2.0, 1.0), ("slow", 0.3, 1.0)] {
+        let t = Instant::now();
+        let mut deep = 0.0f64;
+        for _ in 0..(secs / tb.dt()) as usize {
+            tb.step(f * drum::critical()).expect("step");
+            deep = deep.max(tb.deepest());
+        }
+        let wall = t.elapsed().as_secs_f64();
+        println!("  {label}: {:.2}x real time, deepest {deep:.1} mm ({} in, pinned {})", secs / wall, tb.items_in().count(), tb.pinned());
+    }
 }
