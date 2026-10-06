@@ -127,6 +127,11 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   lines, the prelude exports only the coupling driver, and no crate ships an
   `examples/` folder. Docs cite repo files that aren't shipped
   (`docs/keystone/*`, the book).
+- **setup** (2026-10-05): the facade forwards no features: sim-core's
+  `parallel` (rayon `BatchSim::step_all`, batch.rs:237-254) and
+  ml-chassis's `parallel` can't be turned on through `cortenforge`, so
+  `VecEnv` steps envs one at a time. `cargo tree -e features` shows
+  sim-core built without it.
 
 ### `sim-thermostat`
 
@@ -362,6 +367,90 @@ from reading the source (file:line) and can't be checked at run time
 - **docs** (2026-10-05): `test_utils` is always compiled and exported, and
   `assert_within_n_sigma` panics as its API. Say whether it's meant for
   users (test_utils.rs:1-31, 221-243).
+
+### `sim-therm-env`
+
+`cargo run --release --example gaps_therm_env` does the same for this
+crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
+
+#### Noise across envs
+
+- **bug** (2026-10-05): `build_vec` installs one thermostat (traj_id 0, one
+  counter) on the shared `Arc<Model>` (262-277, 321), so all envs draw from
+  one stream in turn: env 0's path changes with the batch size (qpos 0.0026
+  alone, 0.0037 beside a second env, same seed). An env can't be replayed
+  on its own, and a reset doesn't restart its noise. The thermostat's
+  `install_per_env` exists for this and isn't used. If sim-core's `parallel`
+  feature were on, the order would also depend on thread scheduling (not
+  tested: the facade can't turn it on, see the facade entry). *(probe:
+  build_vec shares one noise stream)*
+- **bug** (2026-10-05): `build()` and `build_vec(1)` walk different paths
+  from the same seed. `SimEnv::step` calls `forward()` after stepping
+  (ml-chassis env.rs:145), which runs the passive stack again, so the
+  thermostat draws noise twice per step and throws one draw away. `VecEnv`
+  draws once. Each reset's `forward()` takes a draw too. *(probe: build()
+  and build_vec(1) differ)*
+- **works** (2026-10-05): two envs built with the same seed replay bit for
+  bit. *(probe: same seed replays)*
+
+#### Builder validation
+
+- **bug** (2026-10-05): validation only rejects NaN and infinity (283-297);
+  the loader catches a zero or negative timestep. Everything else builds:
+  - gamma -1 and k_b_t -1 give NaN qpos.
+  - `ctrl_range(5, 1)` panics on the first step, in `f64::clamp` in
+    ml-chassis space.rs:643.
+  - `episode_steps(0)` gives one-step episodes.
+  *(probe: physics parameters unchecked)*
+- **bug** (2026-10-05): landscape components aren't checked against
+  `n_particles` (330-332). A `DoubleWellPotential` on dof 5 of 1 builds,
+  then panics on the first step ("Matrix index out of bounds"). A 2-long
+  `ExternalField` on 3 particles runs silently, with no field on particle 2.
+  `build` should return an Err. *(probe: landscape not checked against
+  particles)*
+- **API** (2026-10-05): `generate_mjcf` is public and returns a `String`,
+  not a `Result`. It puts actuator `i` on joint `x{i}` (56), so more ctrls
+  than particles gives XML that doesn't load ("reference to undefined
+  joint: x1"), and the doc doesn't say `n_ctrl <= n_particles` (15-20).
+  The loader does reject a NaN, 0 or negative timestep. *(probe:
+  generate_mjcf: more ctrls than particles; generate_mjcf: bad timestep)*
+
+#### Ctrl temperature
+
+- **docs** (2026-10-05): the thermostat clamps the ctrl multiplier to
+  [0, 10] (langevin.rs:175, env.rs:58), but `ctrl_range` takes any range
+  and its doc doesn't say so (163-174): with `ctrl_range(0, 20)`, ctrl 20
+  heats to 10 kT. *(probe: ctrl temperature clamped at 10x)*
+- **docs** (2026-10-05): with `with_ctrl_temperature`, ctrl[0] is 0 after
+  build and every reset, so the bath is cold (pure damping) until the first
+  action. `k_b_t` reads like the starting temperature, and nothing says
+  otherwise (131-136, 156-161). *(probe: ctrl temperature starts cold)*
+
+#### Episodes and the VecEnv
+
+- **bug** (2026-10-05): the default truncation tests accumulated float time,
+  `d.time > max_time` (354-357), so `episode_steps(10)` runs 11 steps at
+  h = 0.003, 0.005, 0.01 and 0.25, and 10 at 0.001 and 0.002, depending on
+  how the sum rounds. Counting steps would be exact. *(probe: truncation off
+  by one)*
+- **API** (2026-10-05): `build_vec` wraps the user's `on_reset` as `|m, d,
+  _idx| on_reset(m, d)` (273-275), so the env index `VecEnv` passes is
+  dropped and per-env randomization can't tell envs apart. The hook type
+  could take the index. *(probe: build_vec on_reset loses the env index)*
+- **API** (2026-10-05): `build_vec` returns a bare `VecEnv` (262), losing
+  `effective_temperature`, `n_particles` and `config_k_b_t`. There's also
+  no handle to the stack, so `disable_stochastic` for a noise-free eval
+  isn't reachable from either env. *(probe: build_vec loses the accessors)*
+
+#### Docs
+
+- **docs** (2026-10-05): several facts are left unstated (15-20, 72-76):
+  - every particle has mass 1 and starts at qpos 0, which is the barrier
+    top of a `DoubleWellPotential`, so `on_reset` is needed;
+  - the integrator is Euler, which is right, since RK4 shrinks the bath
+    (see sim-thermostat);
+  - the observation is `[qpos.., qvel..]` as f32 (342-345).
+  The crate docs have no example. *(probe: observation layout)*
 
 ### `sim-soft`
 
