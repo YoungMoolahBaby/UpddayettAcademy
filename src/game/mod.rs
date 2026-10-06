@@ -5,6 +5,7 @@ mod cards;
 mod counter;
 mod scene;
 mod shots;
+mod tv;
 mod sim;
 mod ui;
 
@@ -18,10 +19,11 @@ impl Plugin for GamePlugin {
         let lm = sim::Laundromat::new();
         app.insert_resource(cards::Cards::new(lm.night))
             .insert_resource(lm)
+            .init_resource::<tv::Tv>()
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()
-            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup)))
+            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup), tv::setup))
             .add_systems(
                 Update,
                 (
@@ -38,6 +40,7 @@ impl Plugin for GamePlugin {
                         counter::fly,
                         counter::draw_sign,
                         cards::hide_inset,
+                        tv::update,
                     ),
                 )
                     .chain(),

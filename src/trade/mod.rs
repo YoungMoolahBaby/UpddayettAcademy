@@ -11,6 +11,7 @@ pub mod escrow;
 pub mod machine;
 pub mod qubo;
 pub mod salties;
+pub mod tv;
 pub mod world;
 
 pub use cycles::{Cycle, Kind, Leg};

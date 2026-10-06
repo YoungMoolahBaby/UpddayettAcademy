@@ -314,7 +314,7 @@ simulated slap bits. Honest caveat: at 14 bits a laptop brute-forces the
 answer in microseconds; physical annealers only matter at large scale and
 for energy, and whether they win there is still debated.
 
-### The TVs (planned, Step 3.5)
+### The TVs (built in Step 3.5)
 
 Every laundromat has a TV bolted in the corner. The Suds & Duds has two
 parody channels, and between them they make the drum the only honest thing

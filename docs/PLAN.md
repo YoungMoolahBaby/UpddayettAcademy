@@ -18,7 +18,7 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: 3.5 polish (layout, title card and ads done; see 3.5 so far).
+Next: 3.5 polish (layout, title card, ads and the TV done; scope trace and Solari left; see 3.5 so far).
 
 ## Step 1 result
 
@@ -662,6 +662,33 @@ went home.
     switched off while a card is up. Titles are sized to fit the window.
   - `UPD_CARDS=1` shoots `shots/card_*.png`; `UPD_SHOT` skips the cards.
   - Unit test (binary): `cargo test --release --bin cortenforge_play`.
+- **The TV done.** One wall set hangs on arms between the neon sign and the
+  back row of washers, tipped toward the room. Its screen is Bevy UI
+  rendered to a 640x360 texture (`src/game/tv.rs`): a header with the
+  channel's logo, a big headline with a line under it, and a crawling
+  chyron. It flips channels every 14 s, with a burst of snow on each flip.
+  The copy is pure and tested in `trade::tv`.
+  - **The Shrug Network:** facts from tonight's roll (hungry count, cold
+    and how many sleep out, hungry flocks, give-aways, trades on the board,
+    the dumb Salties' brag), each followed by "Anyway, ..." and a shrug
+    picked by the night's seed. Night 1: "4 HUNGRY ON TURK ST TONIGHT.
+    Anyway, a celebrity's dog launched a podcast." The banner says 4 hungry.
+  - **PromiseTV:** four fictional candidates (Glorbman, Councilwoman Plinko,
+    Chet Sprockett, Mayor Dumpleton) each promise everyone one item Turk St
+    has one of: the hub motor, the Wi-Fi password, the soldering iron, the
+    sleeping bag. There are no parties. While an ad is on:
+    - Upddayett heckles from his name card: "Who's giving it up, Glorb?
+      There's one, and it's Shopping-Cart Guy's."
+    - I WANT checks the promise against the picker's real price ("Turk St
+      has 1. Checked: for Upddayett it costs the block 2 Goo"), and a
+      "Want it" button puts it in the picker.
+    - Night 1 with the hub wanted: the drum got Upddayett the hub motor for
+      2 Goo.
+  - Tests: 3 new in the library (28 in all):
+    - the news is true (hungry and cold counts, gifts, trades, nights 1-60);
+    - no shrug twice in a row, looping included;
+    - every promise is one item that someone other than Upddayett owns.
+  - `UPD_TV=shrug|promise` holds a channel for screenshots.
 
 ### 3.6 The Salties (sabotage nights)
 

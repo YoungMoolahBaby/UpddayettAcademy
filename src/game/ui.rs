@@ -25,6 +25,8 @@ const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
 const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
 /// The counter (escrow): cardboard tan.
 const COUNTER: egui::Color32 = egui::Color32::from_rgb(215, 180, 130);
+/// PromiseTV's purple-and-gold.
+const PROMISE: egui::Color32 = egui::Color32::from_rgb(215, 160, 255);
 /// Why the counter: on hover of its rule and its result line.
 const ESCROW_WHY: &str = "A 4-way swap only works if everyone delivers or nobody does. Hand things over one at a time and \
                           whoever already got theirs can walk off without giving. So the counter holds everything until the drum \
@@ -89,6 +91,7 @@ fn meter(ui: &mut egui::Ui, value: f64, best: f64, fill: egui::Color32, text: St
     ui.add(egui::ProgressBar::new(f).fill(fill).text(egui::RichText::new(text).monospace().color(egui::Color32::WHITE)))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn panels(
     mut contexts: EguiContexts,
     mut lm: ResMut<Laundromat>,
@@ -97,6 +100,7 @@ pub fn panels(
     window: Single<&Window, With<bevy::window::PrimaryWindow>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut hidden: Local<bool>,
+    tv: Res<super::tv::Tv>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (cam, cam_tf) = *camera;
@@ -128,6 +132,18 @@ pub fn panels(
         {
             painter.circle_stroke(at, 21.0, egui::Stroke::new(2.5, GOLD));
             chips(&painter, egui::pos2(label.x, below.max(rect.max.y) + 3.0), &[(format!("wants: {}", lm.tc.world.items[item].name), GOLD)]);
+        }
+        // Upddayett heckles PromiseTV while an ad is on.
+        if let Some(p) = &tv.promise
+            && npc.name == "Upddayett"
+        {
+            let galley = painter.layout(format!("\"{}\"", p.heckle(&lm.tc.world)), egui::FontId::proportional(13.0), egui::Color32::WHITE, 230.0);
+            // Up and to the left: the trade board covers the right.
+            let size = galley.size() + egui::vec2(12.0, 8.0);
+            let bubble = egui::Rect::from_min_size(at + egui::vec2(-26.0 - size.x, -34.0 - size.y), size);
+            painter.rect(bubble, 6.0, egui::Color32::from_black_alpha(220), egui::Stroke::new(1.5, PROMISE), egui::StrokeKind::Outside);
+            painter.line_segment([bubble.right_bottom() + egui::vec2(-8.0, 0.0), at + egui::vec2(-12.0, -14.0)], egui::Stroke::new(1.5, PROMISE));
+            painter.galley(bubble.min + egui::vec2(6.0, 4.0), galley, egui::Color32::WHITE);
         }
     }
 
@@ -321,6 +337,30 @@ pub fn panels(
                             choice = None;
                         }
                     });
+                    // PromiseTV's promise, checked against the picker's real price.
+                    if let Some(p) = &tv.promise
+                        && let Some(upd) = lm.tc.world.find_npc("Upddayett")
+                    {
+                        let supply = p.supply(&lm.tc.world);
+                        let price = lm.want_menu[upd].iter().find(|(i, _)| *i == p.item).map(|&(_, c)| c);
+                        let check = price.map_or("nobody's trading it tonight".to_string(), |c| format!("for Upddayett it {}", cost_text(c)));
+                        ui.horizontal_wrapped(|ui| {
+                            ui.spacing_mut().item_spacing.x = 4.0;
+                            ui.label(egui::RichText::new("ON TV").small().strong().color(PROMISE));
+                            ui.label(
+                                egui::RichText::new(format!("{}: \"{}\" Turk St has {supply}. Checked: {check}.", p.candidate, p.pitch))
+                                    .small()
+                                    .color(PROMISE),
+                            );
+                            if price.is_some()
+                                && choice != Some((upd, p.item))
+                                && ui.small_button("Want it").on_hover_text("Put it in the I WANT picker and see what it really takes.").clicked()
+                            {
+                                lm.picker_npc = upd;
+                                choice = Some((upd, p.item));
+                            }
+                        });
+                    }
                     if choice != lm.tc.want {
                         lm.set_want(choice);
                     }

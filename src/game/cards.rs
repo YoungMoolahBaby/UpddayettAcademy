@@ -93,7 +93,7 @@ const ADS: [Ad; 3] = [
 
 /// Which ad breaks in when a night begins: every third night, in turn.
 fn ad_for(night: u64) -> Option<usize> {
-    (night % 3 == 0).then_some((night / 3) as usize % ADS.len())
+    night.is_multiple_of(3).then_some((night / 3) as usize % ADS.len())
 }
 
 /// The largest size up to `max` at which `text` fits in `width`.
