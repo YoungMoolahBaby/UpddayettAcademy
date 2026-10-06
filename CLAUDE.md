@@ -65,6 +65,9 @@ Read first:
   [--rhot T] [--swap S] [--full]` tunes it per night; `rowmatch` judges it vs run 5 at equal compute, vs the best of K
   run-5 washers, and vs itself without swaps (~50 min for 60 nights x 48 spins; PLAN "Step 6 result"). Any mode takes
   `--washers K` (a row instead of one washer) or `--best-of K`. In the game it is program 5 (`UPD_PROGRAM=5`).
+- Print probe (Step 7.0): `cargo run --release --example probe_print -- [check|verdict|stl|hinge|walls|grid|selfx|template|mesh]`
+  (env `PART=sled|feeder|bracket|hook`, `TOL=0.5` mm; never 0.1, it runs for minutes). `verdict` is the policy the game will use;
+  STLs land in `prints/` (git-ignored).
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

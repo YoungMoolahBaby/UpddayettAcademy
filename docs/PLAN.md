@@ -255,6 +255,56 @@ The CortenForge pieces (all in the 0.9.0 facade, none used yet):
 - Time each step. The game needs a check in well under a second, or a
   worker thread like the drum's.
 
+### 7.0 result (2026-10-06): the pipeline works; the checkers need a policy
+
+Run it: `cargo run --release --example probe_print -- [check|verdict|stl|hinge|walls|grid|selfx|template|mesh]`.
+Env: `PART=sled|feeder|bracket|hook`, `TOL=0.5` (mesh tolerance, mm),
+`REPAIR=1`, `VERBOSE=1`. STLs go to `prints/` (git-ignored, 1-39 MB each).
+
+- **End to end works.** One Solid becomes a validated design, an STL kit
+  (each part shrunk by half the 0.3 mm clearance), an oriented, checked
+  print, and an MJCF body. The sled's lid round-trips through `to_mjcf`
+  (3 MB, 0.5 s) and `load_model` (0.1 s), then falls shut on its hinge in
+  0.2 s.
+- **The verdict the game will use** (`verdict` mode): mesh-printability on
+  the unrepaired kit mesh, ignoring issue regions under 1 mm^2 (mesher
+  slivers) and self-intersections on a watertight, manifold mesh (they
+  are zero-area triangles). It tries the part as designed first, then
+  `find_optimal_orientation`'s pick.
+
+  | Part | v1 (planted flaw) | v2 |
+  |---|---|---|
+  | Battery sled | WON'T PRINT: 0.03 mm walls, 8,490 mm^2 overhang | tray and lid PRINT, flat |
+  | Pigeon feeder | WON'T PRINT: flat roof, 90 deg overhang, 139 mm bridge | base and roof PRINT, flat |
+  | Caster bracket | **PRINTS**: 0.6 mm holes, which nothing checks | PRINTS |
+  | Headphone hook | WON'T PRINT: 0.08 mm thin wall (the 0.6 mm arm) | PRINTS |
+- **Why a policy:**
+  - cf-design's `validate` misses walls thinner than its 0.8 mm sampling
+    cell, and calls a 1 mm plate 0.40.
+  - printability fails nearly every cf-design part on 0.1 mm^2 slivers
+    and zero-area triangles.
+  - `repair_mesh` clears the triangles but tears holes.
+  - The orientation search stands a 2 mm lid on its edge.
+
+  All of this is in FINDINGS (cf-design, mesh).
+- **FDM design rules the checkers enforced:**
+  - flat bottoms;
+  - square edges or extruded profiles (a horizontal round's underside is
+    an overhang);
+  - a roof printed as its own part;
+  - no tangent or flush CSG seams;
+  - no knife edges: cradles cut tangent to the floor, a hollow cone's tip,
+    a cone meeting its base plane at 60 deg.
+
+  Two of my own bugs were caught: floating feeder posts, and knife-edged
+  cell cradles.
+- **Speed** at a 0.5 mm mesh: 0.4 s (bracket, hook) to ~16 s (the 140 mm
+  roof) per part, all checks included. The game runs the check on a
+  worker thread, like the drum.
+- **For 7.1:** each v1 flaw must be one the checkers catch. The bracket's
+  v1 becomes a 0.6 mm-thick plate (or too long for the 200 mm bed)
+  instead of tiny holes.
+
 ### 7.1 The catalog (proposed; the user may want different parts)
 
 Each part is someone's want, so a print opens new trades and gift chains:

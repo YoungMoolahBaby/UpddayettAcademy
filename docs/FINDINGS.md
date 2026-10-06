@@ -91,6 +91,38 @@ compile.
   cell, because mass integration uses a fixed 1 mm grid (see cf-design
   below).
 
+### `probe_print` (cf-design print checks + mesh printability + MJCF, 2026-10-06): works, but not raw
+
+`cargo run --release --example probe_print -- [check|verdict|stl|hinge|walls|grid|selfx|template|mesh]`.
+Four parts are designed in code: a battery sled with a hinged lid, a pigeon
+feeder, a caster bracket and a headphone hook. Each has a v1 with a planted
+flaw and a v2 fixed the FDM way. They go through cf-design's
+`Mechanism::validate` (with a `PrintProfile`) and mesh-printability's
+`validate_for_printing` + `find_optimal_orientation`, then `save_stl` and
+`to_mjcf` -> `load_model`.
+- **The pipeline is all there.** One Solid becomes a validated design, an
+  STL kit with clearance, an oriented, checked print, and an MJCF body that
+  swings on its hinge in sim-core.
+- **Neither checker is usable raw.**
+  - cf-design's wall check misses walls thinner than its sampling cell.
+  - printability measures well, but fails nearly every cf-design part on
+    mesher slivers (0.1 mm^2 faces, zero-area triangles).
+  - The orientation search ignores stability.
+  - Neither checks hole size.
+
+  The workable verdict uses printability on the unrepaired mesh, ignores
+  regions under 1 mm^2, and ignores self-intersections on a watertight,
+  manifold mesh. With it, every v1 fails for its flaw and every v2 prints,
+  except the bracket's 0.6 mm holes, which nothing checks.
+- **Designing for FDM mattered more than the tools.** It took flat bottoms,
+  extruded profiles instead of round pipes, a roof printed as its own part,
+  and no tangent or flush CSG seams. The checkers caught two real bugs of
+  mine along the way.
+- **Speed:** 0.4 s (bracket) to ~16 s (the 140 mm roof) per part at a 0.5
+  mm mesh, so the game needs a worker thread, like the drum's.
+
+Details are under cf-design and mesh in the friction log.
+
 ## Building the game
 
 ### Step 1: trade computer (sim-thermostat, 2026-10-05): works
@@ -1678,6 +1710,95 @@ Paths are under cf-design's `src/`. Found by `examples/probe_drum.rs`.
   uses 4 ms with solref 0.01, which is 2-3x faster again, with about the
   same depth (~10 mm worst). The docs could give that ceiling as a tuning
   range.
+
+Found by `probe_print` (Step 7.0; paths under cf-design's `src/`):
+- **works** (2026-10-06): `to_mjcf` and sim-mjcf's `load_model` round-trip a
+  hinged two-part mechanism. A 3 MB MJCF with inline meshes takes 0.5 s, it
+  loads in 0.1 s in mm units (gravity 9810, density in kg/mm^3), and the
+  joint range works: the lid falls shut from 1.2 rad in 0.2 s and stays.
+  `to_stl_kit` shrinks each part by exactly half the profile's clearance
+  (130.0 mm designed, 129.7 mm in the kit).
+- **bug** (2026-10-06): `Mechanism::validate`'s wall check samples the field
+  on a grid whose cell *is* the profile's min wall (mechanism/validate.rs:
+  160-161). A wall thinner than one cell has no sample inside it, so it
+  passes. The verdict doesn't depend on where the part sits (shifted by
+  0.2-0.6 mm, the same):
+
+  | Plate (min wall 0.8) | `validate` | printability ThinWall |
+  |---|---|---|
+  | 0.4 mm | clean | 0.40 mm |
+  | 0.6 mm | clean | 0.60 mm |
+  | 1.0 mm | "wall 0.40 mm" (false alarm) | clean |
+  | 2.0 mm | clean | clean |
+
+  So the check misses exactly the walls it exists for. A cell of a third
+  or a quarter of the min wall would fix the sampling. A 0.5 mm-walled tray
+  passed too, while printability measured 0.03 mm knife edges.
+- **docs** (2026-10-06): `HoleTooSmall` only checks tendon channels
+  (mechanism/validate.rs:339-350), though `validate`'s doc lists "hole
+  diameter". A bracket with 0.6 mm bolt holes drilled by CSG (the profile's
+  min hole is 1.5) is clean, and printability has no hole check either.
+- **bug** (2026-10-06): `templates::bracket` says "Dimensions are full
+  extents" (mechanism/templates.rs:231-233), then rounds with `round(r)`,
+  which grows the solid by r on every side (solid/ops.rs:328-330). So
+  `bracket(60, 40, 5)` comes out 62 x 42 x 7 mm, 18,130 mm^3 for a 12,000
+  mm^3 plate: 40% thicker than asked. Shrink by r first, or round inward.
+- **perf** (2026-10-06): `Solid::mesh` and `to_stl_kit` leave zero-area
+  triangles: a sphere has 48, a box minus a cylinder 304, the kit for a
+  60 x 40 bracket 1,088. printability reads them as "Critical
+  SelfIntersecting" (100+ pairs) on nearly every part. After
+  `mesh::repair::repair_mesh` drops them, `mesh` output has no
+  self-intersections left. `mesh_adaptive` keeps some real ones on
+  creased CSG (two boxes: 64 pairs after repair). Tangent CSG seams also
+  mesh into ~1 mm^2 slivers at odd angles, which printability calls 80
+  deg overhangs.
+- **docs** (2026-10-06): nothing says what `to_stl_kit`'s tolerance costs.
+  0.1 mm (a print-sized number) on a 124 mm part ran for over 10 minutes
+  before we stopped it. At 0.5 mm, meshing took 0.02-18 s a design, and
+  the STLs were 1-39 MB (785k faces for a 140 mm roof).
+- **API** (2026-10-06): cf-design's `PrintProfile` (clearance, min wall,
+  min hole; the doc example says FDM 0.8 mm walls) and mesh-printability's
+  `PrinterConfig::fdm_default()` (1.0 mm walls, 0.8 mm features) describe
+  the same printer twice, with different defaults and no conversion.
+
+### `mesh` (printability, repair, io)
+
+Found by `probe_print` (Step 7.0; paths under `cortenforge-mesh-*-0.9.0/src/`).
+- **works** (2026-10-06): `validate_for_printing`'s thin-wall check
+  measures exactly (0.40 / 0.60 / 0.80 mm on plates of those thicknesses).
+  It caught two real design bugs of mine: feeder posts floating 1 mm over
+  the dish floor (each post bottom a 45 mm^2 overhang) and cell cradles
+  tangent to the tray floor (knife edges). It also caught every planted
+  flaw it covers: a flat 140 mm roof (90 deg overhang, 139 mm bridge), a
+  0.6 mm arm, and 0.5 mm walls. `save_stl` just works.
+- **bug** (2026-10-06): `PrintValidation::estimated_print_time` is never
+  set. It starts as `None` (printability validation/mod.rs:95), and nothing
+  assigns it.
+- **docs** (2026-10-06): `estimated_material_volume` is the bounding box x
+  0.3, a "Rough 30% fill estimate" (validation/mod.rs:302-303). It changes
+  when the part turns: for the bracket, 5,172 mm^3 flat and 28,338 mm^3
+  tilted, against 10,813 mm^3 of plastic. The field's doc should say so, or
+  it should be the mesh volume.
+- **API** (2026-10-06): the build-plate filter only spares faces within
+  `EPS_GEOMETRIC` of the lowest point (validation/mod.rs:387-445). A rounded
+  bottom edge rising 1 mm off the bed counts as an 80 deg "Critical"
+  overhang over 81 mm^2, though a slicer prints it in the first layers.
+  Severity also goes by angle alone, so one 0.1 mm^2 face is Critical and
+  `is_printable()` is false. Nearly every cf-design part fails that way
+  (mesher slivers). A layer-height band and a min-area cutoff would make
+  the verdict usable raw.
+- **API** (2026-10-06): `find_optimal_orientation` scores overhang area
+  alone (orientation.rs:207-290). So it stands a 2 mm lid on its 1.7 mm edge,
+  tilts a flat bracket 45 deg (its big faces then sit exactly at the 45 deg
+  threshold), and stands a hook upright. None has bed contact, height or
+  stability terms, and that's what a slicer's auto-orient weighs.
+- **bug** (2026-10-06): `repair::repair_mesh` (defaults) deletes degenerate
+  triangles without collapsing their edges. A watertight feeder base came
+  out with 84 open edges, and a tray came out non-manifold (3,398 edges).
+  So repairing cf-design output to clear the false self-intersections
+  breaks watertightness instead.
+- **perf** (2026-10-06): checks on 300k-800k-face parts take 3-16 s each, and
+  orientation takes 0.1-0.4 s. A game check needs a worker thread.
 
 ### Platform
 
