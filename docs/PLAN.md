@@ -763,10 +763,14 @@ went home.
     That's the whole lesson on one trace.
   - A board rebuilt with a different strip count clears the trace and
     closes the scope. `UPD_SCOPE=<strip>` opens it for screenshots.
-- **Ray tracing done: Solari works and is on by default** (`src/game/rt.rs`,
-  cargo feature `solari`, default on). F2 toggles back to PBR, and
-  `UPD_SOLARI=0` starts on PBR. A GPU without hardware ray tracing falls
-  back to PBR on its own, with a warning.
+- **Ray tracing done: Solari works; the game starts on PBR** (`src/game/rt.rs`,
+  cargo feature `solari`, compiled in by default). F2 turns Solari on and
+  off, and `UPD_SOLARI=1` starts with it on. A GPU without hardware ray
+  tracing stays on PBR, with a warning.
+  - Solari was the default at first. The user's screenshot (2026-10-06,
+    "why is it grainy now?") showed the grain on the moving NPCs, speckle in
+    the dark corners, and black unconverged splotches, so PBR became the
+    default.
   - **Frame rate** (`UPD_BENCH=1`: 1600x900, vsync off, panels up, RTX
     4070 Ti):
 

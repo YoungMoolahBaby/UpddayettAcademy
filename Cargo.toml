@@ -12,5 +12,5 @@ bevy_egui = "0.42.0"
 [features]
 default = ["solari"]
 # Ray-traced lighting (Bevy Solari). Needs a GPU with hardware ray tracing;
-# F2 toggles it in game.
+# F2 toggles it in game (off at start).
 solari = ["bevy/bevy_solari"]

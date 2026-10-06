@@ -1,7 +1,8 @@
 //! Ray-traced lighting with Bevy Solari (feature `solari`, on by default).
 //! Solari lights the room from emissive meshes (the fluorescent tubes, the
 //! LEDs) and directional lights, with ray-traced shadows and bounce light.
-//! F2 toggles it; `UPD_SOLARI=0` starts on plain PBR.
+//! Off by default (without DLSS denoising, moving things stay grainy): F2
+//! toggles it, and `UPD_SOLARI=1` starts with it on.
 //! `UPD_BENCH=1` measures both (vsync off) and saves `shots/rt_*.png`.
 
 use bevy::anti_alias::taa::TemporalAntiAliasing;
@@ -27,7 +28,7 @@ pub struct RtPlugin;
 impl Plugin for RtPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((SolariPlugins, FrameTimeDiagnosticsPlugin::default()))
-            .insert_resource(Rt { on: std::env::var("UPD_SOLARI").as_deref() != Ok("0"), supported: false })
+            .insert_resource(Rt { on: std::env::var("UPD_SOLARI").as_deref() == Ok("1"), supported: false })
             .add_systems(Update, (prepare_cameras, trace_meshes, toggle));
         if bench_enabled() {
             app.add_systems(Update, bench);
