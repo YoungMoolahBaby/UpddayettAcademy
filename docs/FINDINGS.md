@@ -44,8 +44,10 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   than mesh size (7x tets ~ 40x time). A 2-10 s compute budget fits about 500
   tets and a few hundred steps.
 - `StaggeredCoupling` supports only a cube block with its bottom face fixed.
-- The platen scene copied from the crate's tests spikes to 1024 N of contact
-  force and launches the platen after ~200 steps (tuned only for 20-40 steps).
+- The platen scene copied from the crate's tests reaches 1024 N of contact
+  force and launches the platen (tuned only for 20-40 steps). (2026-10-06:
+  the force comes at step 0, because the scene starts inside the 1 cm contact
+  band; see sim-coupling.)
 - No pressure, active-stress or rest-length actuation; only fixed per-vertex
   loads and pinned vertices. No soft-soft contact (self-contact listed as
   future). Friction exists but has no gradients.
@@ -131,7 +133,8 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   `parallel` (rayon `BatchSim::step_all`, batch.rs:237-254) and
   ml-chassis's `parallel` can't be turned on through `cortenforge`, so
   `VecEnv` steps envs one at a time. `cargo tree -e features` shows
-  sim-core built without it.
+  sim-core built without it. (2026-10-06: sim-soft's `phase-timing`
+  isn't forwarded either, so `sim::soft::profile` always reads zero.)
 
 ### `sim-core`
 
@@ -735,25 +738,351 @@ crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
 
 ### `sim-soft`
 
-- **perf** (2026-10-04): the SDF mesher keeps every grid vertex (18,696
-  kept, 561 used; sdf_meshed_tet_mesh.rs:26-30).
-- **bug** (2026-10-04): `replay_step` panics on a solver stall
-  (newton.rs:723) instead of returning an error; `try_replay_step` is easy
-  to miss.
+`cargo run --release --example gaps_sim_soft` checks this crate and
+sim-coupling in one run (10 s). On 0.9.0: 41 open, 1 fine (both crates).
+Paths are under sim-soft's `src/` unless noted.
+
+#### Solver: failures and validation
+
+- **bug** (2026-10-04): `replay_step` panics on a solver stall instead of
+  returning an error (newton.rs:710-745: ArmijoStall 723, NewtonIterCap
+  731, DoublyFailedFactor 740, ValidityViolation 743); `try_replay_step`
+  is easy to miss. Still true 2026-10-06: with `max_newton_iter` 1,
+  `try_replay_step` returns `NewtonIterCap` and `replay_step` panics.
+  *(probe: replay_step panics on a stall)*
+- **API** (2026-10-06): the `try_` methods still panic on bad input instead
+  of returning `Err`. Each of these panics: dt 0 or negative, an `x_prev`
+  of the wrong length, and a theta of the wrong length
+  (newton.rs:956-968, solver/backward_euler/assembly.rs:177-215). dt = inf
+  gets through and comes back as `ArmijoStall` with a NaN residual.
+  *(probe: try_replay_step panics on bad input)*
+- **bug** (2026-10-06): `max_newton_iter` is one short. A solve that
+  reports `iter_count` 3 fails with `NewtonIterCap` when the cap is 3,
+  because convergence is tested only before each update
+  (newton.rs:1028-1080). *(probe: max_newton_iter off by one)*
+- **API** (2026-10-06): a solve can't succeed with `max_newton_iter` 0 or
+  with `tol` 0, even at rest with no load. Both return `NewtonIterCap`
+  with a residual of exactly 0 (newton.rs:1026, 1043, 1076). Neither value
+  is refused up front. *(probe: cap 0 / tol 0 fail at rest)*
+- **API** (2026-10-06): `SolverConfig.dt` is ignored. The step uses the `dt`
+  argument, and `cfg.dt` 1.0 and 0.01 give the same step at dt 0.01, yet
+  `current_dt()` still reports 1.0 (trait_impl.rs:97-99).
+  *(probe: SolverConfig.dt ignored)*
+- **API** (2026-10-06): NaN in `v_prev` comes back as
+  `ArmijoStall { last_iter: 0, last_r_norm: NaN }`, which reads as a
+  line-search failure, and the message blames a non-SPD tangent. NaN in
+  `x_prev` is caught properly as a `ValidityViolation`. *(probe: NaN state)*
+- **API** (2026-10-06): `SolverFailure` is only `Debug` (solver/mod.rs:106),
+  so `?` into `Box<dyn Error>` or anyhow doesn't compile, and `{e:?}` dumps
+  the whole `x_partial`. `MeshingError` is the same
+  (sdf_meshed_tet_mesh.rs:91-92); the crate's other error types
+  implement `Display`. From the source; not run.
+- **docs** (2026-10-06): stale docs. solver/mod.rs:66-72 still says
+  non-convergence panics; material/mod.rs:96-104 says the bounds panic, but
+  on the `try_` path they return `Err`; neo_hookean.rs:14-16 describes an
+  older gate. From the source; not run.
+
+#### Materials and config values
+
+- **API** (2026-10-06): material values aren't checked.
+  `MaterialField::uniform(-1e5, 4e5)` and `NeoHookean::from_lame(-1e5, 4e5)`
+  both build. `ValidityDomain.poisson_range` is never read, although
+  newton.rs:145 says it's checked at construction. The negative-mu tet then
+  "steps Ok" by way of the LU fallback. *(probe: material parameters
+  unchecked)*
+- **docs** (2026-10-06): `from_young_poisson(1e6, 0.47)` panics ("requires
+  nu < 0.45", neo_hookean.rs:70-74), while the `fbar` doc offers nu up to
+  0.49 (config.rs:298-305). The only way to get a high nu is `from_lame`.
+  *(probe: material parameters unchecked)*
+- **API** (2026-10-06): a negative `density` is accepted. With density -1030
+  under gravity the free vertex moves up, as negative mass would
+  (construct.rs:598, 614). Density is also one global value: a
+  `SiliconeMaterial.density` or per-layer density goes unused.
+  *(probe: negative density)*
+- **API** (2026-10-06): NeoHookean refuses any stretch beyond 2x, and that
+  limit can't be changed. A tet that starts 2.1x stretched gets
+  `ValidityViolation: max_stretch_deviation = 1.100 exceeds bound 1.000`
+  (neo_hookean.rs:104-106), and there's no setter. For jelly-like game
+  props that is a hard cap. *(probe: stretch gate fixed at 2x)*
+- **API** (2026-10-06): `MaterialField::from_yeoh_fields_with_bounds` silently
+  drops `min_principal_stretch` (material_field.rs:253-271, 424-427).
+  From the source; not run.
+- **docs** (2026-10-06): `SiliconeMaterial` and `fit_yeoh_uniaxial` fix
+  lambda = 4 mu, which is nu = 0.40 (silicone_table.rs:205-209,
+  uniaxial.rs:177). Real silicone is about 0.49. The tie isn't mentioned
+  where you'd choose a material. From the source; not run.
+- **API** (2026-10-06): gravity is z-only (`gravity_z`, config.rs:260-268).
+  From the source; not run.
+
+#### Contact and friction
+
+- **bug** (2026-10-06): friction with the default `friction_eps_v` of 0
+  fails. A sphere dropped on the penalty floor with `friction_mu` 0.5 and
+  nothing else hits `ArmijoStall` at step 9 (first contact). With
+  eps_v 1e-3, or with no friction, it runs 40 steps. With eps_v 0 the
+  friction Hessian is 2/0 at zero slip (assembly.rs:348, friction.rs:127-129).
+  The field doc quotes an "IPC default ~1e-3 L_bbox" (config.rs:295-297),
+  but the default is 0. *(probe: friction with the default eps_v)*
 - **API** (2026-10-04): `PenaltyRigidContact::with_params` is a "testing
-  surface" and the default contact band is crate-private
-  (penalty.rs:262-268).
-- **API** (2026-10-04): `StaggeredCoupling::new` takes 11 positional
-  arguments, a magic body index of 1, and hard-wires lambda = 4 mu
-  (construct.rs:29-49).
-- **docs** (2026-10-04): `Tensor` must come from `sim::ml_chassis`,
-  unmentioned in sim-soft.
-- **API** (2026-10-04): gradients are unavailable with friction, F-bar or
-  Tet10. `StaggeredCoupling` isn't `Clone`, so each gradient call needs a
-  freshly built scene. (Corrected 2026-10-05: this used to blame
+  surface", and the default kappa and d_hat are crate-private
+  (penalty.rs:78, 85, 262-269). Still true 2026-10-06. `with_params`
+  doesn't validate either: a negative kappa makes the contact attractive.
+  `IpcRigidContact::with_params` does validate (ipc.rs:96-108).
+  From the source; not run.
+- **docs** (2026-10-06): IPC docs disagree. ipc.rs:41 says a converged solve
+  stays at d > 0; barrier.rs:76-78 says it can report `min_sd <= 0`. CCD
+  is a stub (`ccd_toi` returns infinity, ipc.rs:488-491). From the source;
+  not run.
+
+#### Gradients
+
+- **API** (2026-10-04): no gradients with friction or F-bar
+  (factor.rs:467, 496, 899, 918). Still true 2026-10-06:
+  - with `fbar` on, the forward step works and `try_step` panics instead
+    of returning `Err` *(probe: F-bar gradient panics)*;
+  - with friction, the panic says "friction-exact gradient requested
+    without x_prev", but the caller can't pass one: `step`/`try_step`
+    always pass `None` (trait_impl.rs:44, 80) *(probe: gradient with
+    friction, under sim-coupling)*.
+
+  Frictionless Tet10 gradients now work (factor.rs:475-483), but the
+  `CpuTet10NHSolver` doc still says they're guarded (lib.rs:113-122).
+  `StaggeredCoupling` isn't `Clone`, so each gradient call needs a freshly
+  built scene (see sim-coupling). (Corrected 2026-10-05: this used to blame
   `sim_core::Data`, which is `Clone`; see sim-core.)
-- **bug** (2026-10-04): a stray `eprintln` ("faer LU fallback fired...")
-  prints from the library.
+- **API** (2026-10-06): `CpuDifferentiable` is exported at the crate root
+  (lib.rs:49), but all four methods are `unimplemented!()`
+  (differentiable/newton_vjp.rs:95-123). From the source; not run.
+- **bug** (2026-10-06): `equilibrium_pose_sensitivity`'s doc tells you to pass
+  `x_prev = None` for the frictionless path (sensitivities.rs:508-514).
+  With friction on, that path panics at factor.rs:496. From the source; not
+  run.
+- **bug** (2026-10-06): some contracts are checked only by `debug_assert`,
+  so release builds miss them:
+  - a custom `ContactModel` whose Hessian couples vertices of different
+    tets writes into the wrong sparse slot (assembly.rs:111-123);
+  - the sensitivity functions check slice lengths only in debug
+    (sensitivities.rs:128, 174, 523, 594, 684-687).
+
+  From the source; not run.
+
+#### Tensor and theta
+
+- **docs** (2026-10-04): `Tensor` must come from `sim::ml_chassis`
+  (solver/mod.rs:17), and sim-soft doesn't say so. Still true 2026-10-06.
+  There is also a trap: `Tensor::zeros(&[])` has length 1, so a scene with
+  no loaded vertices panics with "theta has length 1 but BC has no loaded
+  vertices" (assembly.rs:177-181). `Tensor::from_slice(&[], &[0])` works.
+  *(probe: empty theta: Tensor::zeros(&[]) has length 1)*
+- **docs** (2026-10-06): the docs call theta a traction, but with `AxisZ` it is
+  one nodal force applied to every loaded vertex, so the total load is
+  n_loaded x theta (assembly.rs:192-201). `NewtonStep` returns no velocity,
+  and the docs don't say to compute `(x_final - x_prev) / dt`.
+  From the source; not run.
+
+#### Meshing and SDFs
+
+- **perf** (2026-10-04): the SDF mesher keeps every grid vertex
+  (sdf_meshed_tet_mesh.rs:26-31, 187). Still true 2026-10-06:
+  `dropping_sphere` at r 2 cm, cell 3 mm keeps 39,732 vertices and uses
+  3,155 (92% unused). The unused vertices also go into `x_prev`,
+  `boundary_surface` and `Tet10Mesh::from_tet4`. *(probe: SDF mesher keeps
+  every grid vertex)*
+- **bug** (2026-10-06): meshing breaks at small scales. Sub-tets under an
+  absolute 1e-15 m^3 are dropped (stuffing.rs:142, 571). A sphere that
+  meshes to 2,208 tets at r 2 cm gives `EmptyMesh` at r 20 um with the same
+  cell ratio. *(probe: mesher not scale-invariant)*
+- **bug** (2026-10-06): the lattice has no size cap. `BccLattice::new`
+  reserves `2 nx ny nz` positions and `12 cubes` tets before it samples
+  anything (lattice.rs:281-310). At r 5 cm, cell 0.5 mm that is about
+  2.5 GB. A tiny cell saturates the `as i32` extents, and the `+ 1` wraps
+  in release (lattice.rs:257-278). Either way you get an abort, not a
+  `MeshingError`. sdf_meshed_tet_mesh.rs:145 says the lattice caps itself.
+  From the source; not run (it would allocate gigabytes).
+- **docs** (2026-10-06): a box with min > max panics ("bbox.min must be
+  componentwise <= bbox.max", lattice.rs:251-255), while `Aabb3::new`'s
+  doc promises `MeshingError::EmptyMesh` (sdf_bridge/mod.rs:69-72).
+  *(probe: inverted bbox panics)*
+- **bug** (2026-10-06): `SdfMeshedTetMesh::with_projected_nodes` writes NaN
+  into the mesh for a non-finite target (sdf_meshed_tet_mesh.rs:490). The
+  Tet10 version guards this (tet10_mesh.rs:442, 664). A vertex out of
+  range is skipped silently (466), but the doc says it panics (400-403).
+  *(probe: with_projected_nodes: NaN target; ...: vertex out of range)*
+- **bug** (2026-10-06): `DifferenceSdf` doesn't forward `hessian`, so it
+  returns the trait's zero default (difference.rs:104-120). On the outer
+  surface the sphere's hessian norm is 14.14 and the difference's is 0.
+  Its `eval` uses `f64::max`, which drops NaN: a sphere minus an all-NaN
+  SDF evaluates to -0.05, which slips past `NonFiniteSdfValue`.
+  *(probe: DifferenceSdf drops the hessian; DifferenceSdf hides NaN)*
+- **bug** (2026-10-06): `HandBuiltTetMesh::uniform_block` with a Yeoh field
+  panics ("MaterialField::sample expects NH variant",
+  material_field.rs:352), but the comments there call that path
+  unreachable, and no constructor documents it. *(probe: Yeoh field on a
+  hand-built mesh)*
+- **bug** (2026-10-06): `Tet10Mesh::from_tet4` on a mesh that is already
+  Tet10 is guarded only by `debug_assert!` (tet10_mesh.rs:127). In release
+  it turns the 125 vertices into 125 "corners". *(probe: Tet10 enriched
+  twice)*
+
+#### Scenes, readouts, lowering
+
+- **API** (2026-10-06): reward stubs. `RewardBreakdown::apply_residuals` is
+  `unimplemented!()` (reward_breakdown.rs:73-74), as are `BasicObservable`'s
+  three field methods (observable/basic.rs:91-99). `score_with` drops NaN
+  terms (reward_breakdown.rs:47-62), so a diverged all-NaN breakdown scores
+  0, ahead of a poor real design at -4. *(probe: reward breakdown stubs and
+  NaN)*
+- **docs** (2026-10-06): `peak_bound` is documented as "Peak Cauchy stress ...
+  (unitless)" (reward_breakdown.rs:27), but `BasicObservable` fills it
+  with a sum of positions in metres (observable/basic.rs:132-139). The
+  scene module says every constructor returns a 3-tuple (scene.rs:3-4);
+  only `one_tet_cube` does. `SceneInitial` isn't `Clone` (scene.rs:955).
+  From the source; not run.
+- **API** (2026-10-06): the lowering and obstacle pipeline leads nowhere for a
+  facade user. `Lowered.model: ExplicitModel`, `LoweringError::Model(ModelError)`
+  (lowering/model.rs:14, 55), `BakedObstacle.grid` and `.fine`
+  (obstacle.rs:48, 52), and `SampledPath.poses` and `::obstacle`
+  (lowering/path.rs:705, 713) are all sim-soft-explicit types. Neither
+  sim-soft nor the facade re-exports that crate, so you can't name them or
+  run the explicit solver. `lower()` also rejects per-element densities as
+  `MaterialsMeet` (lowering/model.rs:158-159). From the source; not run.
+- **setup** (2026-10-06): `profile::snapshot()` always reads zero through the
+  facade. Its `phase-timing` feature (sim-soft Cargo.toml:72) isn't
+  forwarded; see the facade entry. From the source; not run.
+
+#### Prints
+
+- **bug** (2026-10-04): the library prints to stderr. Still true 2026-10-06:
+  a negative-mu tet writes 4 lines like "sim-soft: faer LU fallback fired at
+  factor_and_solve_free ...", and a NaN mu prints one in the middle of the
+  probe's output. They come from factor.rs:417 and 727 (LU fallback) and
+  from the LM retry logs (337, 354, 360, 378, 808, 821, 827, 838).
+  *(probe: library prints to stderr)*
+
+### `sim-coupling`
+
+Checked by the same probe, `gaps_sim_soft`. Paths are under sim-coupling's
+`src/`. The scene throughout: a 0.2 kg platen (or 0.3 kg ball) on a free
+joint over a soft cube with edge 0.1 m and its bottom pinned.
+
+#### Construction
+
+- **API** (2026-10-04): `StaggeredCoupling::new` takes 11 positional
+  arguments (construct.rs:29-41) and hard-wires lambda = 4 mu
+  (construct.rs:42). It only builds a cube block with its bottom face
+  pinned (44-48). Still true 2026-10-06. The only check is the "no z=0
+  base" assert (48):
+  - n_per_edge 3 panics with "nz must be >= 2 and even (bilayer interface
+    ...)" from sim-soft's `cantilever_bilayer_beam`, and `new`'s
+    `# Panics` doesn't mention even sizes *(probe: odd n_per_edge)*;
+  - body 7 of 2 is accepted, and `step` panics with an index out of bounds
+    *(probe: body index out of range)*;
+  - mu NaN is accepted; `step` then panics in the Armijo line search
+    *(probe: mu NaN accepted)*.
+- **bug** (2026-10-06): `dt` drives only the soft side. The doc says it's
+  "used for both" (construct.rs:16-17), but the rigid body steps at the
+  MJCF timestep. With dt 1e-3 and no `<option timestep>` (0.002), 10
+  free-fall steps give vz -0.1962, the model's rate, not -0.0981. The
+  gradients carry the soft dt (freebody.rs:86 and the control and policy
+  paths), so a mismatch also makes them wrong. *(probe: dt vs the MJCF
+  timestep)*
+- **API** (2026-10-06): `new` doesn't run forward kinematics. Skip
+  `data.forward()` and the first step sees the plane at -clearance, inside
+  the whole block: fz is -29,883 N against -898 N after `forward()`.
+  *(probe: new doesn't run forward)*
+- **API** (2026-10-06): the soft block is weightless. The coupling's
+  `SolverConfig::skeleton()` has gravity_z 0, and there's no setter for it,
+  density, tol or the Newton cap. In 20 steps without contact, no block
+  vertex moves. *(probe: soft block weightless)*
+
+#### The rigid body
+
+- **bug** (2026-10-06): `qvel[2]` is hard-coded as the body's vertical
+  velocity (step.rs:88, also freebody.rs, control.rs, policy_grad.rs,
+  single_step.rs:173):
+  - a body on one hinge (nv 1) is accepted by `new`, and `step` panics with
+    "Matrix index out of bounds" *(probe: body without a free joint)*;
+  - put one slide-joint body ahead of the platen and the damping reads the
+    platen's y velocity instead: after 50 steps the platen falls at
+    -0.4905 m/s instead of settling at -0.0327 *(probe: platen not the
+    first joint)*.
+- **bug** (2026-10-06): `rigid_z` and `data().xpos` are one step behind. Both
+  read `xpos` after `data.step`, which doesn't redo forward kinematics, so
+  after 10 steps rigid_z is 0.499559 while qpos z is 0.499460 (step.rs:113),
+  and the next contact is posed from the stale value (construct.rs:225).
+  The same lag means the last control can never move the result:
+  `coupled_trajectory_control_gradient` returns dz/du = [1.27e-5,
+  1.09e-5, 8.50e-6, 5.00e-6, 0] for 5 controls. The docs blame sim-core
+  for integrating with the starting velocity (freebody.rs:38, 59), but
+  qpos has already moved; the stale value is `xpos`. *(probe: rigid_z one
+  step behind; last control gets no gradient)*
+- **API** (2026-10-06): there's no `data_mut`, and `step` overwrites
+  `xfrc_applied[body]` (step.rs:103), so the only way to push on the body
+  is through the control or policy rollouts. `step` panics on a soft-solver
+  failure, but its `# Panics` mentions only the rigid side (step.rs:18-21),
+  and there's no `try_step`. From the source; not run.
+
+#### Contact
+
+- **docs** (2026-10-06): `CoupledStep.force_on_soft` is documented as "the
+  force the soft body exerts" (types.rs:12), but it's the force on the
+  soft body: -898 N (down) under a resting platen. *(probe: force_on_soft
+  sign)*
+- **API** (2026-10-06): the penalty contact pushes from up to d_hat away.
+  The platen scene from the crate's tests uses d_hat 1 cm and starts the
+  contact plane 3 mm above the block, inside that band. The first step
+  gives 1,025 N on a 1.96 N platen and launches it: after 0.3 s z is
+  0.1166 (it started at 0.108) and there's no contact. That explains the
+  2026-10-04 "spike after ~200 steps". Dropped from above the band, the
+  platen settles on its weight (peak 3.9 N), but it rests with the plane a
+  full 10.0 mm above the block. The docs mention neither the band nor the
+  hover. *(probe: platen starts
+  inside the contact band; dropped platen floats)*
+- **API** (2026-10-06): the collider is placed by z only. The plane is
+  infinite (construct.rs:225): a platen moved 0.45 m off to the side still
+  presses with the same -898 N. The sphere collider's centre is pinned to
+  the block's top centre (construct.rs:238), so a ball 0.45 m to the side
+  presses -107 N, the same as one directly above. *(probe: contact plane
+  infinite; sphere collider ignores x/y)*
+- **bug** (2026-10-06): `step_kinematic` with the default plane collider
+  puts the plane at z 0 (step.rs:200) and crushes the block: |f| 26,956 N
+  with the platen 0.4 m clear. `set_sphere_center` is a no-op for the
+  plane, and nothing stops this. *(probe: step_kinematic with the plane
+  collider)*
+- **bug** (2026-10-06): `step_articulated` ignores `rigid_damping` and
+  `with_contact_moment` (step.rs:165), and it uses the COM `xipos` where
+  `step` uses `xpos` (articulated.rs:17-21). The free-body gradients'
+  forward passes route only the linear force, so with the moment on they
+  don't follow `step` (freebody.rs:158-162). `coupled_step_material_vz`
+  drops the damping (single_step.rs:165-176). From the source; not run.
+
+#### Gradients
+
+- **API** (2026-10-04): no gradients with friction, and `StaggeredCoupling`
+  isn't `Clone` (lib.rs:89). Still true 2026-10-06:
+  - `coupled_trajectory_material_gradient` panics with "friction-exact
+    gradient requested without x_prev", at eps_v 1e-3 and at 0.1
+    *(probe: gradient with friction)*;
+  - each trajectory gradient advances the scene, so calling it twice on
+    one coupling gives z 0.121204 and then 0.124872. You have to rebuild
+    the scene, since it can't be cloned *(probe: trajectory gradients
+    consume the scene)*.
+- **docs** (2026-10-06): `param_idx` 0 is the partial d/dmu with lambda held,
+  but the block ties lambda = 4 mu, so the design gradient is
+  g0 + 4 g1. Only the single-step doc says so (single_step.rs:493-495); the
+  trajectory doc (freebody.rs:74-83) doesn't. From the source; not run.
+- **API** (2026-10-06): the free-body gradients don't check their
+  preconditions (a free joint, no contact moment), while the articulated
+  and control ones assert them (control.rs:173-190, policy_grad.rs:56-82).
+  From the source; not run.
+- **perf** (2026-10-06): every step rebuilds the tet mesh 2-4 times and
+  builds a new `CpuNewtonSolver` (contact_readout.rs:85-87, step.rs:60,
+  77). At n_per_edge 4 (384 tets) a step costs 5 ms. `BondedSandwich`
+  builds its solver once (bonded.rs:330-339). From the source, with the
+  measured step time.
+- **works** (2026-10-06): the validated case still holds. A 0.3 kg ball
+  resting on the block reads 2.875 N of support against 2.943 N of weight
+  after 200 steps. *(probe: ball settles on the block)*
 
 ### `sim-ml-chassis`
 
