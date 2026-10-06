@@ -61,6 +61,10 @@ Read first:
 - The drum tumbler (Step 5, `src/trade/drum.rs` + `src/game/drum.rs`): tonight's items tumble in a cf-design drum on a
   worker thread (the model takes ~12 s to build at startup; `UPD_SHOT` waits for it). Probe: `cargo run --release --example probe_drum --
   [drop|tumble|spin|res|info|build|pool]` (env `CELL`, `DT`, `SOLREF`, `MAXCON`, `N`, `ITEMS=0,1,2`, `NOII=1`).
+- A row of washers (Step 6, parallel tempering, `src/trade/row.rs`): `trade_cli row [--washers K] [--rcold T]
+  [--rhot T] [--swap S] [--full]` tunes it per night; `rowmatch` judges it vs run 5 at equal compute, vs the best of K
+  run-5 washers, and vs itself without swaps (~50 min for 60 nights x 48 spins; PLAN "Step 6 result"). Any mode takes
+  `--washers K` (a row instead of one washer) or `--best-of K`. In the game it is program 5 (`UPD_PROGRAM=5`).
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

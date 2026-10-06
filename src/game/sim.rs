@@ -122,7 +122,7 @@ pub const PROGRAMS: [WashProgram; 6] = [
     WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%", smart: true, row: false },
     // Four washers sharing one Normal cycle's electricity: (1000 + 20) / 4 - 20
     // units each ([`Row::equal_compute`]).
-    WashProgram { name: "Row of 4 washers", duration: 235.0, watch_secs: 20.0, i9_rate: "96%", smart: false, row: true },
+    WashProgram { name: "Row of 4 washers", duration: 235.0, watch_secs: 20.0, i9_rate: "95%", smart: false, row: true },
 ];
 
 /// Upddayett, in any night's cast.

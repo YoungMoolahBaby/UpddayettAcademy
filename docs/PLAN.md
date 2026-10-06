@@ -31,7 +31,14 @@ freeze), beats it: +2.7 points over run 3 on 60 fresh nights, 95% CI
 mixed unseen boards); training on them made it worse, so run 5 stays.
 **Step 5 done** (2026-10-06): backlog item 1, the drum tumbler. Tonight's
 items tumble behind the porthole in a cf-design drum, stepped by sim-core
-on a worker thread (see "Step 5" below). Next: pick from the backlog.
+on a worker thread (see "Step 5" below).
+**Step 6 done** (2026-10-06): backlog item 3, a row of washers (parallel
+tempering). Four washers share one Normal cycle's compute and trade loads.
+On 60 fresh nights they beat the learned run 5 by +3.7 points (96.8% vs
+93.1%, 95% CI [+2.4, +5.1]), and +8.2 on the hardest quarter. The swaps
+themselves are worth +3.3 [+2.3, +4.3]. In the game it's the sixth
+program, "Row of 4 washers" (see "Step 6" below). Next: pick from the
+backlog.
 
 ## Step 5: the drum tumbler (plan, 2026-10-06)
 
@@ -147,6 +154,74 @@ down. The i9 latches the best set any washer reads.
 - **In the game** (if it wins): the back row of washers shakes along, and
   loads hop between them.
 
+### Step 6 result (2026-10-06)
+
+Run it:
+- `trade_cli row [--washers K] [--rcold T] [--rhot T] [--swap S] [--full]`
+  tunes, per night, with swap rates and hot-to-cold trips.
+- `trade_cli rowmatch` judges.
+- `UPD_PROGRAM=5` plays it in the game.
+
+**Tuning** (nights 1-20, 24 spins, equal compute; Normal 83.1%). The
+surprise: the cold end should be warm. The i9 latches the best set any
+washer shows and every washer quenches in the settle, so no washer needs
+to sit at Normal's cold 0.35 kT. Sitting there just traps loads.
+
+| Row | Hit |
+|---|---|
+| 6 washers, 0.35-4 kT (Normal's range) | 84.6% |
+| 3 / 4 / 8 / 10 washers, 0.35-4 | 71.3 / 81.7 / 82.9 / 81.9% |
+| 6 washers, cold end 0.5 / 0.7 / 1.0 / 1.4 / 2.0 | 85.4 / 88.3 / 92.5 / 95.4 / 96.5% |
+| 6 washers, hot end 3 / 6 | 74.2 / 84.4% |
+| swap every 0.5 / 3 units (default 1) | 84.0 / 82.7% |
+| **4 washers, 1.4-4 kT (chosen)** | **96.5%** |
+| 8 washers, 1.4-4 | 95.2% |
+| control: 6 washers 1.4-4, never swapping | 92.5% |
+| control: 1 washer fixed at 1.4 / 2.0 kT, whole cycle | 54.2 / 85.8% |
+
+Swap acceptance at the chosen ladder is ~40% per neighbor pair, with ~14
+loads a spin carried from the hottest washer down to ours.
+
+**Held out** (`rowmatch`, fresh nights 141-200, 48 spins a board, seed
+2000; 50 min). Paired sim-opt bootstrap CIs on the per-board differences:
+
+| Comparison | All 60 boards | Hardest 15 (by Normal) |
+|---|---|---|
+| Row (4 x 1/4 cycle) - run 5 | +3.7 [+2.4, +5.1], won 35, lost 4 | +8.2 [+5.1, +11.4] |
+| Row - the same row without swaps | +3.3 [+2.3, +4.3], won 35, lost 2 | +6.4 [+4.6, +8.1] |
+| Row - Normal | +14.6 [+11.8, +17.5] | +29.6 [+26.1, +33.3] |
+| Row (4 whole cycles) - best of 4 run-5 washers | 0 (both 100%) | 0 (both 100%) |
+
+Hit rates: Normal 82.2%, run 5 93.1%, row 96.8%, row without swaps
+93.5%. At 4x compute, both reach 100%, so that comparison is at the
+ceiling and says nothing. On nights 1-10 (as the other programs are
+quoted) the row is 95% vs Normal's 81%.
+
+Reading:
+- Most of the gain is several warm drums with one latch over all of them.
+  Even without swaps they tie run 5.
+- The swaps add a real 3.3 points on top, more on rugged boards. That's
+  the textbook parallel-tempering effect: loads ride up the ladder,
+  shake loose, and come back down.
+- It beats a CEM-learned schedule with no training at all: two ladder
+  ends and a washer count.
+
+**In the game**: program 5, "Row of 4 washers" (4 x 235 units, i9 best
+95%).
+- Ours is the coolest washer (1.4 kT). Three of the dead back-row machines
+  come alive at 2.0 / 2.8 / 4.0 kT and rattle by their heat.
+- Each washer in the row wears a tag light in its load's color, which
+  swells when a trade lands, so the loads can be seen moving.
+- The panel shows the ladder, loads traded and loads carried down, with a
+  hover explainer. The log adds swap rates per pair.
+- `RowSpin` steps the row for both the game and `spin_row`. The refactor
+  reproduces the tuning numbers exactly.
+
+Ideas for later:
+- the row with the smart wash's latch memory (reheat a frozen washer);
+- the row as a teaching beat in "How it works";
+- a ladder that adapts its rungs to equalize swap rates.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
@@ -162,7 +237,7 @@ CortenForge pieces the game doesn't use yet:
 2. **(Done: run 5 wins, +2.7 [+1.5, +4.1]; see "Step 4 follow-up: run 3 vs run 5".)** **Settle run 3 vs run 5 with statistics** (sim-opt `analysis`:
    bootstrap CI on the difference of means). Is the smart wash's
    3-point edge on hard nights real? Small.
-3. **A row of washers: parallel tempering** (sim-opt `Pt`, or replica
+3. **(Done: Step 6; the row beats run 5 by +3.7 [+2.4, +5.1] at equal compute.)** **A row of washers: parallel tempering** (sim-opt `Pt`, or replica
    exchange on our own boards). Several washers run copies of tonight's
    board at different temperatures and swap loads, the textbook fix for
    rugged boards like night 4. Compare at equal compute.

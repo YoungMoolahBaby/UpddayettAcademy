@@ -568,15 +568,21 @@ from reading the source (file:line) and can't be checked at run time
 - **API** (2026-10-05): a component can't report its force at a given
   `qpos` without a `Model` and `Data`, so a force-balance check means
   re-deriving each force from its formula (double_well.rs:208). See Step 3.
-- **perf** (2026-10-06, an estimate; user asked whether a GPU would be
-  better): the evaluation runs (`rematch`, `rowmatch`, CEM training, the
-  row of washers) are ensembles: thousands of copies of one ~20-strip
-  board with the same wiring and different noise. The rematch's wall time
-  (8,640 spins of ~102k steps in 17 min on 12 threads) puts one board step
-  at ~14 us. The physics in it is well under 1 us: ~20 wells, ~50-150
-  springs and ~20 noise draws. So the cost is presumably sim-core's
-  general pipeline on a model with no contacts or constraints (not
-  profiled). In order of payoff for cost:
+- **perf** (2026-10-06; user asked whether a GPU would be better): the
+  evaluation runs (`rematch`, `rowmatch`, CEM training, the row of
+  washers) are ensembles: thousands of copies of one ~20-strip board with
+  the same wiring and different noise. Measured with `trade_cli bench
+  --night 1` (17 strips, 32 springs, 102k steps a spin):
+
+  | Load | Wall per spin | Per board step |
+  |---|---|---|
+  | 1 spin alone | 0.46 s | 4.5 us |
+  | 12 at once (6 cores, SMT) | 0.97 s | 9.5 us per thread |
+
+  The physics in a step is well under 1 us: 17 wells, 32 springs, 17 noise
+  draws. So most of the cost is presumably sim-core's general pipeline on
+  a model with no contacts or constraints (not profiled). The 60-night
+  `rowmatch` took 50 min. In order of payoff for cost:
   1. A fast path for passive-only models, and batched stepping of many
      copies (laid out for SIMD), likely ~10x on the CPU with no precision
      change.

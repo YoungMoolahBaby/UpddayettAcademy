@@ -34,7 +34,9 @@ pub struct Row {
 /// spins each, equal compute): a warm cold end beats a cold one, because the
 /// i9 latches whatever any washer shows and every washer quenches in the
 /// settle. Cold end 0.35 (Normal's): 84.6% with 6 washers; 0.7: 88.3%;
-/// 1.4: 95.4%; 4 washers at 1.4: 96.5% (Normal 83.1%). PLAN "Step 6".
+/// 1.4: 95.4%; 4 washers at 1.4: 96.5% (Normal 83.1%). Held out (nights
+/// 141-200, 48 spins): 96.8% vs run 5's 93.1%, +3.7 points, paired 95% CI
+/// [+2.4, +5.1]; the swaps alone +3.3 [+2.3, +4.3]. PLAN "Step 6 result".
 pub const WASHERS: usize = 4;
 pub const COLD: f64 = 1.4;
 pub const HOT: f64 = 4.0;
