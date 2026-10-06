@@ -18,7 +18,7 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: 3.5 polish (layout, title card, ads and the TV done; scope trace and Solari left; see 3.5 so far).
+Next: 3.5 polish (layout, title card, ads, the TV and the scope done; Solari left; see 3.5 so far).
 
 ## Step 1 result
 
@@ -689,6 +689,22 @@ went home.
     - no shrug twice in a row, looping included;
     - every promise is one item that someone other than Upddayett owns.
   - `UPD_TV=shrug|promise` holds a channel for screenshots.
+- **The scope done.** Click a trade in TRADES and THE SCOPE opens bottom
+  center: that strip's `qpos`, live from CortenForge, on green phosphor.
+  - The sim samples every strip every 0.5 sim units inside its step loop
+    (not once a frame, so no hop slips between frames) and keeps the last
+    300 units.
+  - Dashed levels mark ON (+1), the barrier (0) and off (-1). The drum's kT
+    runs faint amber along the bottom, and a hop counter tallies well-to-well
+    crossings past ±0.5.
+  - Night 1, strip 1 (U -> SC -> BK -> U):
+    - hot (2.76 kT): 16 hops in view, all over both wells;
+    - cooling (0.90 kT): 2 hops, one dip to off and back;
+    - locked: flat on ON, 0 hops, 0 kT.
+
+    That's the whole lesson on one trace.
+  - A board rebuilt with a different strip count clears the trace and
+    closes the scope. `UPD_SCOPE=<strip>` opens it for screenshots.
 
 ### 3.6 The Salties (sabotage nights)
 

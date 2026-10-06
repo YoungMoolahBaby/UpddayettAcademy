@@ -66,6 +66,17 @@ pub struct Laundromat {
     pub spin_check: SpinCheck,
     /// What the counter (the escrow) did with the i9's call, once the drum stops.
     pub settled: Option<escrow::Settlement>,
+    /// The trade on the scope (its strip's qpos over time), if one was clicked.
+    pub scope: Option<usize>,
+    /// Every strip's qpos, sampled every [`TRACE_DT`] of sim time, newest last.
+    pub trace: std::collections::VecDeque<Sample>,
+}
+
+/// One scope sample: sim time, the drum's kT, every strip's deflection.
+pub struct Sample {
+    pub t: f64,
+    pub kt: f32,
+    pub x: Vec<f32>,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -129,6 +140,9 @@ const MANUAL_SPEED: f64 = 40.0;
 const SAMPLE: f64 = 1.0;
 /// Most steps per frame, so a slow frame can't snowball.
 const MAX_STEPS_PER_FRAME: usize = 5_000;
+/// The scope samples every strip this often (sim time units) and keeps this many.
+pub const TRACE_DT: f64 = 0.5;
+pub const TRACE_LEN: usize = 600;
 
 impl Laundromat {
     pub fn new() -> Self {
@@ -152,6 +166,8 @@ impl Laundromat {
             coil: None,
             spin_check: SpinCheck::default(),
             settled: None,
+            scope: None,
+            trace: Default::default(),
             tc,
             machine,
             physics,
@@ -600,6 +616,12 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
     let real = time.delta_secs_f64().min(0.1);
     let steps = ((lm.speed() * real / dt).round() as usize).min(MAX_STEPS_PER_FRAME);
     let sample_steps = (SAMPLE / dt).round() as u64;
+    let trace_steps = (TRACE_DT / dt).round() as u64;
+    // A rebuilt board can have a different number of strips: start the scope over.
+    if lm.trace.back().is_some_and(|s| s.x.len() != lm.n()) {
+        lm.trace.clear();
+        lm.scope = None;
+    }
     for _ in 0..steps {
         match lm.mode {
             Mode::Manual => lm.machine.set_temperature(lm.dial),
@@ -621,6 +643,15 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
             lm.latch.observe(&lm.machine, &lm.tc.problem.qubo);
             lm.spin_check.observe(&lm.machine, &lm.tc.ising);
         }
+        if ((lm.machine.time() / dt).round() as u64).is_multiple_of(trace_steps) {
+            let x = lm.machine.positions().iter().map(|&x| x as f32).collect();
+            let kt = (lm.machine.temperature() * lm.physics.k_b_t) as f32;
+            lm.trace.push_back(Sample { t: lm.machine.time(), kt, x });
+        }
+    }
+
+    while lm.trace.len() > TRACE_LEN {
+        lm.trace.pop_front();
     }
 
     // Smooth each strip's deflection into a 0..1 "trade is on" level.

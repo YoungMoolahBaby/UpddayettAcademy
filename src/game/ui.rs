@@ -8,7 +8,7 @@ use cortenforge_play::trade::{Cycle, Sabotage, World, qubo, salties};
 
 use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
-use super::sim::{Laundromat, Mode, PROGRAMS};
+use super::sim::{Laundromat, Mode, PROGRAMS, TRACE_DT, TRACE_LEN};
 
 fn c32(c: Color) -> egui::Color32 {
     let s = c.to_srgba();
@@ -559,6 +559,7 @@ pub fn panels(
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());
 
+    let mut clicked = None;
     egui::Window::new("TRADES")
         .anchor(egui::Align2::RIGHT_TOP, [-12.0, 12.0])
         .resizable(false)
@@ -600,7 +601,13 @@ pub fn panels(
                             text = text.strong().color(egui::Color32::from_rgb(140, 200, 255));
                         }
                         ui.horizontal(|ui| {
-                            ui.label(text).on_hover_text(format!("{}.\nEveryone gains: {}", cycle.describe(&lm.tc.world), cycle.gains_text(&lm.tc.world)));
+                            if lm.scope == Some(c) {
+                                text = text.underline();
+                            }
+                            let hover = format!("{}.\nEveryone gains: {}\nClick: watch its strip on the scope.", cycle.describe(w), cycle.gains_text(w));
+                            if ui.add(egui::Label::new(text).sense(egui::Sense::click())).on_hover_text(hover).clicked() {
+                                clicked = Some(c);
+                            }
                             if lm.carries_want(c) {
                                 ui.label(egui::RichText::new("WANTED").small().strong().color(GOLD));
                             }
@@ -610,6 +617,11 @@ pub fn panels(
                 });
             });
         });
+    if clicked.is_some() {
+        lm.scope = clicked;
+    }
+    // The scope sits bottom center, clear of the board cam and the rules.
+    scope(ctx, &mut lm, 12.0);
     Ok(())
 }
 
@@ -669,5 +681,90 @@ fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
     };
     if let Some(line) = line {
         ui.label(egui::RichText::new(line).italics().color(ai));
+    }
+}
+
+/// THE SCOPE (Tentzhen's in-game nickname): one strip's qpos over sim time,
+/// live from CortenForge, on green phosphor. At a hot drum the strip hops
+/// between its wells (Kramers hops); as the drum cools the hops die out.
+fn scope(ctx: &egui::Context, lm: &mut Laundromat, at_bottom: f32) {
+    let Some(c) = lm.scope else {
+        return;
+    };
+    let phosphor = egui::Color32::from_rgb(110, 255, 140);
+    let mut open = true;
+    egui::Window::new("THE SCOPE")
+        .id("scope".into())
+        .anchor(egui::Align2::CENTER_BOTTOM, [0.0, -at_bottom])
+        .resizable(false)
+        .collapsible(false)
+        .open(&mut open)
+        .show(ctx, |ui| {
+            let w = &lm.tc.world;
+            let cycle = &lm.tc.cycles[c];
+            ui.label(egui::RichText::new(format!("strip {c}: {}", initials_chain(cycle, w))).monospace().color(phosphor))
+                .on_hover_text(format!("{}.", cycle.describe(w)));
+            let (rect, _) = ui.allocate_exact_size(egui::vec2(380.0, 150.0), egui::Sense::hover());
+            let p = ui.painter_at(rect);
+            p.rect_filled(rect, 4.0, egui::Color32::from_rgb(4, 14, 7));
+            let grid = egui::Stroke::new(1.0, egui::Color32::from_rgb(18, 55, 28));
+            for k in 1..10 {
+                let x = rect.left() + rect.width() * k as f32 / 10.0;
+                p.line_segment([egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())], grid);
+            }
+            // qpos from -1.8 to 1.8, top is +.
+            let y = |q: f32| rect.center().y - (q / 1.8).clamp(-1.0, 1.0) * rect.height() / 2.0;
+            let levels = [(1.0, "ON"), (0.0, "barrier"), (-1.0, "off")];
+            let level = egui::Color32::from_rgb(40, 110, 60);
+            for (q, _) in levels {
+                p.line_segment([egui::pos2(rect.left(), y(q)), egui::pos2(rect.right(), y(q))], egui::Stroke::new(1.0, level));
+            }
+            // Labels go on last, over the trace, at the left edge (the trace fills from the right).
+            let labels = |p: &egui::Painter| {
+                for (q, label) in levels {
+                    let r = p.text(egui::pos2(rect.left() + 4.0, y(q)), egui::Align2::LEFT_CENTER, label, egui::FontId::monospace(10.0), level);
+                    p.rect_filled(r.expand(2.0), 2.0, egui::Color32::from_black_alpha(200));
+                    p.text(egui::pos2(rect.left() + 4.0, y(q)), egui::Align2::LEFT_CENTER, label, egui::FontId::monospace(10.0), phosphor);
+                }
+            };
+            let Some(last) = lm.trace.back() else {
+                labels(&p);
+                return;
+            };
+            let window = (TRACE_LEN as f64 * TRACE_DT) as f32;
+            let x = |t: f64| rect.right() - ((last.t - t) as f32 / window) * rect.width();
+            // The drum's kT, faint amber along the bottom.
+            let hottest = lm.trace.iter().map(|s| s.kt).fold(0.1, f32::max);
+            let heat: Vec<_> = lm.trace.iter().map(|s| egui::pos2(x(s.t), rect.bottom() - 2.0 - s.kt / hottest * rect.height() * 0.3)).collect();
+            p.add(egui::Shape::line(heat, egui::Stroke::new(1.0, egui::Color32::from_rgba_unmultiplied(255, 170, 60, 110))));
+            // The strip, with a glow under it.
+            let pts: Vec<_> = lm.trace.iter().filter_map(|s| Some(egui::pos2(x(s.t), y(*s.x.get(c)?)))).collect();
+            p.add(egui::Shape::line(pts.clone(), egui::Stroke::new(4.0, phosphor.gamma_multiply(0.25))));
+            p.add(egui::Shape::line(pts, egui::Stroke::new(1.3, phosphor)));
+            labels(&p);
+            // Count the hops on screen: well to well, past the barrier.
+            let mut side = 0i8;
+            let mut hops = 0;
+            for s in &lm.trace {
+                let q = s.x.get(c).copied().unwrap_or(0.0);
+                let now = if q > 0.5 { 1 } else if q < -0.5 { -1 } else { side };
+                if side != 0 && now != side {
+                    hops += 1;
+                }
+                side = now;
+            }
+            ui.label(
+                egui::RichText::new(format!("qpos, last {window:.0} sim units   hops: {hops}   drum {:.2} kT", last.kt))
+                    .monospace()
+                    .small()
+                    .color(phosphor),
+            )
+            .on_hover_text(
+                "Each hop is a Kramers hop: thermal noise kicks the strip over the barrier. Hot, it hops all the time; \
+                 cooling slowly, it settles into the well the springs favor. Amber is the drum's temperature.",
+            );
+        });
+    if !open {
+        lm.scope = None;
     }
 }
