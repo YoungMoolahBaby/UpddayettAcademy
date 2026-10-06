@@ -34,9 +34,6 @@ pub const ARROW_Y: f32 = 2.15;
 pub struct WasherRoot;
 
 #[derive(Component)]
-pub struct Drum;
-
-#[derive(Component)]
 pub struct StripSegment {
     bit: usize,
     k: usize,
@@ -203,24 +200,17 @@ pub fn setup(
     let door_at = Vec3::new(0.0, 0.7, WASHER.z / 2.0 + 0.01);
 
     commands.entity(root).with_children(|p| {
-        p.spawn((Mesh3d(body.clone()), MeshMaterial3d(paint), Transform::from_xyz(0.0, WASHER.y / 2.0, 0.0)));
+        // The cabinet is cf-design CSG too: a box with the drum's cavity behind the door.
+        p.spawn((Mesh3d(meshes.add(super::drum::cabinet_mesh(WASHER, door_at))), MeshMaterial3d(paint), Transform::default()));
         p.spawn((Mesh3d(ring.clone()), MeshMaterial3d(chrome.clone()), Transform::from_translation(door_at).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
-        p.spawn((Mesh3d(pane.clone()), MeshMaterial3d(glass.clone()), Transform::from_translation(door_at + Vec3::Z * 0.01).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
-
-        // Laundry tumbling behind the glass.
-        let sock = meshes.add(Cuboid::new(0.16, 0.1, 0.06));
-        let colors = [Color::srgb(0.9, 0.2, 0.2), Color::srgb(0.2, 0.5, 0.95), Color::srgb(0.95, 0.85, 0.2), Color::srgb(0.35, 0.95, 0.1), Color::srgb(0.9, 0.9, 0.9)];
-        p.spawn((Drum, Transform::from_translation(door_at - Vec3::Z * 0.12), Visibility::default()))
-            .with_children(|d| {
-                for (k, c) in colors.iter().enumerate() {
-                    let a = TAU * k as f32 / colors.len() as f32;
-                    d.spawn((
-                        Mesh3d(sock.clone()),
-                        MeshMaterial3d(mats.add(StandardMaterial { base_color: *c, perceptual_roughness: 0.9, ..default() })),
-                        Transform::from_xyz(0.22 * a.cos(), 0.22 * a.sin(), 0.0).with_rotation(Quat::from_rotation_z(a)),
-                    ));
-                }
-            });
+        // Clearer glass than the dead machines': the drum tumbles behind it.
+        let clear = mats.add(StandardMaterial {
+            base_color: Color::srgba(0.75, 0.85, 0.9, 0.18),
+            perceptual_roughness: 0.05,
+            alpha_mode: AlphaMode::Blend,
+            ..default()
+        });
+        p.spawn((Mesh3d(pane.clone()), MeshMaterial3d(clear), Transform::from_translation(door_at + Vec3::Z * 0.01).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
 
         // Slap-bit board: PCB, two clamp rails, a clamp screw per strip end.
         p.spawn((Mesh3d(meshes.add(Cuboid::new(1.25, 0.04, 1.05))), MeshMaterial3d(pcb.clone()), Transform::from_xyz(0.0, BOARD_Y - 0.02, 0.0)));
@@ -403,13 +393,11 @@ pub fn salty_props(
     }
 }
 
-/// The washer rattles harder (and the drum spins faster) the hotter it runs.
+/// The washer rattles harder the hotter it runs (the drum itself is `drum`).
 pub fn shake_washer(
     time: Res<Time>,
     lm: Res<Laundromat>,
-    mut root: Single<&mut Transform, (With<WasherRoot>, Without<Drum>)>,
-    mut drum: Single<&mut Transform, (With<Drum>, Without<WasherRoot>)>,
-    mut spin: Local<f32>,
+    mut root: Single<&mut Transform, With<WasherRoot>>,
 ) {
     let t = time.elapsed_secs();
     let temp = lm.temperature() as f32;
@@ -420,9 +408,6 @@ pub fn shake_washer(
         amp * (t * 47.0 + 1.0).sin() * (t * 5.1).sin(),
     );
     root.rotation = Quat::from_rotation_y(amp * 0.6 * (t * 53.0).sin());
-    let rate = if lm.mode == Mode::Done { 0.0 } else { 2.5 * temp.min(6.0) };
-    *spin += rate * time.delta_secs();
-    drum.rotation = Quat::from_rotation_z(-*spin);
 }
 
 /// Bend every strip into the arch its CortenForge particle says it has.

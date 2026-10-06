@@ -57,6 +57,9 @@ Read first:
   memory (reheats when the strips freeze): `--restarts K` sets the cool-downs on the clock, `--patience F`
   how long the strips must sit still (x a cool-down) before it reheats. `--mix` makes `versus` / `learn` also
   run each night with one want and one give-away (3x the time).
+- The drum tumbler (Step 5, `src/trade/drum.rs` + `src/game/drum.rs`): tonight's items tumble in a cf-design drum on a
+  worker thread (the model takes ~12 s to build at startup; `UPD_SHOT` waits for it). Probe: `cargo run --release --example probe_drum --
+  [drop|tumble|spin|res|info|build|pool]` (env `CELL`, `DT`, `SOLREF`, `MAXCON`, `N`, `ITEMS=0,1,2`, `NOII=1`).
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

@@ -4,6 +4,7 @@ mod ads;
 mod arrows;
 mod cards;
 mod counter;
+mod drum;
 #[cfg(feature = "solari")]
 mod rt;
 mod scene;
@@ -26,13 +27,14 @@ impl Plugin for GamePlugin {
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()
-            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup), tv::setup))
+            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup), drum::setup.after(scene::setup), tv::setup))
             .add_systems(
                 Update,
                 (
                     sim::step_sim,
                     (
                         scene::shake_washer,
+                        drum::update,
                         scene::bend_strips,
                         scene::update_leds,
                         scene::flicker_lights,

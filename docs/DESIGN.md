@@ -322,6 +322,20 @@ simulated slap bits. Honest caveat: at 14 bits a laptop brute-forces the
 answer in microseconds; physical annealers only matter at large scale and
 for energy, and whether they win there is still debated.
 
+### The drum (built in Step 5)
+
+Behind the porthole, tonight's items tumble for real. The load is the five
+items in the most trades: the 12-pack, the phone, the hub motor and so on.
+The drum and every item are `cf_design` shapes. The same shape is the
+physics collider and the mesh you see, and sim-core runs the contacts.
+- The tumble follows the wash program: hot is a hard tumble, and the
+  paddles carry items over the top; cold is a slow roll.
+- When the power cuts out, the drum coasts to a stop.
+- When the i9 has its answer, a final spin pins everything to the wall,
+  and then it all drops.
+- The strips on top do the deciding. The drum shows how hard they are
+  being shaken.
+
 ### The TVs (built in Step 3.5)
 
 Every laundromat has a TV bolted in the corner. The Suds & Duds has two

@@ -1554,11 +1554,31 @@ Paths are under cf-design's `src/`. Found by `examples/probe_drum.rs`.
   only drives tendons (mechanism/actuator.rs:16-20, `new` takes a tendon
   name), so a motor-driven drum needs a tendon around the axle, or a
   workaround. We write the drum joint's `qvel` before every step instead.
+- **works** (2026-10-06): the game renders the same Solids it collides.
+  `Solid::mesh` returns analytical normals that drop straight into a Bevy
+  mesh; the drum and 17 items mesh in 0.9 s. The washer cabinet is CSG too
+  (a box minus the drum's cavity, `mesh_adaptive`, sharp edges kept).
+- **perf** (2026-10-06): `Solid::ellipsoid` is "not an exact SDF"
+  (solid/primitives.rs:102-105). The docs warn about `shell` and `round`,
+  but not that the loose field makes contacts 3x slower: a kale bag as an
+  ellipsoid tumbled at 1.27x real time alone, and as a rounded box at 3.9x.
+  Contact cost also grows with how closely an item fits the concave wall: a
+  sleeping-bag capsule of r 85 mm took 2 ms a step by itself, and 0.4 ms at
+  r 60. The docs could say which primitives are cheap colliders.
+- **API** (2026-10-06): a Mechanism can't exclude a collision pair.
+  `to_model` filters only parent-child pairs (model_builder.rs:12-15), so
+  two parts on the world collide with each other: the drum (revolute) and
+  the door (fixed), which sit 5 mm apart. The octree then searched that
+  whole ring every step, which halved the speed. The workaround is to set
+  `geom_contype` / `geom_conaffinity` on the built Model. A
+  `.exclude("drum", "door")` on the builder would do it.
 - **docs** (2026-10-06): the mm-scale timestep (0.5 ms, model_builder.rs:145)
   is conservative for contact-heavy scenes. The solref comment
   (model_builder.rs:131) says only that 0.005 "must stay above
-  2 * timestep". 2 ms was stable in every drum test and 4x cheaper. The
-  docs could give that ceiling as a tuning range.
+  2 * timestep". 2 ms was stable in every drum test and 4x cheaper. The game
+  uses 4 ms with solref 0.01, which is 2-3x faster again, with about the
+  same depth (~10 mm worst). The docs could give that ceiling as a tuning
+  range.
 
 ### Platform
 

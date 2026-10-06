@@ -26,7 +26,12 @@ pub fn drive(
     mut since: Local<u32>,
     mut respun: Local<bool>,
     mut exit: MessageWriter<AppExit>,
+    drum: Res<super::drum::DrumView>,
 ) {
+    // The drum's model takes ~12 s to build; start once it tumbles.
+    if !drum.ready() {
+        return;
+    }
     *frame += 1;
     let f = *frame;
     if f == 30 {

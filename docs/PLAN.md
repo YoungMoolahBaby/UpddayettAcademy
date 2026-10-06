@@ -29,8 +29,9 @@ so far" below). Its follow-up, latch memory (reheat when the strips
 freeze), ties on average and helps a little on the hardest nights (see
 "Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
 mixed unseen boards); training on them made it worse, so run 5 stays.
-**Step 5 started** (2026-10-06): backlog item 1, the drum tumbler. The
-probe works (see "Step 5" below), so the game integration is next.
+**Step 5 done** (2026-10-06): backlog item 1, the drum tumbler. Tonight's
+items tumble behind the porthole in a cf-design drum, stepped by sim-core
+on a worker thread (see "Step 5" below). Next: pick from the backlog.
 
 ## Step 5: the drum tumbler (plan, 2026-10-06)
 
@@ -65,26 +66,62 @@ two Goo cans, kale, an 18650 and a hub.
 - The drum is driven by writing its joint `qvel` each step (cf-design
   actuators drive only tendons).
 
-### 5.1 In the game (next)
+### 5.1 In the game (done, 2026-10-06)
 
-- `src/game/drum.rs`: a worker thread owns the drum's Model and Data and
-  steps at 2 ms. Bevy reads the item poses each frame. The drum and item
-  meshes come from the same Solids (`Solid::mesh`), scaled into the scene
-  behind the porthole glass.
-- **Items**: up to 5 of tonight's trade items, from the best set first,
-  each with a simple shape per item kind (box, can, ball, capsule).
-- **Speed follows the program**: drum rate = critical x f(kT). Hot is a
-  vigorous tumble near 0.7x critical; cold slows toward 0.3x and the items
-  settle. Once the i9 latches the answer, the final spin goes to 2x
-  critical and the items pin. While they are pinned, items ride with the
-  drum kinematically: they don't move relative to it, so physics stops and
-  spin keeps up with real time.
-- Check it with `UPD_SHOT=1`: porthole shots at tumble and at spin.
+Tonight's items tumble behind the porthole. Pieces:
+- **`src/trade/drum.rs`** (library, tested): `Tumbler`.
+  - The model has a drum (with a lip around the opening) and a fixed
+    glass door.
+  - It holds one body per world item (17), built once in ~12 s. Items not
+    in the drum park far outside it.
+  - Items drop in one at a time, once the drop spot is clear.
+  - Items pin to the drum above 1.5x critical speed: they ride with it
+    and the physics is skipped. They fall again below 1.2x.
+  - `item_look` gives each item a Solid, a density and a color.
+- **`src/game/drum.rs`**: a worker thread builds and steps the model in
+  real time. If it falls behind, the drum slows down instead of
+  queuing work.
+  - Meshes come from the same Solids, scaled 1.7x into the scene.
+  - The washer cabinet is now cf-design CSG with a cavity for the drum,
+    behind clearer glass and a drum lamp.
+  - `UPD_SHOT` waits until the model is built.
+- **Load**: the 5 items in the most trades on tonight's board. Not the
+  best set: that would show the answer before the spin.
+- **Speed**: (0.2 + 0.15 kT) x critical, capped at 0.8. That is 0.25x
+  cold and 0.8x hot. The drum stops when the power is off. When the cycle
+  ends there is a 4 s final spin at 2x, with the items pinned, then it
+  coasts to a stop. The motor ramps at 8 rad/s^2.
+
+Tuning the probe settings for real items:
+
+| Change | Why |
+|---|---|
+| Mask the drum-door pair (`geom_contype` bits) | cf-design doesn't filter it; 2x faster |
+| Kale as a rounded box, not an ellipsoid | the ellipsoid's loose field costs 3x |
+| Shrink the oversized items (sleeping bag, birdseed, GPU, vinyl) | cost grows with how closely they fit the wall |
+| 4 ms step with solref 0.01 | 2-3x faster |
+
+Worst load (5 big items):
+
+| Phase | Speed |
+|---|---|
+| Tumble | 1.6x real time |
+| Cold pile | 1.4x |
+| Pinned spin | 2.5x |
+
+`probe_drum -- pool` times it: `ITEMS=0,1,2`, `CELL`, `DT`, `SOLREF`,
+`NOII=1` (no item-item contacts).
+
+Ideas for later:
+- the door's glass bowl as a mesh;
+- a closer porthole camera (like the board cam);
+- items changing hands when the counter settles;
+- sound.
 
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
-1. **The drum as a real tumbler** (cf-design SDF + sim-core contacts).
+1. **(Done: Step 5.)** **The drum as a real tumbler** (cf-design SDF + sim-core contacts).
    Design the drum's inside in code with `cf_design` (a cylinder with
    three lifter paddles) and use it as the collider. Tonight's trade
    items tumble in the porthole as rigid bodies: the 12-pack, the phone,
