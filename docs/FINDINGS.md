@@ -133,6 +133,287 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   `VecEnv` steps envs one at a time. `cargo tree -e features` shows
   sim-core built without it.
 
+### `sim-core`
+
+`cargo run --release --example gaps_sim_core` checks this crate and
+sim-mjcf in one run. On 0.9.0: 27 open, 6 fine (both crates). Paths are
+under sim-core's `src/` unless noted.
+
+#### Callbacks
+
+- **docs** (2026-10-05): `CbPassive` and `CbControl` (types/callbacks.rs:37-46)
+  don't say how often they run. The passive callback runs once per `step` on
+  Euler and the implicit integrators, 4 times on RK4 (once per stage,
+  integrate/rk4.rs:129), and once per `forward()`. The control callback also
+  runs on every plain `forward()` (forward/mod.rs:425). `mjd_transition_fd`
+  steps a scratch copy 2(2nv+na+nu)+1 times (derivatives/fd.rs:87-250), so a
+  noise source in the passive callback (the thermostat) draws during
+  finite differences and makes the derivatives noisy. The counts match
+  MuJoCo; the docs should say them. *(probe: passive callback calls per step)*
+- **docs** (2026-10-05): disabling both springs and dampers returns from the
+  passive stage before the user callback (forward/passive.rs:383-385), so a
+  thermostat installed there goes silent: 0 calls in 10 steps. MuJoCo does
+  the same; `CbPassive` should warn. *(probe: passive callback off with
+  springs and dampers)*
+- **bug** (2026-10-05): `step1` runs the control callback even with
+  actuation disabled (forward/mod.rs:147); `forward` checks the flag
+  (forward/mod.rs:425-427). *(probe: step1 runs control with actuation
+  disabled)*
+- **API** (2026-10-05): one slot per callback: `set_passive_callback`
+  replaces the previous one (types/model.rs:1252-1257), with no way to
+  chain. This is the root of the thermostat's "second stack replaces the
+  first".
+
+#### State and lifecycle
+
+- **bug** (2026-10-05): `energy_initial` is documented as set at the first
+  `forward()` with energy enabled (types/data.rs:437-441), but only
+  `forward_skip` captures it (forward/mod.rs:388). After `forward` and 100
+  steps it is still 0 while the total energy is 9.79, so "drift" is the
+  total energy. *(probe: energy_initial never set)*
+- **bug** (2026-10-05): `reset_to_keyframe` (types/data.rs:1229-1291) copies
+  the keyframe without first doing what `reset` does: warnings, energy,
+  plugin state and the force and constraint arrays stay. After a
+  divergence, `divergence_detected()` is still true after
+  `reset_to_keyframe` (false after `reset`). MuJoCo resets fully, then
+  applies the keyframe. *(probe: reset_to_keyframe is a partial reset)*
+- **API** (2026-10-05): nothing ties a `Data` to its `Model`. Stepping a
+  1-dof Data with a 2-dof model panics ("Matrix index out of bounds",
+  forward/check.rs:23), and the other way round panics in a copy. `step` could
+  compare `qpos.len()` with `nq` and return an error. *(probe: Data stepped
+  with another Model)*
+- **API** (2026-10-05): a bad state (NaN, inf, or a value over 1e10 in qpos,
+  qvel or qacc) makes `step` reset everything (time and ctrl to 0) and return
+  `Ok(())` (forward/check.rs:22-110). A NaN ctrl zeroes all ctrl
+  (forward/actuation.rs:488-496). The only signs are `divergence_detected()`
+  and one `log::warn!` (types/warning.rs:63), which nobody sees without a
+  logger. A trainer can't tell from the `Result`. *(probe: bad state: step
+  resets and returns Ok)*
+- **API** (2026-10-05): `Model` is all pub fields, but its derived caches
+  don't follow edits. Hinge and slide damping reads `jnt_damping`
+  (forward/passive.rs:918), so setting `dof_damping` (the MuJoCo field) does
+  nothing. Setting `jnt_damping` after load leaves Euler's implicit damping
+  at the load-time value (types/model_init.rs:967; integrate/mod.rs:83,93).
+  From 0 to 5, qvel after 100 steps is 0.3660, against 0.3697 for a model
+  loaded with 5, until you call `compute_implicit_params()`. Nothing says
+  which fields need which recompute. *(probe: damping changed after load)*
+- **bug** (2026-10-05): with `implicitspringdamper`, `forward()` writes qvel
+  (forward/acceleration.rs:233, from forward/mod.rs:569 when no constraint
+  is active). qvel goes 0, -0.1, -0.2 over two `forward()` calls on a
+  spring, though `forward` is documented not to change the state. Any
+  `forward()` after `step` (ml-chassis's `SimEnv::step` does one) advances
+  qvel twice. *(probe: implicitspringdamper: forward() moves qvel)*
+- **bug** (2026-10-05): `Data::clone` sets every `plugin_data` to `None`
+  (types/data.rs:890-892), and finite-difference derivatives clone Data
+  (derivatives/fd.rs:87,502). `make_data` can't fail: a plugin `init()`
+  error panics (types/model_init.rs:897-900). RK4 never calls a plugin's
+  `advance()`; only `Data::integrate` does (integrate/mod.rs:209-214). From
+  the source; not run (no plugin here).
+- **works** (2026-10-05): `Data` *is* `Clone` (types/data.rs:684), contrary to
+  an earlier entry here: a clone taken mid-run steps on bit for bit. `Model`
+  is `Clone` and shares its callbacks through `Arc`. *(probe: Data clone
+  replays)*
+- **works** (2026-10-05): `Model` and `Data` are `Send + Sync`; two Datas
+  stepped on `std::thread::scope` threads over one `&Model` match a serial
+  run. This works without the `parallel` feature. *(probe: threads share one
+  Model)*
+- **works** (2026-10-05): `reset` restores qpos0 and zeroes qvel, ctrl and
+  time. ctrl is clamped to ctrlrange. Non-test code has no `unwrap()`,
+  `todo!` or `eprintln!`. *(probe: reset restores the state)*
+
+#### BatchSim
+
+- **docs** (2026-10-05): `step_all` promises output "independent of thread
+  count and scheduling order" (batch.rs:232-236). That's false with a
+  stateful callback on the shared model, which is exactly what
+  therm-env's `build_vec` installs (see sim-therm-env).
+- **docs** (2026-10-05): `BatchSim::reset` says it doesn't zero
+  `qfrc_applied`/`xfrc_applied` "(see Data::reset)" (batch.rs:289), but
+  `Data::reset` does zero them (types/data.rs:1138-1141).
+- **API** (2026-10-05): `model()` returns env 0's model even with per-env
+  models (batch.rs:178-183); there's no `forward_all`, and `new_per_env`
+  doesn't check that the models share a shape.
+
+#### Docs
+
+- **docs** (2026-10-05): lib.rs:8 calls `Model` "immutable after loading"
+  (see the damping entry), and lib.rs:24 says one step is "forward() then
+  integrate()". Doing that by hand skips the bad-state checks, sleep and the
+  warmstart save.
+- **docs** (2026-10-05): "no heap allocation during simulation"
+  (types/data.rs:23, 553) isn't true. The constraint stage rebuilds the
+  `efc_*` arrays and clones qM (constraint/mod.rs:314-319, 343, 410-411),
+  and eulerdamp clones qLD (integrate/mod.rs:89, 102).
+- **docs** (2026-10-05): the smaller ones:
+  - `InvalidTimestep` displays "timestep is zero or negative"
+    (types/enums.rs:846), but it is also returned for NaN and inf.
+  - The `step2` doc says Euler is used "regardless of model.integrator"
+    (forward/mod.rs:161-163); only RK4 falls back.
+  - `batch.rs:61` mentions a warmstart `HashMap` that doesn't exist.
+- **API** (2026-10-05): sim-types' `SimulationConfig` and `SolverConfig`
+  (sim-types config.rs:14-40) aren't read by sim-core and can't be applied
+  to a `Model`. Their default timestep is 1/240, against MJCF's 0.002.
+
+### `sim-mjcf`
+
+Checked by the same `gaps_sim_core` probe. No bad MJCF string panicked
+except the joint-layout assert (from sim-core); the gaps are input that is
+accepted or dropped without a word, and errors that don't say where. Paths
+are under sim-mjcf's `src/`.
+
+#### Hangs and crashes
+
+- **bug** (2026-10-05): a NaN geom `mass` or `density`, or a NaN
+  off-diagonal `fullinertia`, makes `load_model` hang forever.
+  nalgebra's `symmetric_eigen()` has no iteration limit and never converges
+  on NaN (builder/mass.rs:103, 233). The validator checks inertial mass and
+  geom size but not geom mass or density. A NaN on the inertia diagonal
+  loads with a NaN inertia instead. *(probe: NaN and inf load)*
+- **bug** (2026-10-05): a chain of 150 nested bodies overflows the 1 MB
+  Windows main-thread stack and kills the process (`0xc00000fd`); 100
+  loads. Parsing and building recurse per body (parser/body.rs:85 and the
+  builder's traversal). A rope or chain model hits this. *(probe: deep
+  nesting)*
+- **bug** (2026-10-05): a ball joint followed by a hinge on one body (valid
+  MuJoCo) panics inside `load_model`: "ball joint 0 on body 1 must be the
+  LAST joint on its body". `validate_joint_layout` asserts (sim-core
+  types/model_init.rs:458-481) and runs from `make_data`, which the builder
+  calls (builder/build.rs:40-41). *(probe: ball + hinge on one body)*
+- **bug** (2026-10-05): `ctrlrange="1 -1"` loads, then the first `step`
+  panics in `f64::clamp` ("min > max", sim-core forward/actuation.rs:510).
+  The same applies to actrange (forward/actuation.rs:457). *(probe: ctrlrange lo > hi)*
+
+#### Silently accepted or dropped
+
+- **bug** (2026-10-05): typos load without a warning. Attributes are looked
+  up by name and never checked against a list (parser/attrs.rs:32-39), and
+  unknown elements are skipped (parser/mod.rs:163, parser/body.rs:53, 69, 151,
+  193, parser/actuator.rs:22-34):
+  - `<geom typ="box" size="1 1 1"/>` makes a sphere.
+  - `<gemo/>` vanishes.
+  - `<intvelocity>` gives nu 0, though `<default>` accepts it.
+  - `<sensor><jointpositon/>` gives nsensor 0, which shifts every later
+    sensordata index.
+  - A `<joint type="free"/>` directly in the worldbody gives njnt 0.
+
+  *(probe: typos load silently)*
+- **bug** (2026-10-05): values that don't parse fall back to the default.
+  Scalars go through `.parse().ok()` (parser/attrs.rs:42-49), keywords
+  through `from_str` (parser/options.rs:79-132), and booleans compare against
+  `"true"` (parser/attrs.rs:137):
+  - `timestep="0.01s"` stays 0.002.
+  - `damping="abc"` gives 0.
+  - `mass=" 1"` (a space) is ignored and density gives 4.19.
+  - `integrator="RK45"` runs Euler.
+  - `<flag gravity="off"/>` keeps gravity on.
+  - `limited="1"` means not limited.
+
+  *(probe: bad values fall back to defaults)*
+- **bug** (2026-10-05): `size` in `<default><geom>` isn't inherited:
+  `MjcfGeomDefaults` has no size (types.rs:676), so a bare `<geom/>` under a
+  0.05 default gets radius 0.1. *(probe: default geom size ignored)*
+- **bug** (2026-10-05): a self-closing `<body .../>` is dropped (no `body` arm
+  in the `Event::Empty` branches, parser/body.rs:56-70): a mocap target
+  `<body name="t" mocap="true" pos="0 0 1"/>` gives nbody 1, nmocap 0.
+  *(probe: self-closing <body/> dropped)*
+- **bug** (2026-10-05): a second `<compiler>` or `<option>` replaces the
+  first instead of merging (parser/mod.rs:85-90). `<compiler
+  angle="radian"/><compiler autolimits="true"/>` reads `range="-1 1"` as
+  degrees (±0.0175). Adding `<option><flag energy="enable"/></option>`
+  after `<option timestep="0.001"/>` puts the timestep back to 0.002.
+  *(probe: second <compiler>/<option> resets the first)*
+- **bug** (2026-10-05): limits aren't checked (builder/joint.rs:104-111,
+  builder/actuator.rs:94):
+  - `limited="true"` with no range gets ±π, then the degree conversion makes
+    it ±0.0548 rad.
+  - `range="1 -1"` loads as (0.0175, -0.0175).
+  - `ctrllimited="true"` with no ctrlrange gets (-1, 1).
+
+  MuJoCo refuses all three. *(probe: limits and ranges unchecked)*
+- **bug** (2026-10-05): sizes, masses and inertias that can't be right load
+  anyway. Validation only checks finiteness, and only some fields
+  (validation.rs:220-228, 380-403):
+  - a geom with no size gets 0.1 (builder/geom.rs:373-383);
+  - `size="-0.1"` gives body mass -4.19;
+  - geom `mass="-1"` gives -1;
+  - a moving body with no geom has mass 0 and steps to NaN with `Ok(())`;
+  - `diaginertia="0 0 0"` does the same;
+  - a fullinertia that isn't positive definite gets its eigenvalues
+    `abs()`'d (3, 1, 1; builder/mass.rs:103-108);
+  - `<inertial>` with no mass gets 1.
+
+  *(probe: mass, size and inertia unchecked)*
+- **bug** (2026-10-05): geometry attributes read wrong:
+  - A plane's size becomes (0.1, 0.1, 0.1) (builder/geom.rs:883). A renderer
+    sizing the ground from `geom_size` gets it wrong.
+  - `fromto` on a box gives (0.1, 0.5, 0); MuJoCo gives (0.1, 0.2, 0.5)
+    (builder/geom.rs:815-853).
+  - A 5-value `fromto` is ignored and the capsule keeps half-length 0.1
+    (parser/attrs.rs:148-162). A 4-value `pos` drops the 4th value.
+  - `xyaxes` on a `<body>` is never parsed and gives the identity
+    orientation (parser/body.rs:207-246).
+  - `quat="0 0 0 0"` gives a NaN orientation (builder/orientation.rs:13-15).
+
+  *(probe: geometry attributes misread)*
+- **bug** (2026-10-05): NaN gets through where the validator doesn't look. A
+  body `pos="nan 0 0"` loads as NaN, and a joint `axis="nan 0 0"` silently
+  becomes the Z axis (`safe_normalize_axis`, parser/attrs.rs:12-15). An
+  infinite gravity is refused. *(probe: NaN and inf load)*
+- **bug** (2026-10-05): an undefined `class="nope"` loads (only `childclass`
+  is checked, builder/frame.rs:37-58). MuJoCo's root class name `main`
+  resolves to nothing (the root is stored as `""`), so `class="main"`
+  loses the root defaults. Several top-level `<default>` blocks overwrite
+  each other (defaults.rs:754-762, from the source). *(probe: undefined
+  class ignored)*
+- **bug** (2026-10-05): an explicit value that equals the built-in default
+  is overwritten by a class default: `gear="1"` under a class with gear 50
+  gives 50. The source has a `#todo` for it (defaults.rs:345-391); the same
+  applies to kp=1 and sensor noise or cutoff 0. *(probe: explicit value
+  overwritten by class default)*
+- **bug** (2026-10-05): duplicate geom names load and the name map keeps the
+  last (builder/geom.rs:89); the same applies to sites, tendons and sensors.
+  Duplicate bodies, joints and actuators are refused. *(probe: duplicate geom
+  names)*
+- **bug** (2026-10-05): joints inside a `<frame>` are invisible to
+  `validate()`, which walks the tree before `expand_frames`
+  (builder/mod.rs:234 vs 246). An actuator on one fails with "reference to
+  undefined joint: j". *(probe: joint inside <frame> undefined)*
+- **bug** (2026-10-05): `load_model` refuses any string containing
+  `<include`, even inside a comment (builder/mod.rs:367). *(probe: <include in
+  a comment)*
+- **API** (2026-10-05): a mesh with no `name` gets `""`, not its file name
+  (parser/asset.rs:90), so `<geom mesh="base"/>` for `base.stl` fails, and two
+  unnamed meshes clash. From the source; not run (needs a file).
+
+#### Errors
+
+- **API** (2026-10-05): build-stage errors come back as
+  `MjcfError::Unsupported(String)` (builder/mod.rs:374, 411). Two bodies
+  named "a" give `Unsupported("Model validation failed: duplicate body name:
+  a")`, so the typed `DuplicateBody` and `UndefinedJoint` variants can't be
+  matched. A file-read failure is `Unsupported` too, not `Io`. *(probe:
+  errors flattened to Unsupported)*
+- **API** (2026-10-05): errors give no line, element or attribute:
+  `<geom size="0.1 x"/>` reports "XML parse error: invalid float: x".
+  *(probe: errors have no location)*
+- **works** (2026-10-05): unknown joint and geom types, short or
+  non-numeric vectors, duplicate joints, undefined references, a NaN geom
+  size, an inertial mass of 0 and a missing `<mujoco>` all return an error.
+  `MjcfError` implements `Error` and `Display`. The compiler defaults match
+  MuJoCo (angle degree, autolimits on). *(probe: bad input refused)*
+
+#### Docs
+
+- **docs** (2026-10-05): lib.rs:95 shows `<mesh vertex="..."/>` as embedded
+  data, but it needs `face=` too (builder/mesh.rs:412-418): "embedded vertex
+  data requires face data". MuJoCo builds the convex hull from vertices
+  alone. lib.rs:60 lists textures and materials under `<asset>`, which are
+  skipped (parser/asset.rs:39). *(probe: mesh with vertices only)*
+- **docs** (2026-10-05): the smaller ones, from the source:
+  - `condim` 2 or 5 warns and rounds (builder/geom.rs:272).
+  - A later empty `<contact/>` wipes earlier pairs (parser/mod.rs:174-175).
+  - The `.mjb` loader has no size limit on lengths (mjb.rs:276).
+
 ### `sim-thermostat`
 
 `cargo run --release --example gaps_thermostat` re-checks every entry
@@ -468,8 +749,9 @@ crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
 - **docs** (2026-10-04): `Tensor` must come from `sim::ml_chassis`,
   unmentioned in sim-soft.
 - **API** (2026-10-04): gradients are unavailable with friction, F-bar or
-  Tet10. `sim_core::Data` isn't `Clone`, so gradient calls consume the
-  scene.
+  Tet10. `StaggeredCoupling` isn't `Clone`, so each gradient call needs a
+  freshly built scene. (Corrected 2026-10-05: this used to blame
+  `sim_core::Data`, which is `Clone`; see sim-core.)
 - **bug** (2026-10-04): a stray `eprintln` ("faer LU fallback fired...")
   prints from the library.
 
