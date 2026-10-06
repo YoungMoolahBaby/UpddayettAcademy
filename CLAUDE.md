@@ -35,7 +35,7 @@ Read first:
   and `cargo run --release --example probe_soft -- [drop|couple|grad|all]`.
   `examples/probe_therm.rs` holds the proven thermostat setup and the
   QUBO-to-Ising converter that Step 1 reuses.
-- Gap probes for the 0.9.2 release (one per crate): `cargo run --release --example gaps_thermostat` (and `gaps_therm_env`, `gaps_sim_core` for sim-core + sim-mjcf)
+- Gap probes for the 0.9.2 release (one per crate): `cargo run --release --example gaps_thermostat` (and `gaps_therm_env`, `gaps_sim_core` for sim-core + sim-mjcf, `gaps_ml_chassis` for ml-chassis + rl)
   re-checks every probed FINDINGS entry and prints OPEN / FIXED / ok, with the locked crate version.
 - Trade computer (Step 1): `cargo run --release --example trade_cli -- [run|bench|cycles] [--want upd:hub]`;
   library in `src/trade/`, unit tests via `cargo test --release --lib`.

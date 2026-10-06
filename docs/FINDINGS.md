@@ -755,7 +755,299 @@ crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
 - **bug** (2026-10-04): a stray `eprintln` ("faer LU fallback fired...")
   prints from the library.
 
+### `sim-ml-chassis`
+
+`cargo run --release --example gaps_ml_chassis` checks this crate and
+sim-rl in one run (5 s). On 0.9.0: 33 open, 4 fine (both crates). Paths
+are under ml-chassis's `src/` unless noted.
+
+#### SimEnv and VecEnv step differently
+
+- **bug** (2026-10-06): the two envs disagree about `forward()`.
+  `SimEnv::step` calls it after stepping (env.rs:145); `VecEnv::step`
+  doesn't (vec_env.rs:170-249, only reset envs get one, 235). Either way
+  something breaks:
+  - in a VecEnv, sensors and other derived fields (`sensordata`, `xpos`,
+    `site_xpos`, `actuator_force`, energy) describe the state before the
+    last integration: after one step the shoulder sensor reads 0.000000
+    while qpos is 0.002915. SimEnv reads 0.002915 for both. *(probe: VecEnv:
+    sensors one step stale)*
+  - in a SimEnv, the passive callback runs twice per step (20 calls in 10
+    steps against VecEnv's 10), which is the thermostat double draw
+    logged under sim-therm-env. *(probe: SimEnv: passive callback runs
+    twice per step)*
+  - under implicitspringdamper `forward()` itself moves qvel (see sim-core),
+    so after 50 steps the shoulder's qvel is -1.478 in a SimEnv and 2.506
+    in a VecEnv. *(probe: SimEnv and VecEnv differ (implicitspringdamper))*
+
+  The parity test (vec_env.rs:512-554) compares only qpos/qvel under
+  Euler, so it misses all three.
+- **works** (2026-10-06): with Euler and no passive callback, SimEnv and a
+  one-env VecEnv walk the same path bit for bit. *(probe: SimEnv and VecEnv
+  agree (Euler))*
+- **API** (2026-10-06): when done and truncated are both true, `SimEnv`
+  returns both (env.rs:149-150) and `VecEnv` forces truncated to false
+  (vec_env.rs:195-199). *(probe: done and truncated disagree)*
+- **bug** (2026-10-06): SimEnv's early break inside the sub-step loop calls
+  `done_fn` before any `forward()` (env.rs:139), so a done based on
+  `site_xpos` (like the stock reaching tasks) is tested on stale positions
+  there and on fresh ones at 149. From the source; not run.
+- **works** (2026-10-06): a VecEnv truncation keeps the terminal observation
+  and returns the new episode's first one. *(probe: VecEnv keeps the
+  terminal obs)*
+
+#### Divergence
+
+sim-core resets a diverged `Data` inside `step` and returns Ok (see
+sim-core). The envs handle that differently:
+
+- **bug** (2026-10-06): `SimEnv` never checks `divergence_detected()`
+  (env.rs:137-161). A NaN force at t = 0.20 returns Ok with done false, and
+  the time is back to 0.01, so a time-based truncation restarts and the
+  episode can run forever. *(probe: SimEnv hides divergence)*
+- **API** (2026-10-06): `VecEnv` catches it (176-180), but only as a plain
+  `done`: `errors[i]` stays None, though its doc (44-46) says physics
+  failures land there, and the terminal obs is None. With sub-steps,
+  sim-core restarts the episode in the middle of the step, so the reward is
+  from the restarted episode (0.0286 here), not "before auto-reset" as the
+  doc says (30). A learner can't tell a blow-up from success.
+  `Trajectory` has no flag for it either (rollout.rs:20-33). *(probe:
+  VecEnv: divergence is a plain done)*
+- **bug** (2026-10-06): sim-core tests qpos/qvel at the start of a step, so
+  a state the last integration pushed past 1e10 is returned as a normal
+  step first: qpos 1.004e10 with done false, then done on the next step.
+  *(probe: VecEnv: divergence seen one step late)*
+
+#### Spaces and actions
+
+- **bug** (2026-10-06): `SimEnv::step` and `ActionSpace::apply` don't check
+  the action length (env.rs:134, space.rs:750-756): for 2 ctrls, a 1-long
+  action panics ("range end index 2 out of range") and a 5-long one is cut
+  silently. `step` returns a Result and could say so. VecEnv checks the
+  shape (vec_env.rs:153). *(probe: SimEnv: action length unchecked)*
+- **bug** (2026-10-06): `check_flat` only tests `end <= len` (space.rs:550-563),
+  so `qpos(2..1)` builds with dim 0 and then `extract` panics ("slice
+  index starts at 2 but ends at 1", 148). The module doc promises "never
+  runtime panics during extraction" (7-9). The same goes for every range
+  segment. *(probe: reversed obs range builds)*
+- **API** (2026-10-06): overlapping action injectors build: `ctrl(0..2)
+  .ctrl(1..2)` gives dim 3 for 2 ctrls, the last write wins (852-873).
+  *(probe: overlapping action injectors)*
+- **API** (2026-10-06): `mocap_pos` / `mocap_quat` name their argument
+  `body_range` (829-845) but take mocap ids: the mocap body's body id (3)
+  is refused as out of range (nmocap 1). An all-zero quaternion action
+  normalizes to NaN (674-681), and nothing flags it, since sim-core only
+  checks qpos/qvel/qacc. *(probe: mocap injectors)*
+- **docs** (2026-10-06): the `energy()` observation (409-414) reads `[0, 0]`
+  unless the model has `<flag energy="enable"/>`, and its doc doesn't say
+  so. *(probe: energy obs needs the flag)*
+- **docs** (2026-10-06): `TaskConfig::obs_scale`'s doc says "multiply raw
+  observations element-wise by these scales before feeding into a
+  policy" (task.rs:99-103), but `LinearPolicy` and `MlpPolicy` scale
+  internally (linear.rs:71-76, mlp.rs:32-37). Doing what the doc says
+  scales twice. From the source; not run.
+
+#### Tasks and VecEnv construction
+
+- **bug** (2026-10-06): `TaskConfig::from_build_fn` checks nothing
+  (task.rs:155-172): a task that says act_dim 1 with a 1-long obs_scale
+  builds over an env with 2 ctrls and obs dim 4. `VecEnv` has no
+  `observation_space()` / `action_space()` getters, so the caller can't
+  check either. *(probe: from_build_fn unchecked)*
+- **API** (2026-10-06): `TaskConfigBuilder` has no `on_reset` and ignores
+  the seed (task.rs:287-292, "accept-and-ignore"), so builder tasks can't
+  randomize starts and replicates with different seeds run the same
+  episodes. From the source; not run.
+- **API** (2026-10-06): `VecEnv` always uses `BatchSim::new`
+  (vec_env.rs:406), so per-env models (`BatchSim::new_per_env`) aren't
+  reachable. `batch_mut()` would let a user swap the batch, but the env
+  still applies actions and runs reset `forward()` with its own model.
+  From the source; not run.
+- **bug** (2026-10-06): `reset_all` returns at the first `forward()` error
+  (vec_env.rs:276-285), so later envs skip their `on_reset` and `forward`.
+  From the source; not run.
+
+#### Rollouts
+
+- **bug** (2026-10-06): `collect_episodic_rollout` takes act_dim from env
+  0's first action (rollout.rs:108-109). Another env's short action runs
+  and is zero-padded silently (recorded as `[]`); a long one on the last
+  env panics ("index out of bounds: the len is 6 but the index is 6").
+  *(probe: rollout: action length)*
+- **bug** (2026-10-06): a VecEnv of 0 envs builds (vec_env.rs:386-419), and
+  the rollout then panics in `Tensor::row`. `max_steps = 0` still takes a
+  step (rollout.rs:139-158), against its doc (74-75). *(probe: rollout:
+  zero envs, zero steps)*
+- **perf** (2026-10-06): finished envs keep stepping with zero actions and
+  auto-resetting until the slowest env finishes (rollout.rs:164-185). With
+  episodes of 6 and 56 steps, env 0's `on_reset` ran 10 times in one
+  rollout. That wastes physics, burns `on_reset`'s RNG, so one env's
+  starts depend on the others' episode lengths, and CEM's `total_steps`
+  under-reports what ran. *(probe: rollout steps finished envs)*
+
+#### Policies and values
+
+- **bug** (2026-10-06): `MlpPolicy`, `MlpValue`, `MlpQ` (mlp.rs:105, 259-277,
+  383-403) and `AutogradPolicy::new` (autograd/policy.rs:117-177) start at
+  all zeros. tanh(0) is 0, so the hidden layer never gets a gradient: only
+  the output bias learns, forever. `MlpPolicy`'s `log_prob_gradient` is
+  nonzero in 1 of 41 entries, `AutogradPolicy` too, and `MlpQ`'s
+  `action_gradient` is `[0.0]`, so a TD3/SAC actor gets nothing. This is
+  the documented recipe for PPO and TD3 (sim-rl ppo.rs:67, td3.rs:75-76,
+  algorithm.rs:69). `AutogradPolicy::new_xavier` exists; the Mlp types
+  have no init option and no warning. CEM is unaffected (its noise breaks
+  the symmetry). *(probe: Mlp starts at zero)*
+- **bug** (2026-10-06): the linear policies zip the observation with
+  `obs_scale` (linear.rs:71-76), so a wrong length is silent: at obs_dim 2,
+  `forward([1])` and `forward([1, 0, 9])` both give tanh(1). `LinearQ`
+  (and `MlpQ`) join obs and action before the weights (linear.rs:292-296,
+  mlp.rs:407-411), so a short obs shifts the action into an obs weight:
+  Q([1], [1]) is 3 where Q([1, 0], [1]) is 4. *(probe: LinearPolicy: obs
+  length; LinearQ: obs and action misaligned)*
+- **bug** (2026-10-06): the default `forward_batch` (policy.rs:59-67) drops a
+  trailing partial row: 5 floats at obs_dim 2 give 2 outputs, and obs_dim 0
+  divides by zero. *(probe: forward_batch drops a partial row)*
+- **bug** (2026-10-06): `log_prob_gradient` with sigma 0 returns `[inf, inf,
+  inf]` (linear.rs:128-133, mlp.rs:213-217). *(probe: sigma 0 gradient)*
+
+#### Autograd, optimizer, replay buffer
+
+- **bug** (2026-10-06): a second `Tape::backward` re-propagates the
+  intermediate cotangents (autograd/tape.rs:748-790), so for b = 6x the
+  gradient goes 6, then 18. The doc says the second call accumulates,
+  which would give 12. *(probe: Tape: second backward)*
+- **bug** (2026-10-06): Adam takes any settings (optimizer.rs:216-244). A
+  negative `max_grad_norm` reverses the step (+0.1 becomes -0.1), 0 freezes
+  it, and beta1 = 1 gives NaN. A NaN gradient skips clipping. *(probe:
+  Adam settings unchecked)*
+- **docs** (2026-10-06): `Optimizer::params()` says "after the most recent
+  step" (optimizer.rs:56) but stays at its initial zeros under
+  `step_in_place`, which every algorithm uses. `load_snapshot` ignores the
+  snapshot's config (lr comes from the new one) and checks only the `m`
+  length; a wrong `v` length panics in `copy_from_slice` (321-330). From
+  the source; not run.
+- **bug** (2026-10-06): `ReplayBuffer::new(0, ..)` builds and the first push
+  panics ("range end index 2 out of range", replay_buffer.rs:103-110).
+  *(probe: ReplayBuffer capacity 0)*
+
+#### Artifacts, checkpoints, competition
+
+- **bug** (2026-10-06): `TrainingCheckpoint::save` doesn't validate,
+  though its doc says it errors on non-finite values (artifact.rs:623-634).
+  serde_json writes NaN as `null`, so a checkpoint saved with a NaN
+  `noise_std` saves Ok and won't load ("invalid type: null, expected f64").
+  `PolicyArtifact::validate` checks `metrics[i].mean_reward` but not
+  `extra`, so a NaN there does the same. The comment at best_tracker.rs:90
+  ("serde_json rejects non-finite") is wrong. *(probe: checkpoint: NaN
+  round trip)*
+- **API** (2026-10-06): a custom `impl Policy` trains with CEM but can't be
+  saved: `NetworkKind` (artifact.rs:47-54) is Linear, Mlp or Autograd, so
+  `save` / `to_policy` fail or rebuild the wrong type. From the source;
+  not run.
+- **bug** (2026-10-06): `CompetitionResult::save_artifacts` names files
+  `{task}_{algorithm}` (competition.rs:124-137), ignoring
+  `replicate_index`, so with several seeds only the last replicate's files
+  survive. `RunResult::best_reward` uses `max_by` with an `Equal` fallback
+  (49-54): `[1, NaN]` gives NaN, `[NaN, 1]` gives 1, and ties pick the last,
+  unlike the provenance's best (strict `>`, 692-707). The provenance
+  `hyperparams` is always empty, and with 0 epochs `final_reward` is 0
+  (711-719). From the source; not run.
+
 ### `sim-rl`
+
+Checked by the same probe, `gaps_ml_chassis`. Paths are under sim-rl's
+`src/`.
+
+#### CEM's real job: a wash program
+
+- **works** (2026-10-06): CEM learns a real wash program. One sock sits in
+  a tilted double well (barrier 3, tilt 0.5), starting in the shallow
+  well. A `LinearPolicy` on `[x, v]` sets the drum temperature (0 to 3 kT)
+  through sim-therm-env's ctrl temperature, and the reward is time in the
+  deep well minus heat used. In 25 epochs of 32 socks (0.8 s) it finds
+  temp = tanh(-2.44 x - 0.09): heat while the sock is in the shallow well,
+  cool once it's out. That scores 50.8 of 100, against 0 for cold, 20.6
+  for always hot and 24.3 for the best constant. The chassis pieces
+  (therm-env `build_vec`, `LinearPolicy`, `collect_episodic_rollout`)
+  fit together without glue. *(probe: CEM learns a wash program)*
+- **works** (2026-10-06): the same seed on a deterministic task replays bit
+  for bit. *(probe: CEM: same seed replays)*
+
+#### CEM
+
+- **bug** (2026-10-06): CEM ranks elites by reward per step (cem.rs:172-180)
+  but reports reward per episode (208-213), and the docs don't say so.
+  When episodes end early, it optimizes the wrong thing. With +1 per step
+  alive, every episode ties at 1.0, so the stable sort picks elites by env
+  index and CEM can't learn to survive: 4 of 8 seeds end with every cart
+  alive, the others at 133-269 of 300. *(probe: CEM: per-step fitness)*
+- **bug** (2026-10-06): `best_artifact` stores the elite mean after the
+  update (200), scored with the reward of the population around the old
+  mean. Those parameters were never rolled out: after 1 epoch of the wash
+  job, `best_reward` is 17.8 (epoch 0's mean) for parameters that score
+  45.9. REINFORCE, PPO, TD3 and SAC also snapshot after the update. There's
+  no way to get the best single candidate. *(probe: CEM: best never
+  evaluated)*
+- **bug** (2026-10-06): `n_elites` isn't capped at the population (142), so
+  elite_fraction 1.5 with 4 envs panics ("range end index 6 out of
+  range"). *(probe: CEM: elite_fraction > 1)*
+- **bug** (2026-10-06): nothing else is checked either. elite_fraction 0 or
+  NaN silently becomes one elite (`NaN as usize` is 0), and `n_envs = 1`
+  or elite_fraction 1 makes the update a random walk. A NaN noise_std
+  trains on with NaN parameters, and the episodes still return finite
+  rewards because sim-core resets the NaN state (-259 here). noise_min >
+  noise_std or noise_decay > 1 make the noise grow. *(probe: CEM:
+  hyperparameters unchecked)*
+- **bug** (2026-10-06): a NaN reward compares equal to everything in the
+  elite sort (183), so it can be picked: every epoch's mean_reward is NaN,
+  `BestTracker` skips NaN (ml-chassis best_tracker.rs:49-52), and
+  `best_reward` stays None, so `best_artifact` is the initial parameters.
+  No error. (It didn't panic at 32 envs.) *(probe: CEM: NaN reward)*
+- **bug** (2026-10-06): `TrainingBudget::Steps(s)` becomes `s / (n_envs *
+  max_episode_steps)` epochs (138, same in every algorithm). With 10 envs
+  and 300 max steps, `Steps(2999)` trains 0 epochs silently, and
+  `Steps(3000)` runs one that uses 1000 steps because episodes end early.
+  *(probe: CEM: Steps budget)*
+- **docs** (2026-10-06): the `noise_std` in an epoch's metrics is the
+  decayed value for the next epoch (219-222): epoch 0 ran at 0.3 and
+  reports 0.270. *(probe: CEM: noise_std metric)*
+- **API** (2026-10-06): `from_checkpoint` doesn't check `algorithm_name`
+  (90-112, every algorithm): a checkpoint named PPO loads into `Cem`.
+  Each `train()` numbers epochs from 0, so `best_epoch` is ambiguous after
+  a resume. *(probe: from_checkpoint ignores the name)*
+- **docs** (2026-10-06): this is not textbook CEM (1-6, 154-156): the noise
+  is a fixed isotropic schedule on the raw parameters and is never refit
+  from the elites, and the old mean isn't kept, so the mean can get worse.
+  Parameters in different units need hand scaling, and the docs don't
+  say so. From the source; not run.
+- **docs** (2026-10-06): the constructor examples write `CemHyperparams {
+  elite_fraction: 0.2, noise_std: 0.3, .. }` (53-57; reinforce.rs:55-60,
+  ppo.rs:65-71, ml-chassis algorithm.rs:66-76). That isn't valid Rust, and
+  no `*Hyperparams` has a `Default`. They're marked `ignore`, so the
+  compiler never caught it. From the source; not run.
+
+#### TD3, SAC, PPO
+
+From the source; not run (the probe exercises only CEM's training loop).
+
+- **bug** (2026-10-06): TD3/SAC with `warmup_steps > buffer_capacity` never
+  train: `buffer.len()` stops at the capacity, so actions stay random and
+  no update runs (td3.rs:285, 359; sac.rs:288, 352). Warmup counts
+  transitions (n_envs per step), not steps as the docs say. The buffer is
+  local to `train()`, so it's lost between calls and missing from
+  checkpoints.
+- **bug** (2026-10-06): TD3 `policy_delay: 0` never updates the actor or
+  the targets (`is_multiple_of(0)` is false, td3.rs:434). PPO `k_passes: 0`
+  never updates and reports `value_loss` 0/0 = NaN (ppo.rs:424).
+- **bug** (2026-10-06): SAC clamps actions to [-1, 1] after sampling, but
+  `log_prob` and the reparameterized gradient use the unclamped Gaussian
+  (sac.rs:291, 300, 369, 446-463), so the gradient is wrong at the bounds.
+  TD3/SAC hard-code [-1, 1] instead of reading the `ActionSpace`.
+- **docs** (2026-10-06): a checkpoint missing its critic gives
+  `ParamCountMismatch { expected: 1, actual: 0 }` (ppo.rs:127-131,
+  td3.rs:162-166, sac.rs:163-167), not a "missing critic" error.
+
+#### Earlier
 
 - **perf** (2026-10-04): the `Policy` / `DifferentiablePolicy` / `ValueFn`
   traits are a clean seam, but PPO calls per-sample `forward` /

@@ -11,8 +11,8 @@ deferred to a later voice-and-music step.
 Now: **the 0.9.2 gap hunt** (CortenForge 0.9.2 will fix what FINDINGS lists,
 and every crate moves to 0.9.2). One probe per crate we use, in
 `examples/gaps_<crate>.rs`, one check per FINDINGS entry. Done:
-sim-thermostat (26 open), sim-therm-env (10 open), sim-core + sim-mjcf (27 open). Next:
-sim-ml-chassis + sim-rl, sim-soft + sim-coupling. After that: 3.4 the
+sim-thermostat (26 open), sim-therm-env (10 open), sim-core + sim-mjcf (27 open),
+sim-ml-chassis + sim-rl (33 open; CEM learned a wash program). Next: sim-soft + sim-coupling. After that: 3.4 the
 escrow counter, then 3.5 polish.
 
 ## Step 1 result
