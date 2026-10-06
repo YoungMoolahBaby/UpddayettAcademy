@@ -34,6 +34,7 @@ impl Plugin for GamePlugin {
                     sim::step_sim,
                     (
                         scene::shake_washer,
+                        scene::run_row,
                         drum::update,
                         scene::bend_strips,
                         scene::update_leds,

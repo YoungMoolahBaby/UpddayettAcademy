@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
 use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, salties, world};
+use cortenforge_play::trade::row::{Row, RowSpin};
 use cortenforge_play::trade::smart::{self, SmartWash};
 
 /// What the drum is doing.
@@ -79,6 +80,12 @@ pub struct Laundromat {
     pub drum_mem: smart::Memory,
     /// The drum setting (kT) when the breaker tripped this cycle.
     pub stopped_kt: Option<f64>,
+    /// The row program: the back-row washers (warmer, in ladder order; ours
+    /// is the coolest) and the swaps between them, this cycle or the last.
+    pub row: Vec<Machine>,
+    pub row_spin: Option<RowSpin>,
+    /// Sim time each washer last traded loads, ours first.
+    pub swapped_at: Vec<f64>,
 }
 
 /// One scope sample: sim time, the drum's kT, every strip's deflection.
@@ -102,14 +109,20 @@ pub struct WashProgram {
     /// The smart wash: the learned program sets the drum from the board
     /// ([`smart::SmartWash`]) instead of the clock.
     pub smart: bool,
+    /// A row of washers trading loads (parallel tempering, [`Row`]): ours is
+    /// the coolest, and three of the back row run warmer.
+    pub row: bool,
 }
 
-pub const PROGRAMS: [WashProgram; 5] = [
-    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%", smart: false },
-    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%", smart: false },
-    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%", smart: false },
-    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%", smart: false },
-    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%", smart: true },
+pub const PROGRAMS: [WashProgram; 6] = [
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%", smart: false, row: false },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%", smart: false, row: false },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%", smart: false, row: false },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%", smart: false, row: false },
+    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%", smart: true, row: false },
+    // Four washers sharing one Normal cycle's electricity: (1000 + 20) / 4 - 20
+    // units each ([`Row::equal_compute`]).
+    WashProgram { name: "Row of 4 washers", duration: 235.0, watch_secs: 20.0, i9_rate: "96%", smart: false, row: true },
 ];
 
 /// Upddayett, in any night's cast.
@@ -185,6 +198,9 @@ impl Laundromat {
             drum: (0.0, 0.0),
             drum_mem: smart::Memory::default(),
             stopped_kt: None,
+            row: vec![],
+            row_spin: None,
+            swapped_at: vec![],
             tc,
             machine,
             physics,
@@ -470,6 +486,8 @@ impl Laundromat {
     pub fn new_load(&mut self) {
         self.seed += 1;
         self.machine = self.board(self.seed);
+        self.row.clear();
+        self.row_spin = None;
         self.cut_at = None;
         self.latch = Latch::new();
         self.settled = None;
@@ -550,8 +568,20 @@ impl Laundromat {
         self.drum = (0.0, 0.0);
         self.drum_mem = smart::Memory::default();
         self.stopped_kt = None;
+        if p.row {
+            // Three more boards of tonight's laundry, each its own load and
+            // shaking (seeded as in `trade_cli rowmatch`).
+            let row = Row::default();
+            self.row = (1..row.washers).map(|k| self.board(self.seed.wrapping_add(k as u64 * 104_729))).collect();
+            let mut washers: Vec<&mut Machine> = std::iter::once(&mut self.machine).chain(self.row.iter_mut()).collect();
+            self.row_spin = Some(RowSpin::new(&row, &mut washers, self.seed));
+            self.swapped_at = vec![f64::NEG_INFINITY; row.washers];
+        }
         let how = if p.smart {
             format!("learned program, params {:?}", self.smart.params())
+        } else if let Some(spin) = &self.row_spin {
+            let ladder: Vec<String> = (0..=self.row.len()).map(|i| format!("{:.2}", spin.setting(i))).collect();
+            format!("{} washers at kT x[{}], trading loads every unit,", self.row.len() + 1, ladder.join(", "))
         } else {
             format!("kT x{} -> x{}", self.anneal.hot, self.anneal.cold)
         };
@@ -622,6 +652,14 @@ impl Laundromat {
             mask(self.ground),
             if self.tc.is_optimal(self.latch.best_bits) { "BEST" } else { "missed" }
         );
+        if let Some(spin) = &self.row_spin {
+            let rates: Vec<String> = (0..spin.stats.offers.len()).map(|i| format!("{:.0}%", 100.0 * spin.stats.rate(i))).collect();
+            info!(
+                "  the row: swaps accepted [{}] between neighbors, {} loads carried from the hottest washer down to ours",
+                rates.join(" "),
+                spin.stats.trips
+            );
+        }
         for line in self.counter_lines() {
             info!("  {line}");
         }
@@ -672,6 +710,8 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
         lm.scope = None;
     }
     for _ in 0..steps {
+        // The row program steps every washer itself.
+        let mut stepped = false;
         match lm.mode {
             Mode::Manual => lm.machine.set_temperature(lm.dial),
             Mode::Done => lm.machine.set_temperature(0.0),
@@ -684,13 +724,40 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
                     lm.log_result();
                     continue;
                 }
-                let kt = if PROGRAMS[lm.program].smart { lm.smart_drum(t) } else { lm.anneal.temperature(t) };
-                lm.machine.set_temperature(kt);
+                if let Some(spin) = lm.row_spin.as_mut() {
+                    // Every washer on its rung, trading loads, until the
+                    // drums stop (or the breaker trips); then all settle.
+                    let mut washers: Vec<&mut Machine> = std::iter::once(&mut lm.machine).chain(lm.row.iter_mut()).collect();
+                    let swapped = if t < lm.anneal.stop_time() {
+                        spin.step(&lm.tc.ising, &mut washers).expect("row step")
+                    } else {
+                        for m in washers.iter_mut() {
+                            m.set_temperature(0.0);
+                            m.step().expect("sim step");
+                        }
+                        vec![]
+                    };
+                    let now = lm.machine.time();
+                    for i in swapped {
+                        lm.swapped_at[i] = now;
+                        lm.swapped_at[i + 1] = now;
+                    }
+                    stepped = true;
+                } else {
+                    let kt = if PROGRAMS[lm.program].smart { lm.smart_drum(t) } else { lm.anneal.temperature(t) };
+                    lm.machine.set_temperature(kt);
+                }
             }
         }
-        lm.machine.step().expect("sim step");
+        if !stepped {
+            lm.machine.step().expect("sim step");
+        }
         if matches!(lm.mode, Mode::Cycle { .. }) && ((lm.machine.time() / dt).round() as u64).is_multiple_of(sample_steps) {
+            // The i9 reads every washer in the row.
             lm.latch.observe(&lm.machine, &lm.tc.problem.qubo);
+            for m in &lm.row {
+                lm.latch.observe(m, &lm.tc.problem.qubo);
+            }
             lm.spin_check.observe(&lm.machine, &lm.tc.ising);
         }
         if ((lm.machine.time() / dt).round() as u64).is_multiple_of(trace_steps) {

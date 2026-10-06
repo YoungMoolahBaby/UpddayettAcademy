@@ -13,7 +13,7 @@
 //! on [`Machine`]s.
 
 use super::machine::{Anneal, Error, Machine, Physics};
-use super::{Latch, TradeComputer};
+use super::{Ising, Latch, TradeComputer};
 
 /// A row of washers.
 #[derive(Clone, Copy, Debug)]
@@ -108,6 +108,89 @@ impl Coin {
     }
 }
 
+/// A row of washers in motion: the ladder, the swap coin, and where the
+/// loads are. [`TradeComputer::spin_row`] runs one to the end; the game
+/// steps one a frame at a time.
+pub struct RowSpin {
+    /// Each washer's drum setting (multiplier) and kT.
+    ladder: Vec<f64>,
+    kt: Vec<f64>,
+    swap_steps: usize,
+    steps: usize,
+    coin: Coin,
+    round: usize,
+    pub stats: RowStats,
+    /// Which load each washer holds (loads keep their number as they move).
+    pub load: Vec<usize>,
+    /// Whether each load last touched the hot end (for counting trips).
+    from_hot: Vec<bool>,
+}
+
+impl RowSpin {
+    /// Sets every washer's drum to its rung of the ladder (coldest first).
+    pub fn new(row: &Row, washers: &mut [&mut Machine], seed: u64) -> Self {
+        let k = washers.len();
+        assert_eq!(k, row.washers, "one machine per washer");
+        let ladder = row.ladder();
+        let kt: Vec<f64> = ladder.iter().map(|t| t * washers[0].physics.k_b_t).collect();
+        for (m, &t) in washers.iter_mut().zip(&ladder) {
+            m.set_temperature(t);
+        }
+        let dt = washers[0].physics.dt;
+        let swap_steps = if row.swap.is_finite() { ((row.swap / dt).round() as usize).max(1) } else { usize::MAX };
+        Self {
+            ladder,
+            kt,
+            swap_steps,
+            steps: 0,
+            coin: Coin::new(seed),
+            round: 0,
+            stats: RowStats { offers: vec![0; k.saturating_sub(1)], accepts: vec![0; k.saturating_sub(1)], trips: 0 },
+            load: (0..k).collect(),
+            from_hot: vec![false; k],
+        }
+    }
+
+    /// Washer `i`'s drum setting.
+    pub fn setting(&self, i: usize) -> f64 {
+        self.ladder[i]
+    }
+
+    /// One sim step of every washer, then (when due) a round of swap
+    /// offers, even pairs and odd pairs in turn. Returns the pairs that
+    /// traded loads this step.
+    pub fn step(&mut self, ising: &Ising, washers: &mut [&mut Machine]) -> Result<Vec<usize>, Error> {
+        let k = washers.len();
+        for m in washers.iter_mut() {
+            m.step()?;
+        }
+        self.steps += 1;
+        let mut swapped = vec![];
+        if self.steps % self.swap_steps == 0 && k > 1 {
+            for i in (self.round % 2..k - 1).step_by(2) {
+                self.stats.offers[i] += 1;
+                let (ui, uj) = (washers[i].potential(ising), washers[i + 1].potential(ising));
+                let arg = (1.0 / self.kt[i] - 1.0 / self.kt[i + 1]) * (ui - uj);
+                if arg >= 0.0 || self.coin.uniform() < arg.exp() {
+                    let (a, b) = washers.split_at_mut(i + 1);
+                    // Each drum keeps its setting: only the loads move.
+                    Machine::swap_loads(a[i], b[0])?;
+                    self.load.swap(i, i + 1);
+                    self.stats.accepts[i] += 1;
+                    swapped.push(i);
+                }
+            }
+            self.round += 1;
+            self.from_hot[self.load[k - 1]] = true;
+            if self.from_hot[self.load[0]] {
+                self.from_hot[self.load[0]] = false;
+                self.stats.trips += 1;
+            }
+        }
+        Ok(swapped)
+    }
+}
+
 impl TradeComputer {
     /// The row's washers, fresh from the laundry basket (each its own seed).
     pub fn row_machines(&self, row: &Row, physics: Physics, seed: u64) -> Result<Vec<Machine>, Error> {
@@ -127,51 +210,14 @@ impl TradeComputer {
         every: f64,
         mut tick: impl FnMut(&[Machine], &Latch),
     ) -> Result<(Latch, RowStats), Error> {
-        let k = washers.len();
-        assert_eq!(k, row.washers, "one machine per washer");
-        let ladder = row.ladder();
-        let kt: Vec<f64> = ladder.iter().map(|t| t * washers[0].physics.k_b_t).collect();
-        for (m, &t) in washers.iter_mut().zip(&ladder) {
-            m.set_temperature(t);
-        }
         let dt = washers[0].physics.dt;
         let every_steps = |t: f64| if t.is_finite() { ((t / dt).round() as usize).max(1) } else { usize::MAX };
-        let (sample_steps, tick_steps, swap_steps) = (every_steps(sample), every_steps(every), every_steps(row.swap));
+        let (sample_steps, tick_steps) = (every_steps(sample), every_steps(every));
         let steps = (row.duration / dt).round() as usize;
-        let mut coin = Coin::new(seed);
-        let mut stats = RowStats { offers: vec![0; k.saturating_sub(1)], accepts: vec![0; k.saturating_sub(1)], trips: 0 };
-        // Which load each washer holds (loads keep their number as they
-        // move), and whether that load last touched the hot end.
-        let mut load: Vec<usize> = (0..k).collect();
-        let mut from_hot = vec![false; k];
+        let mut spin = RowSpin::new(row, &mut washers.iter_mut().collect::<Vec<_>>(), seed);
         let mut latch = Latch::new();
-        let mut round = 0usize;
         for s in 1..=steps {
-            for m in washers.iter_mut() {
-                m.step()?;
-            }
-            if s % swap_steps == 0 && k > 1 {
-                // Even pairs, then odd pairs, in turn.
-                for i in (round % 2..k - 1).step_by(2) {
-                    stats.offers[i] += 1;
-                    let (ui, uj) = (washers[i].potential(&self.ising), washers[i + 1].potential(&self.ising));
-                    let arg = (1.0 / kt[i] - 1.0 / kt[i + 1]) * (ui - uj);
-                    if arg >= 0.0 || coin.uniform() < arg.exp() {
-                        let (a, b) = washers.split_at_mut(i + 1);
-                        Machine::swap_loads(&mut a[i], &mut b[0])?;
-                        // set_temperature is per washer, and swap_loads kept
-                        // each drum's setting: only the loads moved.
-                        load.swap(i, i + 1);
-                        stats.accepts[i] += 1;
-                    }
-                }
-                round += 1;
-                from_hot[load[k - 1]] = true;
-                if from_hot[load[0]] {
-                    from_hot[load[0]] = false;
-                    stats.trips += 1;
-                }
-            }
+            spin.step(&self.ising, &mut washers.iter_mut().collect::<Vec<_>>())?;
             if s % sample_steps == 0 {
                 for m in washers.iter() {
                     latch.observe(m, &self.problem.qubo);
@@ -186,7 +232,7 @@ impl TradeComputer {
             latch.observe(m, &self.problem.qubo);
         }
         latch.final_bits = washers[0].bits();
-        Ok((latch, stats))
+        Ok((latch, spin.stats))
     }
 }
 

@@ -240,10 +240,21 @@ pub fn panels(
                         let label = match (lm.power_out(), lm.battery) {
                             (true, false) => "POWER CUT: the drum stopped",
                             (true, true) => "power cut: running on the battery",
+                            _ if p < 0.98 && lm.row_spin.is_some() => "the row trades loads...",
                             _ if p < 0.98 => "spinning down...",
                             _ => "drum stopping",
                         };
                         ui.add(egui::ProgressBar::new(p).text(label));
+                        if let Some(spin) = &lm.row_spin {
+                            let ladder: Vec<String> = (0..=lm.row.len()).map(|i| format!("{:.1}", spin.setting(i) * lm.physics.k_b_t)).collect();
+                            ui.small(format!(
+                                "Row: ours {} kT, the back row warmer. Loads traded {}, {} carried down from the hottest.",
+                                ladder.join(" / "),
+                                spin.stats.accepts.iter().sum::<usize>(),
+                                spin.stats.trips
+                            ))
+                            .on_hover_text("Parallel tempering: every unit, neighbors offer to swap loads, and the swap is taken by the Boltzmann odds of each load's energy at the other drum's heat. A load stuck in a bad set rides up the row, gets shaken loose, and comes back down. The i9 reads every washer and keeps the best set any of them shows.");
+                        }
                     }
                     Mode::Done => {
                         ui.add(egui::ProgressBar::new(1.0).text("cycle done"));
@@ -272,7 +283,11 @@ pub fn panels(
                     ui.label("Program (how slowly the drum cools):");
                     egui::Grid::new("programs").num_columns(2).spacing([10.0, 2.0]).show(ui, |ui| {
                         for (k, p) in PROGRAMS.iter().enumerate() {
-                            let detail = format!("{:>4.0} units, i9 best {}", p.duration, p.i9_rate);
+                            let detail = if p.row {
+                                format!("4 x {:.0} units, i9 best {}", p.duration, p.i9_rate)
+                            } else {
+                                format!("{:>4.0} units, i9 best {}", p.duration, p.i9_rate)
+                            };
                             if small {
                                 ui.radio_value(&mut lm.program, k, p.name).on_hover_text(detail);
                             } else {

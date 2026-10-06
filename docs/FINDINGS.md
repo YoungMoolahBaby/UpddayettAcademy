@@ -568,6 +568,27 @@ from reading the source (file:line) and can't be checked at run time
 - **API** (2026-10-05): a component can't report its force at a given
   `qpos` without a `Model` and `Data`, so a force-balance check means
   re-deriving each force from its formula (double_well.rs:208). See Step 3.
+- **perf** (2026-10-06, an estimate; user asked whether a GPU would be
+  better): the evaluation runs (`rematch`, `rowmatch`, CEM training, the
+  row of washers) are ensembles: thousands of copies of one ~20-strip
+  board with the same wiring and different noise. The rematch's wall time
+  (8,640 spins of ~102k steps in 17 min on 12 threads) puts one board step
+  at ~14 us. The physics in it is well under 1 us: ~20 wells, ~50-150
+  springs and ~20 noise draws. So the cost is presumably sim-core's
+  general pipeline on a model with no contacts or constraints (not
+  profiled). In order of payoff for cost:
+  1. A fast path for passive-only models, and batched stepping of many
+     copies (laid out for SIMD), likely ~10x on the CPU with no precision
+     change.
+  2. A GPU ensemble path: one board per thread, shared couplings,
+     lockstep. The counter-based noise (keyed by trajectory and step) is
+     already GPU-friendly by design. Plausibly 50-100x+ for runs like the
+     ~55-minute rowmatch.
+  The catch is f64: GeForce cards run it at 1/64 of their f32 rate, so a
+  GPU path wants f32 Langevin, validated against the statistics the crate
+  already tests (equipartition, Kramers rates). It won't help a single
+  interactive board (the game steps one per frame) or contact-heavy
+  models like the drum tumbler.
 - **API** (2026-10-06): `PassiveComponent` has `apply` but no energy
   (component.rs:61-64), so a stack can't report its total potential.
   Replica exchange needs U(x) at every swap (Step 6, the row of washers),

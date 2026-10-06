@@ -33,6 +33,28 @@ pub const ARROW_Y: f32 = 2.15;
 #[derive(Component)]
 pub struct WasherRoot;
 
+/// A back-row machine that runs in the row program: washer `washer` of the
+/// row (ours is 0, the coolest).
+#[derive(Component)]
+pub struct RowWasher {
+    washer: usize,
+    base: Vec3,
+}
+
+/// The tag light on washer `.0` of the row, in the color of the load it holds.
+#[derive(Component)]
+pub struct LoadTag(usize);
+
+/// One glowing material per load, in [`LOAD_COLORS`] order.
+#[derive(Resource)]
+pub struct LoadMats(Vec<Handle<StandardMaterial>>);
+
+const LOAD_COLORS: [LinearRgba; 4] =
+    [LinearRgba::rgb(0.2, 3.0, 0.6), LinearRgba::rgb(3.0, 1.6, 0.1), LinearRgba::rgb(0.4, 0.9, 4.0), LinearRgba::rgb(3.0, 0.3, 2.4)];
+
+/// A tag's spot on a washer's front, top right, from the cabinet's center.
+const TAG_AT: Vec3 = Vec3::new(0.5, 0.66, WASHER.z / 2.0 + 0.04);
+
 #[derive(Component)]
 pub struct StripSegment {
     bit: usize,
@@ -161,13 +183,28 @@ pub fn setup(
     let body = meshes.add(Cuboid::from_size(WASHER));
     let ring = meshes.add(Torus::new(0.36, 0.46));
     let pane = meshes.add(Cylinder::new(0.37, 0.02));
+    // The middle three come back to life for the row program (Step 6): they
+    // run warmer than ours and trade loads with it. Each machine in the row
+    // wears a tag light in its load's color, so the loads can be seen moving.
+    let tag = meshes.add(Sphere::new(0.11));
+    let load_mats: Vec<_> = LOAD_COLORS.iter().map(|&c| glow(&mut mats, c)).collect();
+    commands.insert_resource(LoadMats(load_mats.clone()));
     for k in 0..7 {
         let x = -5.4 + k as f32 * 1.8;
         let base = Vec3::new(x, WASHER.y / 2.0, -5.2);
-        commands.spawn((Mesh3d(body.clone()), MeshMaterial3d(enamel.clone()), Transform::from_translation(base)));
-        let door = base + Vec3::new(0.0, -0.1, WASHER.z / 2.0 + 0.01);
-        commands.spawn((Mesh3d(ring.clone()), MeshMaterial3d(chrome.clone()), Transform::from_translation(door).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
-        commands.spawn((Mesh3d(pane.clone()), MeshMaterial3d(glass.clone()), Transform::from_translation(door).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
+        let door = Vec3::new(0.0, -0.1, WASHER.z / 2.0 + 0.01);
+        let mut e = commands.spawn((Transform::from_translation(base), Visibility::default()));
+        if (2..=4).contains(&k) {
+            e.insert(RowWasher { washer: k - 1, base });
+        }
+        e.with_children(|p| {
+            p.spawn((Mesh3d(body.clone()), MeshMaterial3d(enamel.clone()), Transform::default()));
+            p.spawn((Mesh3d(ring.clone()), MeshMaterial3d(chrome.clone()), Transform::from_translation(door).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
+            p.spawn((Mesh3d(pane.clone()), MeshMaterial3d(glass.clone()), Transform::from_translation(door).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
+            if (2..=4).contains(&k) {
+                p.spawn((LoadTag(k - 1), Mesh3d(tag.clone()), MeshMaterial3d(load_mats[k - 1].clone()), Transform::from_translation(TAG_AT), Visibility::Hidden));
+            }
+        });
     }
 
     // Fluorescent tubes with rect lights under them.
@@ -203,6 +240,8 @@ pub fn setup(
         // The cabinet is cf-design CSG too: a box with the drum's cavity behind the door.
         p.spawn((Mesh3d(meshes.add(super::drum::cabinet_mesh(WASHER, door_at))), MeshMaterial3d(paint), Transform::default()));
         p.spawn((Mesh3d(ring.clone()), MeshMaterial3d(chrome.clone()), Transform::from_translation(door_at).with_rotation(Quat::from_rotation_x(FRAC_PI_2))));
+        // Our tag in the row program (the root sits on the floor).
+        p.spawn((LoadTag(0), Mesh3d(tag.clone()), MeshMaterial3d(load_mats[0].clone()), Transform::from_translation(TAG_AT + Vec3::Y * WASHER.y / 2.0), Visibility::Hidden));
         // Clearer glass than the dead machines': the drum tumbles behind it.
         let clear = mats.add(StandardMaterial {
             base_color: Color::srgba(0.75, 0.85, 0.9, 0.18),
@@ -408,6 +447,38 @@ pub fn shake_washer(
         amp * (t * 47.0 + 1.0).sin() * (t * 5.1).sin(),
     );
     root.rotation = Quat::from_rotation_y(amp * 0.6 * (t * 53.0).sin());
+}
+
+/// The row program: the back-row washers rattle by their drum settings, and
+/// every tag shows the load its washer holds, swelling when a trade lands.
+pub fn run_row(
+    time: Res<Time>,
+    lm: Res<Laundromat>,
+    load_mats: Res<LoadMats>,
+    mut washers: Query<(&RowWasher, &mut Transform)>,
+    mut tags: Query<(&LoadTag, &mut MeshMaterial3d<StandardMaterial>, &mut Transform, &mut Visibility), Without<RowWasher>>,
+) {
+    let t = time.elapsed_secs();
+    let spinning = matches!(lm.mode, Mode::Cycle { .. });
+    for (w, mut tf) in &mut washers {
+        let temp = if spinning { lm.row.get(w.washer - 1).map_or(0.0, |m| m.temperature() as f32) } else { 0.0 };
+        let amp = 0.006 * temp.sqrt();
+        let ph = w.washer as f32 * 1.7;
+        tf.translation = w.base + Vec3::new(amp * (t * 59.0 + ph).sin(), 0.5 * amp * (t * 79.0 + ph).sin(), amp * (t * 43.0 + ph).sin());
+    }
+    let now = lm.machine.time();
+    for (tag, mut mat, mut tf, mut vis) in &mut tags {
+        let Some(spin) = &lm.row_spin else {
+            *vis = Visibility::Hidden;
+            continue;
+        };
+        *vis = Visibility::Inherited;
+        let load = spin.load.get(tag.0).copied().unwrap_or(tag.0);
+        mat.0 = load_mats.0[load % load_mats.0.len()].clone();
+        // A trade lands: the tag swells for a couple of time units.
+        let since = now - lm.swapped_at.get(tag.0).copied().unwrap_or(f64::NEG_INFINITY);
+        tf.scale = Vec3::splat(1.0 + 0.8 * (-(since.max(0.0) as f32) / 2.0).exp());
+    }
 }
 
 /// Bend every strip into the arch its CortenForge particle says it has.
