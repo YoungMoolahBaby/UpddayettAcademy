@@ -34,36 +34,51 @@ pub struct Beat {
     pub paint: fn(&Stage, f32),
 }
 
+/// How long every shot holds, against its written length. The impacts (slams,
+/// flashes) stay quick; the holds stretch so every line can be read.
+pub const PACE: f32 = 1.8;
+
+impl Beat {
+    /// Seconds this beat stays on screen.
+    pub fn hold(&self) -> f32 {
+        self.secs * PACE
+    }
+}
+
 pub struct Ad {
     pub beats: &'static [Beat],
 }
 
 impl Ad {
     pub fn secs(&self) -> f32 {
-        self.beats.iter().map(|b| b.secs).sum()
+        self.beats.iter().map(Beat::hold).sum()
     }
 
     /// Paint the ad `t` seconds in.
     pub fn paint(&self, st: &Stage, t: f32) {
         let mut start = 0.0;
         for beat in self.beats {
-            if t < start + beat.secs || std::ptr::eq(beat, self.beats.last().unwrap()) {
+            if t < start + beat.hold() || std::ptr::eq(beat, self.beats.last().unwrap()) {
                 let tb = t - start;
                 (beat.paint)(st, tb);
                 // Every cut lands with a white flash.
                 flash(st, tb);
                 return;
             }
-            start += beat.secs;
+            start += beat.hold();
         }
     }
 }
 
-/// MTN GOO, SUPER INTELLIGENCE FOR DOGS, CARTPASS.
-pub const ADS: [Ad; 3] = [
+/// The reel, in order: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack
+/// ads back to back (each side on the other), CARTPASS, OKAYZA.
+pub const ADS: [Ad; 6] = [
     Ad { beats: &GOO_BEATS },
     Ad { beats: &DOG_BEATS },
+    Ad { beats: &ATTACK_PLINKO },
+    Ad { beats: &ATTACK_GLORBMAN },
     Ad { beats: &CART_BEATS },
+    Ad { beats: &OKAYZA_BEATS },
 ];
 
 // ── The style kit ──
@@ -160,7 +175,7 @@ fn fine_print(st: &Stage, t: f32, text: &str) {
     let h = st.h();
     let galley = st.p.layout_no_wrap(text.to_string(), FontId::proportional(h * 0.02), Color32::from_gray(190));
     let w = galley.size().x;
-    let x = st.screen.right() - (t * st.screen.width() * 0.55) % (w + st.screen.width());
+    let x = st.screen.right() - (t * st.screen.width() * 0.35) % (w + st.screen.width());
     let y = st.screen.bottom() - h * 0.035;
     st.p.rect_filled(Rect::from_min_max(pos2(st.screen.left(), y - h * 0.018), pos2(st.screen.right(), st.screen.bottom())), 0.0, Color32::from_black_alpha(220));
     st.p.galley(pos2(x, y - galley.size().y / 2.0), galley, Color32::from_gray(190));
@@ -482,3 +497,309 @@ const CART_BEATS: [Beat; 5] = [
         },
     },
 ];
+
+// ── The attack ads: each side, the same template, the same length ──
+//
+// Both candidates (PromiseTV's) go after the other for something perfectly
+// reasonable, made to sound sinister. Fictional people, no parties, and both
+// cut from one template so neither side gets the nicer ad (DESIGN: skewer both
+// equally, for behavior, not policy).
+
+const ATTACK_RED: Color32 = Color32::from_rgb(170, 20, 20);
+
+/// A grainy, red-tinted photo of the opponent, the kind attack ads find.
+fn mugshot(st: &Stage, at: Pos2, s: f32, t: f32) {
+    let frame = Rect::from_center_size(at, vec2(s * 0.8, s));
+    st.p.rect_filled(frame, 0.0, Color32::from_gray(60));
+    st.p.add(Shape::ellipse_filled(at + vec2(0.0, s * 0.42), vec2(s * 0.36, s * 0.22), Color32::from_gray(25)));
+    st.p.circle_filled(at + vec2(0.0, -s * 0.05), s * 0.2, Color32::from_gray(35));
+    // Grain, reshuffled twelve times a second.
+    let seed = (t * 12.0) as u32;
+    for k in 0..220u32 {
+        let h = (k.wrapping_mul(2_654_435_761) ^ seed.wrapping_mul(40_503)).wrapping_mul(2_246_822_519);
+        let x = (h & 0xffff) as f32 / 65_535.0 - 0.5;
+        let y = (h >> 16) as f32 / 65_535.0 - 0.5;
+        st.p.circle_filled(at + vec2(x * s * 0.8, y * s), 1.2, Color32::from_white_alpha(70));
+    }
+    st.p.rect_filled(frame, 0.0, Color32::from_rgba_unmultiplied(200, 0, 0, 60));
+    st.p.rect_stroke(frame, 0.0, Stroke::new(3.0, Color32::BLACK), egui::StrokeKind::Inside);
+}
+
+/// "FACT:" and a source nobody checked.
+fn fact(st: &Stage, t: f32, line: &str, source: &str) {
+    if t < 0.3 {
+        return;
+    }
+    let tag = st.p.text(st.at(-0.75, 0.12), Align2::LEFT_CENTER, "FACT:", FontId::new(st.h() * 0.05, st.family.clone()), ATTACK_RED);
+    st.p.text(pos2(tag.right() + st.h() * 0.02, tag.center().y), Align2::LEFT_CENTER, line, FontId::proportional(st.h() * 0.042), Color32::WHITE);
+    st.p.text(st.at(-0.75, 0.19), Align2::LEFT_CENTER, source, FontId::proportional(st.h() * 0.022), Color32::from_gray(150));
+}
+
+fn road(st: &Stage) {
+    let road = vec![st.at(-0.15, -0.2), st.at(0.15, -0.2), st.at(0.9, 0.5), st.at(-0.9, 0.5)];
+    st.p.add(Shape::convex_polygon(road, Color32::from_gray(55), Stroke::NONE));
+    for k in 0..5 {
+        let f = k as f32 / 5.0;
+        let y = -0.18 + f * 0.65;
+        st.p.rect_filled(Rect::from_center_size(st.at(0.0, y), vec2(4.0 + f * 10.0, 10.0 + f * 30.0)), 1.0, Color32::from_rgb(220, 190, 40));
+    }
+    for (x, y, w) in [(-0.3, 0.3, 0.12), (0.25, 0.12, 0.08), (-0.08, 0.02, 0.05), (0.4, 0.38, 0.14)] {
+        st.p.add(Shape::ellipse_filled(st.at(x, y), vec2(w, w * 0.35) * st.h(), Color32::from_gray(15)));
+    }
+}
+
+fn paper_stack(st: &Stage, at: Pos2, s: f32) {
+    for k in 0..24 {
+        let y = s * 0.5 - k as f32 * s * 0.04;
+        let dx = (k as f32 * 1.7).sin() * s * 0.03;
+        st.p.rect_filled(Rect::from_center_size(at + vec2(dx, y), vec2(s * 0.7, s * 0.035)), 1.0, Color32::from_gray(if k % 2 == 0 { 235 } else { 210 }));
+    }
+}
+
+/// The closing card: who paid, and the candidate approving it.
+fn paid_for(st: &Stage, t: f32, by: &str, who: &str, line: &str) {
+    st.fill(Color32::from_rgb(12, 12, 16));
+    slam(st, t, 0.0, st.at(0.0, -0.1), by, st.h() * 0.07, Color32::WHITE, ATTACK_RED);
+    caption(st, who, line);
+}
+
+const ATTACK_PLINKO: [Beat; 5] = [
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            mugshot(st, st.at(0.4, -0.08), st.h() * 0.55, t);
+            slam(st, t, 0.0, st.at(-0.35, -0.12), "COUNCILWOMAN", st.h() * 0.06, Color32::WHITE, ATTACK_RED);
+            slam(st, t, 0.2, st.at(-0.35, -0.02), "PLINKO", st.h() * 0.1, Color32::WHITE, ATTACK_RED);
+            caption(st, "NARRATOR:", "Councilwoman Plinko says she'll fix the potholes on Turk St.");
+        },
+    },
+    Beat {
+        secs: 2.0,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            slam(st, t, 0.0, st.at(0.0, -0.1), "FIX.", st.h() * 0.2, Color32::WHITE, ATTACK_RED);
+            slam(st, t, 0.7, st.at(0.0, 0.1), "THEM.", st.h() * 0.2, Color32::WHITE, ATTACK_RED);
+        },
+    },
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(20, 18, 18));
+            road(st);
+            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.06), st.at(2.0, 0.24)), 0.0, Color32::from_black_alpha(200));
+            fact(st, t, "These potholes have served Turk St for 40 years.", "(Turk St Gazette, probably)");
+        },
+    },
+    Beat {
+        secs: 2.4,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            mugshot(st, st.at(0.0, 0.05), st.h() * 0.6, t);
+            slam(st, t, 0.0, st.at(0.0, -0.33), "PLINKO: TOO SMOOTH. TOO FAST. TOO FAR.", st.h() * 0.07, Color32::WHITE, ATTACK_RED);
+        },
+    },
+    Beat {
+        secs: 2.6,
+        paint: |st, t| paid_for(st, t, "PAID FOR BY GLORBMAN FOR WHATEVER", "GLORBMAN:", "I'm Glorbman, and I approved this message."),
+    },
+];
+
+const ATTACK_GLORBMAN: [Beat; 5] = [
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            mugshot(st, st.at(0.4, -0.08), st.h() * 0.55, t);
+            slam(st, t, 0.0, st.at(-0.35, -0.12), "CANDIDATE", st.h() * 0.06, Color32::WHITE, ATTACK_RED);
+            slam(st, t, 0.2, st.at(-0.35, -0.02), "GLORBMAN", st.h() * 0.1, Color32::WHITE, ATTACK_RED);
+            caption(st, "NARRATOR:", "Glorbman read the bill before he voted on it.");
+        },
+    },
+    Beat {
+        secs: 2.0,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            slam(st, t, 0.0, st.at(0.0, -0.1), "ALL", st.h() * 0.2, Color32::WHITE, ATTACK_RED);
+            slam(st, t, 0.7, st.at(0.0, 0.1), "400 PAGES.", st.h() * 0.15, Color32::WHITE, ATTACK_RED);
+        },
+    },
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(20, 18, 18));
+            paper_stack(st, st.at(0.0, -0.12), st.h() * 0.6);
+            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.06), st.at(2.0, 0.24)), 0.0, Color32::from_black_alpha(200));
+            fact(st, t, "What was he looking for? He won't say.*", "*He said \"typos.\"");
+        },
+    },
+    Beat {
+        secs: 2.4,
+        paint: |st, t| {
+            st.fill(Color32::BLACK);
+            mugshot(st, st.at(0.0, 0.05), st.h() * 0.6, t);
+            slam(st, t, 0.0, st.at(0.0, -0.33), "GLORBMAN: TOO CAREFUL. TOO PREPARED. TOO LITERATE.", st.h() * 0.07, Color32::WHITE, ATTACK_RED);
+        },
+    },
+    Beat {
+        secs: 2.6,
+        paint: |st, t| paid_for(st, t, "PAID FOR BY PLINKO CAN'T LOSE", "COUNCILWOMAN PLINKO:", "I'm Councilwoman Plinko, and I approved this message."),
+    },
+];
+
+// ── OKAYZA: the pharma spot ──
+
+const OKAYZA_TEAL: Color32 = Color32::from_rgb(60, 200, 190);
+const OKAYZA_DARK: Color32 = Color32::from_rgb(10, 70, 80);
+
+/// One of our capsule people (like the NPCs), smiling or not.
+fn person(st: &Stage, at: Pos2, s: f32, coat: Color32, happy: bool) {
+    st.p.rect_filled(Rect::from_center_size(at, vec2(s * 0.34, s * 0.7)), s * 0.17, coat);
+    let head = at + vec2(0.0, -s * 0.5);
+    st.p.circle_filled(head, s * 0.16, Color32::from_rgb(225, 185, 150));
+    let mouth: Vec<_> = (0..=8)
+        .map(|k| {
+            let x = (k as f32 / 8.0 - 0.5) * s * 0.14;
+            let curve = (1.0 - (x / (s * 0.07)).powi(2)) * s * 0.03;
+            head + vec2(x, s * 0.06 + if happy { curve } else { -curve })
+        })
+        .collect();
+    st.p.add(Shape::line(mouth, Stroke::new(s * 0.015, Color32::BLACK)));
+    for dx in [-0.05, 0.05] {
+        st.p.circle_filled(head + vec2(dx * s, -s * 0.02), s * 0.015, Color32::BLACK);
+    }
+}
+
+/// A two-tone capsule, `spin` radians around.
+fn capsule(st: &Stage, at: Pos2, s: f32, spin: f32) {
+    let rot = egui::emath::Rot2::from_angle(spin);
+    for (side, color) in [(-1.0f32, OKAYZA_TEAL), (1.0, Color32::WHITE)] {
+        let pts: Vec<_> = (0..=16)
+            .map(|k| {
+                let a = k as f32 / 16.0 * std::f32::consts::PI;
+                at + rot * vec2(side * (s * 0.35 + a.sin() * s * 0.18), -a.cos() * s * 0.18)
+            })
+            .chain([at + rot * vec2(0.0, s * 0.18), at + rot * vec2(0.0, -s * 0.18)])
+            .collect();
+        st.p.add(Shape::convex_polygon(pts, color, Stroke::NONE));
+    }
+}
+
+fn meadow(st: &Stage) {
+    st.fill(Color32::from_rgb(130, 200, 250));
+    st.p.circle_filled(st.at(0.6, -0.32), st.h() * 0.1, Color32::from_rgb(255, 235, 120));
+    st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.15), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(90, 190, 90));
+}
+
+/// The side effects, read over the happy footage, one line at a time.
+fn side_effects(st: &Stage, t: f32, lines: &[&str]) {
+    let k = ((t / (0.8 * PACE)) as usize).min(lines.len() - 1);
+    caption(st, "NARRATOR:", lines[k]);
+}
+
+const OKAYZA_BEATS: [Beat; 6] = [
+    Beat {
+        secs: 2.6,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(85, 90, 100));
+            for k in 0..30 {
+                let x = (k as f32 * 0.137).fract() * 2.0 - 1.0;
+                let y = (k as f32 * 0.311 + t * 1.5).fract() * 1.2 - 0.6;
+                st.p.line_segment([st.at(x, y), st.at(x - 0.01, y + 0.05)], Stroke::new(2.0, Color32::from_rgb(160, 170, 190)));
+            }
+            person(st, st.at(0.0, 0.05), st.h() * 0.5, Color32::from_gray(120), false);
+            caption(st, "NARRATOR:", "Do you suffer from moderate-to-severe Being Fine?");
+        },
+    },
+    Beat {
+        secs: 1.8,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(40, 44, 52));
+            slam(st, t, 0.0, st.at(0.0, -0.08), "MODERATE-TO-SEVERE", st.h() * 0.1, Color32::WHITE, Color32::BLACK);
+            slam(st, t, 0.5, st.at(0.0, 0.06), "BEING FINE?", st.h() * 0.12, Color32::WHITE, Color32::BLACK);
+        },
+    },
+    Beat {
+        secs: 2.4,
+        paint: |st, t| {
+            st.fill(OKAYZA_DARK);
+            rays(st, st.at(0.0, 0.1), Color32::from_rgba_unmultiplied(60, 200, 190, 30), t);
+            slam(st, t, 0.0, st.at(0.0, -0.26), "OKAYZA", st.h() * 0.18, OKAYZA_TEAL, Color32::BLACK);
+            st.p.text(st.at(0.0, -0.12), Align2::CENTER_CENTER, "(mehprozine)", FontId::proportional(st.h() * 0.035), Color32::from_gray(200));
+            capsule(st, st.at(0.0, 0.1), st.h() * 0.4, t * 2.0);
+            caption(st, "NARRATOR:", "Ask your doctor about Okayza.");
+        },
+    },
+    Beat {
+        secs: 4.0,
+        paint: |st, t| {
+            meadow(st);
+            let hand = st.at(-0.05, -0.02);
+            person(st, st.at(-0.05, 0.2), st.h() * 0.45, OKAYZA_TEAL, true);
+            let kite = st.at(0.35 + (t * 1.3).sin() * 0.03, -0.32);
+            let k = st.h() * 0.06;
+            let diamond = vec![kite + vec2(0.0, -k), kite + vec2(k * 0.7, 0.0), kite + vec2(0.0, k * 1.3), kite + vec2(-k * 0.7, 0.0)];
+            st.p.add(Shape::convex_polygon(diamond, Color32::from_rgb(255, 80, 120), Stroke::NONE));
+            st.p.line_segment([hand, kite + vec2(0.0, k * 1.3)], Stroke::new(1.0, Color32::WHITE));
+            side_effects(
+                st,
+                t,
+                &[
+                    "Side effects may include feeling great,",
+                    "feeling nothing,",
+                    "growing a second, smaller, more successful you,",
+                    "uncontrollable pugcasting,",
+                    "and sudden fluency in dolphin.",
+                ],
+            );
+        },
+    },
+    Beat {
+        secs: 3.2,
+        paint: |st, t| {
+            meadow(st);
+            person(st, st.at(-0.2, 0.2), st.h() * 0.45, OKAYZA_TEAL, true);
+            // The second, smaller, more successful you, in a tiny suit.
+            person(st, st.at(0.15, 0.28), st.h() * 0.25, Color32::from_rgb(30, 30, 40), true);
+            side_effects(
+                st,
+                t,
+                &[
+                    "Death may occur, but in a chill way.",
+                    "Do not take Okayza if you are allergic to Okayza.",
+                    "Tell your doctor if your doctor is a raccoon.",
+                    "Okayza: it's fine.",
+                ],
+            );
+        },
+    },
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(Color32::WHITE);
+            capsule(st, st.at(-0.45, -0.02), st.h() * 0.3, -0.4);
+            slam(st, t, 0.0, st.at(0.15, -0.08), "OKAYZA", st.h() * 0.16, OKAYZA_TEAL, OKAYZA_DARK);
+            st.p.text(st.at(0.15, 0.06), Align2::CENTER_CENTER, "Because \"fine\" is a diagnosis.", FontId::proportional(st.h() * 0.045), Color32::from_gray(40));
+            fine_print(
+                st,
+                t,
+                "Okayza is not a drug. Okayza is not available. Results not typical. Results not anything. \
+                 Ask your doctor, then ask a second doctor why the first one laughed.",
+            );
+        },
+    },
+];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Neither side gets the longer or busier ad.
+    #[test]
+    fn both_sides_get_the_same_ad() {
+        assert_eq!(ATTACK_PLINKO.len(), ATTACK_GLORBMAN.len());
+        for (a, b) in ATTACK_PLINKO.iter().zip(&ATTACK_GLORBMAN) {
+            assert_eq!(a.secs, b.secs);
+        }
+    }
+}

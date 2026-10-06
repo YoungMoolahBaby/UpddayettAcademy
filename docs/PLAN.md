@@ -687,6 +687,34 @@ went home.
       THINGS? stamped SO 2003; CARTPASS with a $9.99/MO sticker; the wheels
       drop off under a WHEELS SOLD SEPARATELY stamp; end slate with the
       cancel-by-mail crawl.
+    - **Two attack ads** (user: "a political ad for each side where they're
+      shitting on the other for a reasonable take"). The PromiseTV candidates
+      attack each other for something perfectly reasonable:
+      - Glorbman on Plinko: "says she'll fix the potholes on Turk St." Then
+        FIX. THEM.; "FACT: These potholes have served Turk St for 40 years
+        (Turk St Gazette, probably)"; "TOO SMOOTH. TOO FAST. TOO FAR."
+      - Plinko on Glorbman: "read the bill before he voted on it." Then ALL
+        400 PAGES.; "What was he looking for? He won't say.* (*He said
+        'typos.')"; "TOO CAREFUL. TOO PREPARED. TOO LITERATE."
+
+      Both are cut from one grim template: grainy red-tinted photo, FACT:
+      with a source nobody checked, "Paid for by ...", "I'm ..., and I
+      approved this message." A test holds them to the same beats and
+      length, so neither side gets the nicer ad. They play back to back.
+      There are no parties or real politicians, and both are mocked for
+      attack-ad behavior, not policy.
+    - **OKAYZA (mehprozine)**, the pharma spot: "Do you suffer from
+      moderate-to-severe Being Fine?" in the rain. Over a sunny kite montage,
+      the side effects: feeling great; feeling nothing; growing a second,
+      smaller, more successful you (he shows up in a tiny suit);
+      uncontrollable pugcasting; sudden fluency in dolphin; "death, but in a
+      chill way"; "tell your doctor if your doctor is a raccoon". End slate:
+      "Because 'fine' is a diagnosis."
+    - **Pacing:** the user found the first cut far too fast. Every shot now
+      holds 1.8x its written length (`ads::PACE`), so each ad runs ~20-26 s.
+      The slams and flashes stay quick, and the fine print crawls slower.
+      The reel is 6 ads (Esc skips it), and the night breaks cycle through
+      all six.
   - The board-cam inset is its own camera and drew over the cards, so it's
     switched off while a card is up. Titles are sized to fit the window.
   - `UPD_CARDS=1` shoots the title, the splash and every ad beat

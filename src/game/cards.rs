@@ -276,8 +276,8 @@ pub fn shots(mut commands: Commands, mut cards: ResMut<Cards>, time: Res<Time>, 
         let mut start = 0.0;
         for (b, beat) in ad.beats.iter().enumerate() {
             // Late in the beat, once everything has slammed in.
-            plan.push((at, start + beat.secs * 0.75, Card::Ad(k), format!("ad{k}_{b}")));
-            start += beat.secs;
+            plan.push((at, start + beat.hold() * 0.75, Card::Ad(k), format!("ad{k}_{b}")));
+            start += beat.hold();
             at += 30;
         }
     }
@@ -303,8 +303,8 @@ mod tests {
 
     #[test]
     fn an_ad_every_third_night_in_turn() {
-        let ads: Vec<_> = (1..=9).filter_map(ad_for).collect();
-        assert_eq!(ads, vec![1, 2, 0]);
+        let ads: Vec<_> = (1..=18).filter_map(ad_for).collect();
+        assert_eq!(ads, vec![1, 2, 3, 4, 5, 0]);
         assert!((1..100).filter_map(ad_for).all(|k| k < ADS.len()));
     }
 }
