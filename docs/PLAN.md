@@ -29,7 +29,57 @@ so far" below). Its follow-up, latch memory (reheat when the strips
 freeze), ties on average and helps a little on the hardest nights (see
 "Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
 mixed unseen boards); training on them made it worse, so run 5 stays.
-Next: pick from the backlog below.
+**Step 5 started** (2026-10-06): backlog item 1, the drum tumbler. The
+probe works (see "Step 5" below), so the game integration is next.
+
+## Step 5: the drum tumbler (plan, 2026-10-06)
+
+The washer drum becomes a real tumbler. Its inside is a `cf_design`
+Solid, and the same Solid is the sim-core collider and the Bevy mesh.
+Tonight's trade items tumble inside as rigid bodies, and the spin follows
+the wash program.
+
+### 5.0 Feasibility probe (done, `examples/probe_drum.rs`)
+
+`cargo run --release --example probe_drum -- [drop|tumble|spin|res|info|build]`;
+the env vars `CELL`, `DT`, `MAXCON` and `N` override the setup. The drum
+is r 250 mm, 300 mm deep, with three 50 mm paddles. The items are a phone,
+two Goo cans, kale, an 18650 and a hub.
+- **Physics works**: no escapes. The paddles lift items over the axle at
+  0.6x critical speed, and items pin to the wall at 2x. Penetration stays
+  under 5 mm.
+- **Settings for the game**:
+  - SDF cell 10 mm;
+  - `timestep` 2 ms (cf-design's default is 0.5 ms);
+  - `sdf_maxcontact` 8.
+- **Speed** at those settings:
+
+  | Run | 6 items | 4 items |
+  |---|---|---|
+  | Tumble (0.6x critical) | 1.3x real time | 2.3x |
+  | Spin (2x critical) | 0.67x | 0.93x |
+
+  The cost is collision, ~250 us per item per step, single-threaded.
+- **Build**: `to_model` takes 9 s (the 1 mm mass grid; FINDINGS cf-design).
+  The game builds it once, on a background thread, at startup.
+- The drum is driven by writing its joint `qvel` each step (cf-design
+  actuators drive only tendons).
+
+### 5.1 In the game (next)
+
+- `src/game/drum.rs`: a worker thread owns the drum's Model and Data and
+  steps at 2 ms. Bevy reads the item poses each frame. The drum and item
+  meshes come from the same Solids (`Solid::mesh`), scaled into the scene
+  behind the porthole glass.
+- **Items**: up to 5 of tonight's trade items, from the best set first,
+  each with a simple shape per item kind (box, can, ball, capsule).
+- **Speed follows the program**: drum rate = critical x f(kT). Hot is a
+  vigorous tumble near 0.7x critical; cold slows toward 0.3x and the items
+  settle. Once the i9 latches the answer, the final spin goes to 2x
+  critical and the items pin. While they are pinned, items ride with the
+  drum kinematically: they don't move relative to it, so physics stops and
+  spin keeps up with real time.
+- Check it with `UPD_SHOT=1`: porthole shots at tumble and at spin.
 
 ## Backlog (2026-10-06; not planned yet, best first)
 
@@ -62,6 +112,13 @@ Also open:
   workarounds.
 - Ads: play 2-3 per launch instead of all six (~2.5 min)? No verdict yet
   on pace 1.0 vs the default 2.1.
+- Rework the OKAYZA ad (2026-10-06, user). Today it treats
+  "moderate-to-severe Being Fine" as the illness (src/game/ads.rs:656-790).
+  Make the joke about the real thing instead: drugs for real conditions,
+  advertised with sunny footage while the narrator calmly reads an
+  alarming list of side effects. Lots of people aren't fine, and medicine
+  is still getting where it needs to be. So the target is the ad format,
+  not the patients and not medicine itself. Keep the fictional brand.
 - The dates in PLAN 3.3d / 3.6 notes written as 2026-10-06 were UTC and
   mean the evening of 2026-10-05 (fix offered, no answer).
 

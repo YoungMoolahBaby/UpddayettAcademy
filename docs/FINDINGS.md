@@ -52,6 +52,45 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   loads and pinned vertices. No soft-soft contact (self-contact listed as
   future). Friction exists but has no gradients.
 
+### `probe_drum` (cf-design + sim-core SDF contacts, 2026-10-06): works, fast enough with tuning
+
+`cargo run --release --example probe_drum -- [drop|tumble|spin|res|info|build]`.
+The washer drum is a `cf_design::Solid`, a closed can (r 250 mm, 300 mm deep,
+10 mm wall) with three lifter paddles, on a revolute joint to the world.
+Six trade items ride inside as free bodies: a phone, two Goo cans, kale, an
+18650 and a hub. `Mechanism::to_model` makes every geom an SDF, so every
+contact is SDF vs SDF, and the drum is concave. It worked on the first
+compile.
+- **Physics is right.** Items drop in and settle. No escapes in any run. At
+  36 rpm (0.6x critical) the paddles lift items over the axle 24 times in
+  6 s. At 120 rpm (2x critical) they pin to the wall at the right radius
+  (the phone flat at r 243 against a 250 mm wall), moving at w*r.
+  Penetration stays under 5 mm. The only trouble was mine: a phone spawned
+  through the back wall.
+- **Speed.** At cf-design's defaults (5 mm cell, 0.5 ms step, 50 contacts
+  per pair), 6 items run at 0.24x real time (2.1 ms/step), and almost all of
+  that time is collision. Three settings fix it:
+
+  | Setting | Change | Effect |
+  |---|---|---|
+  | SDF cell | 10 mm | 2x faster |
+  | `model.timestep` | 2 ms | 4x fewer steps; still under solref/2 |
+  | `model.sdf_maxcontact` | 8 | |
+
+  With all three:
+
+  | Run | Speed (6 items) | Speed (4 items) |
+  |---|---|---|
+  | Tumble | 1.3x real time | 2.3x |
+  | Spin | 0.67x | 0.93x |
+
+  Spin is the slow one, because pinned items hold the most contacts. A
+  step is single-threaded (sim-core's `parallel` feature covers only batch
+  envs).
+- **Build time.** `to_model` takes 9 s for the drum alone, whatever the SDF
+  cell, because mass integration uses a fixed 1 mm grid (see cf-design
+  below).
+
 ## Building the game
 
 ### Step 1: trade computer (sim-thermostat, 2026-10-05): works
@@ -256,6 +295,20 @@ under sim-core's `src/` unless noted.
 - **API** (2026-10-05): sim-types' `SimulationConfig` and `SolverConfig`
   (sim-types config.rs:14-40) aren't read by sim-core and can't be applied
   to a `Model`. Their default timestep is 1/240, against MJCF's 0.002.
+
+#### SDF contacts
+
+- **works** (2026-10-06): concave SDF vs convex SDF (a drum with paddles
+  around items, `examples/probe_drum.rs`). Items lift, fall and pin with no
+  tunneling at 2-3 m/s and stay under 5 mm deep. The three-tier dispatch
+  (sdf/shape.rs:125-215) is well documented, and `sdf_maxcontact`
+  (types/model.rs:927, default 50) caps the contacts per pair. Dropping it
+  to 8 changed nothing visible.
+- **perf** (2026-10-06): contact detection, not the solver, is the cost:
+  ~250 us per item-drum pair per step at a 10 mm cell. That holds at any
+  contact cap, and with the analytical (octree) tier, whose leaf size is
+  tied to the grid cell (sdf/octree_detect.rs:61). One step is
+  single-threaded. Six items tumble at 1.3x real time with a 2 ms step.
 
 ### `sim-mjcf`
 
@@ -1472,6 +1525,40 @@ From the source; not run (the probe exercises only CEM's training loop).
   SIMD backends from helping. SAC/TD3 batch their critic gradients.
 - **docs** (2026-10-04): the `Algorithm` docs tell Bevy users to write their
   own training loops, but no published example shows how.
+
+### `cf-design`
+
+Paths are under cf-design's `src/`. Found by `examples/probe_drum.rs`.
+
+- **works** (2026-10-06): a concave drum with paddles is a dozen lines of
+  `Solid` CSG. Then `Mechanism::to_model` gives a ready sim-core Model with
+  analytical SDF collision (`AnalyticalShape`, mechanism/analytical_shape.rs),
+  mm-scale gravity, solref and timestep, and the same Solid meshes for
+  rendering. Every shape's interval is tight enough for octree contacts
+  (Tier 2), the concave drum included.
+- **perf** (2026-10-06): `to_model` integrates mass properties on a fixed
+  1 mm grid (`MASS_CELL_MM`, mechanism/model_builder.rs:113, used at :449),
+  single-threaded, whatever `sdf_resolution` is. For a 0.5 m drum that is
+  86M `Solid::evaluate` calls at ~100 ns each: 8.7 of `to_model`'s 9.1 s.
+  The SDF grid takes 0.01 s and the visual mesh 0.12 s. A part-size-relative
+  cell (or a parallel loop, or a mass override for parts whose motion is
+  prescribed) would make large parts cheap.
+- **docs** (2026-10-06): `to_model`'s `sdf_resolution` reads as "SDF grid
+  cell size in mm. Smaller = finer collision" (mechanism/model_builder.rs:70).
+  It also sets the octree contact leaf size (2 x the cell,
+  sim-core sdf/octree_detect.rs:61) and with it the contact cost, even
+  though the contacts themselves are analytical. 10 mm ran 2x faster than
+  5 mm and 3.5x faster than 2.5 mm, with the same physics. The docs should
+  say that this is the speed knob.
+- **API** (2026-10-06): no way to drive a joint at a set speed. `ActuatorDef`
+  only drives tendons (mechanism/actuator.rs:16-20, `new` takes a tendon
+  name), so a motor-driven drum needs a tendon around the axle, or a
+  workaround. We write the drum joint's `qvel` before every step instead.
+- **docs** (2026-10-06): the mm-scale timestep (0.5 ms, model_builder.rs:145)
+  is conservative for contact-heavy scenes. The solref comment
+  (model_builder.rs:131) says only that 0.005 "must stay above
+  2 * timestep". 2 ms was stable in every drum test and 4x cheaper. The
+  docs could give that ceiling as a tuning range.
 
 ### Platform
 
