@@ -8,3 +8,9 @@ cortenforge = "0.9.0"
 nalgebra = "0.34"
 bevy = { version = "0.19.1", features = ["area_light_luts"] }
 bevy_egui = "0.42.0"
+
+[features]
+default = ["solari"]
+# Ray-traced lighting (Bevy Solari). Needs a GPU with hardware ray tracing;
+# F2 toggles it in game.
+solari = ["bevy/bevy_solari"]

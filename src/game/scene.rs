@@ -49,6 +49,15 @@ pub struct HallLed(usize);
 #[derive(Component)]
 pub struct RoomLight(f32);
 
+/// The tubes' glowing material. Under ray tracing (`rt`) the tubes are the
+/// room's lights, so `boost` turns them up; the breaker dims them either way.
+#[derive(Resource)]
+pub struct Tubes {
+    pub mat: Handle<StandardMaterial>,
+    pub base: LinearRgba,
+    pub boost: f32,
+}
+
 /// The Salties' magnet, taped under the counter lip (shown once found).
 #[derive(Component)]
 pub struct MagnetBlock;
@@ -167,6 +176,7 @@ pub fn setup(
     // Fluorescent tubes with rect lights under them.
     let tube = meshes.add(Cuboid::new(0.12, 0.06, 2.4));
     let tube_glow = glow(&mut mats, LinearRgba::rgb(6.0, 7.0, 6.5));
+    commands.insert_resource(Tubes { mat: tube_glow.clone(), base: LinearRgba::rgb(6.0, 7.0, 6.5), boost: 1.0 });
     for x in [-3.5, 0.0, 3.5] {
         commands.spawn((Mesh3d(tube.clone()), MeshMaterial3d(tube_glow.clone()), Transform::from_xyz(x, 4.6, 0.5)));
         commands.spawn((
@@ -320,7 +330,14 @@ fn slot_x(slot: f32) -> f32 {
 /// On a breaker night the tubes buzz and flicker before the spin (the
 /// Salties are at the panel), and the room goes dim when it trips. The
 /// smart ones know where the panel is: no flicker.
-pub fn flicker_lights(time: Res<Time>, lm: Res<Laundromat>, mut lights: Query<(&RoomLight, Option<&mut RectLight>, Option<&mut PointLight>)>, mut ambient: ResMut<GlobalAmbientLight>) {
+pub fn flicker_lights(
+    time: Res<Time>,
+    lm: Res<Laundromat>,
+    mut lights: Query<(&RoomLight, Option<&mut RectLight>, Option<&mut PointLight>)>,
+    mut ambient: ResMut<GlobalAmbientLight>,
+    tubes: Res<Tubes>,
+    mut mats: ResMut<Assets<StandardMaterial>>,
+) {
     let t = time.elapsed_secs();
     let breaker_night = matches!(lm.sabotage(), Some(Sabotage::PowerCut(_)));
     let f = if lm.power_out() {
@@ -342,6 +359,12 @@ pub fn flicker_lights(time: Res<Time>, lm: Res<Laundromat>, mut lights: Query<(&
         }
     }
     ambient.brightness = 120.0 * f.max(0.35);
+    let glow = tubes.base * (f * tubes.boost);
+    if mats.get(&tubes.mat).is_some_and(|m| m.emissive != glow)
+        && let Some(mut m) = mats.get_mut(&tubes.mat)
+    {
+        m.emissive = glow;
+    }
 }
 
 /// Where a prop sits and whether it shows.

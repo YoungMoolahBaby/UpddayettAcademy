@@ -3,11 +3,15 @@
 Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
-Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
+Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Step 3 so far (see the Step 3 plan below): 3.0, 3.1, all of 3.3 (3.3a-d plus
-the costly-want clamp), 3.4 (the escrow counter) and 3.6 (the Salties, dumb
-and smart) done; 3.2 deferred to a later voice-and-music step.
+**Step 3 done** (see the Step 3 plan below), except 3.2, deferred to a later
+voice-and-music step:
+- 3.0, 3.1;
+- all of 3.3 (3.3a-d plus the costly-want clamp);
+- 3.4, the escrow counter;
+- 3.5, polish: layout, title card, ads, the TV, the scope, Solari;
+- 3.6, the Salties, dumb and smart.
 **The 0.9.2 gap hunt is done** (CortenForge 0.9.2 will fix what FINDINGS lists,
 and every crate moves to 0.9.2). There is one probe per crate we use, in
 `examples/gaps_<crate>.rs`, with one check per FINDINGS entry. Open gaps per
@@ -18,7 +22,11 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: 3.5 polish (layout, title card, ads, the TV and the scope done; Solari left; see 3.5 so far).
+Next: the user's pick. Open candidates:
+- the CEM-learned smart wash program;
+- 3.2 voice and music;
+- when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
+  workarounds.
 
 ## Step 1 result
 
@@ -633,7 +641,7 @@ went home.
 - Done when: screenshots of each; the frame rate is logged with and without
   Solari.
 
-**3.5 so far (2026-10-06):**
+**3.5 as built (2026-10-06):**
 - **Layout done.**
   - HOW IT WORKS folds into sections. "The basics" (Goo, trades, the drum,
     the counter) starts open; the rest start folded. The Salties section
@@ -705,6 +713,53 @@ went home.
     That's the whole lesson on one trace.
   - A board rebuilt with a different strip count clears the trace and
     closes the scope. `UPD_SCOPE=<strip>` opens it for screenshots.
+- **Ray tracing done: Solari works and is on by default** (`src/game/rt.rs`,
+  cargo feature `solari`, default on). F2 toggles back to PBR, and
+  `UPD_SOLARI=0` starts on PBR. A GPU without hardware ray tracing falls
+  back to PBR on its own, with a warning.
+  - **Frame rate** (`UPD_BENCH=1`: 1600x900, vsync off, panels up, RTX
+    4070 Ti):
+
+    | Mode | fps | ms a frame |
+    | --- | --- | --- |
+    | PBR | 190-215 | 4.7-5.3 |
+    | Solari | 248-275 | 3.6-4.0 |
+    | PBR, toggled back | 194 | 5.2 |
+
+    Solari is the faster one here. It drops the point light's cube shadow
+    maps and the three rect lights, and traces from the emissive tubes
+    instead.
+  - **What it took** (Bevy friction, not CortenForge):
+    - Every mesh gets a `RaytracingMesh3d` twin, fixed up the way Solari
+      needs (tangents, u32 indices, no second UV set). Glass and the unlit
+      TV picture stay raster-only.
+    - The main camera needs `Msaa::Off` plus storage-binding texture usage.
+      `Camera3d` already brings both components with default values, so a
+      `Without<...>` insert never fires. The first run died with a wgpu
+      validation error ("TextureView ... do not contain required usage flags
+      STORAGE_BINDING").
+    - `SolariLightingPlugin` makes deferred the default for every opaque
+      material, PBR included. Without a `DeferredPrepass` on the main camera
+      and the board cam, the PBR picture went black.
+    - Solari lights only from emissive meshes and directional lights. In
+      Solari mode the tubes glow 20,000x brighter (`UPD_TUBES=<x>` to tune),
+      and the breaker flicker dims them like the lights.
+    - The TV's picture as an emissive texture came out as a faint purple
+      wash under Solari. It's now unlit and drawn forward, and reads the
+      same in both modes.
+    - Without DLSS Ray Reconstruction (it needs NVIDIA's SDK) the picture
+      is speckled. TAA under Solari averages it out over frames. Its
+      `TemporalJitter` and `MipBias` have to come off with it, or the PBR
+      picture shakes.
+  - **The look:** soft ray-traced shadows and bounce light off the tubes,
+    darker and moodier: the "RTX remaster" from DESIGN. Static surfaces
+    converge clean. Anything that moves (the NPCs' bob, the shaking washer,
+    flying crates) keeps a film grain, because TAA can't average a moving
+    surface. If that grates, F2 (or flipping the `Rt::on` default) gives
+    the clean PBR picture.
+  - Screenshots: `shots/rt_pbr.png`, `rt_solari.png`, `rt_pbr_again.png`.
+
+**3.5 done (2026-10-06).**
 
 ### 3.6 The Salties (sabotage nights)
 

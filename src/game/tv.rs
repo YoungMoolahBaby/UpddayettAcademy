@@ -158,7 +158,15 @@ pub fn setup(
 
     // The set: a black bezel, the screen, and two arms back to the wall.
     let plastic = mats.add(StandardMaterial { base_color: Color::srgb(0.03, 0.03, 0.035), perceptual_roughness: 0.4, ..default() });
-    let screen = mats.add(StandardMaterial { base_color_texture: Some(image), unlit: true, ..default() });
+    // The picture shows as is: unlit, and drawn forward so it reads the same
+    // under ray tracing (Solari shades deferred surfaces itself, and showed
+    // an emissive picture as a faint wash).
+    let screen = mats.add(StandardMaterial {
+        base_color_texture: Some(image),
+        unlit: true,
+        opaque_render_method: bevy::material::OpaqueRendererMethod::Forward,
+        ..default()
+    });
     let frame = Transform::from_translation(AT).with_rotation(Quat::from_rotation_x(TILT));
     commands.spawn((frame, Visibility::default())).with_children(|p| {
         p.spawn((Mesh3d(meshes.add(Cuboid::new(SCREEN.x + 0.14, SCREEN.y + 0.14, 0.1))), MeshMaterial3d(plastic.clone()), Transform::default()));

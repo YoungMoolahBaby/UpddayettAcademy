@@ -16,6 +16,8 @@ fn main() {
             primary_window: Some(Window {
                 title: "Upddayett's School of Biddness - Lesson 3: Money Laundering (Legally)".into(),
                 resolution: (w, h).into(),
+                // `UPD_BENCH=1` times frames, so it runs uncapped.
+                present_mode: if std::env::var_os("UPD_BENCH").is_some() { bevy::window::PresentMode::AutoNoVsync } else { default() },
                 ..default()
             }),
             ..default()

@@ -3,6 +3,8 @@
 mod arrows;
 mod cards;
 mod counter;
+#[cfg(feature = "solari")]
+mod rt;
 mod scene;
 mod shots;
 mod tv;
@@ -46,6 +48,8 @@ impl Plugin for GamePlugin {
                     .chain(),
             )
             .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear)).chain());
+        #[cfg(feature = "solari")]
+        app.add_plugins(rt::RtPlugin);
         if cards::shots_enabled() {
             app.add_systems(Update, cards::shots);
         } else if shots::enabled() {
