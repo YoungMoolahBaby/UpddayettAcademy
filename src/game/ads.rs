@@ -36,7 +36,7 @@ pub struct Beat {
 
 /// How long every shot holds, against its written length. The impacts (slams,
 /// flashes) stay quick; the holds stretch so every line can be read.
-pub const PACE: f32 = 2.5;
+pub const PACE: f32 = 2.1;
 
 impl Beat {
     /// Seconds this beat stays on screen.

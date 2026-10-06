@@ -711,7 +711,7 @@ went home.
       chill way"; "tell your doctor if your doctor is a raccoon". End slate:
       "Because 'fine' is a diagnosis."
     - **Pacing:** the user found the first cut far too fast. Every shot now
-      holds 2.5x its written length (`ads::PACE`; 1.8x was still too fast per slide), so each shot holds ~5-7 s and each ad runs ~30-35 s.
+      holds 2.1x its written length (`ads::PACE`; the user found 1.8x too fast and 2.5x a little slow), so each shot holds ~4-6 s and each ad runs ~25-30 s.
       The slams and flashes stay quick, and the fine print crawls slower.
       The reel is 6 ads (Esc skips it), and the night breaks cycle through
       all six.
