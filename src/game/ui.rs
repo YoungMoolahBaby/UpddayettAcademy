@@ -23,6 +23,13 @@ const HUNGRY: egui::Color32 = egui::Color32::from_rgb(255, 150, 60);
 const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
 /// The Salties: road-salt white with a cold blue cast.
 const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
+/// The counter (escrow): cardboard tan.
+const COUNTER: egui::Color32 = egui::Color32::from_rgb(215, 180, 130);
+/// Why the counter: on hover of its rule and its result line.
+const ESCROW_WHY: &str = "A 4-way swap only works if everyone delivers or nobody does. Hand things over one at a time and \
+                          whoever already got theirs can walk off without giving. So the counter holds everything until the drum \
+                          stops, then hands every trade over at once. That's also why loops stop at 4: each extra person is one \
+                          more way the loop breaks. Kidney exchanges cap their loops for the same reason.";
 
 /// Below this window size the panels go compact.
 const COMPACT: egui::Vec2 = egui::vec2(1280.0, 760.0);
@@ -438,8 +445,9 @@ pub fn panels(
                 ui.horizontal_wrapped(|ui| {
                     ui.spacing_mut().item_spacing.x = 4.0;
                     ui.label(egui::RichText::new(head).strong().color(color));
-                    ui.label(body);
-                });
+                    ui.label(body)
+                })
+                .inner
             };
             rule(ui, "Goo", GOLD, "is how much someone personally values a thing. 1 Goo = a can of Mtn Goo to them.");
             rule(ui, "Trades", GOLD, "only happen if everyone in them gains Goo. Nobody loses.");
@@ -447,6 +455,8 @@ pub fn panels(
                 ui.label(egui::RichText::new(format!("   e.g. {swap}: {gains}")).small().italics());
             }
             rule(ui, "The drum", GOLD, "picks the trades that make the most Goo in total. No item moves twice.");
+            rule(ui, "The counter", COUNTER, "holds every item during the spin, then hands each trade over whole, or not at all.")
+                .on_hover_text(ESCROW_WHY);
             rule(ui, "Tonight", GOLD, "sets the values: who's hungry, who's out in the cold. Food means more to someone hungry.");
             rule(
                 ui,
@@ -504,6 +514,9 @@ pub fn panels(
                 ui.label(format!("In total: +{:.0} Goo, and nobody loses.", t.goo));
                 for (line, karma) in lm.tc.gift_lines(best) {
                     ui.label(egui::RichText::new(format!("♥ Gift: {line}. Karma +{karma:.1}")).color(GIFT_EGUI));
+                }
+                for line in lm.counter_lines() {
+                    ui.label(egui::RichText::new(line).small().color(COUNTER)).on_hover_text(ESCROW_WHY);
                 }
                 if let Some((npc, item)) = lm.tc.want {
                     let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);

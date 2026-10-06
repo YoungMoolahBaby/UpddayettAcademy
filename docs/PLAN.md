@@ -6,14 +6,19 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Step 3 so far (see the Step 3 plan below): 3.0, 3.1, all of 3.3 (3.3a-d plus
-the costly-want clamp) and 3.6 (the Salties, dumb and smart) done; 3.2
-deferred to a later voice-and-music step.
-Now: **the 0.9.2 gap hunt** (CortenForge 0.9.2 will fix what FINDINGS lists,
-and every crate moves to 0.9.2). One probe per crate we use, in
-`examples/gaps_<crate>.rs`, one check per FINDINGS entry. Done:
-sim-thermostat (26 open), sim-therm-env (10 open), sim-core + sim-mjcf (27 open),
-sim-ml-chassis + sim-rl (33 open; CEM learned a wash program), sim-soft + sim-coupling (42 open).
-That covers every CortenForge crate the repo uses. Next: 3.4 the escrow counter, then 3.5 polish.
+the costly-want clamp), 3.4 (the escrow counter) and 3.6 (the Salties, dumb
+and smart) done; 3.2 deferred to a later voice-and-music step.
+**The 0.9.2 gap hunt is done** (CortenForge 0.9.2 will fix what FINDINGS lists,
+and every crate moves to 0.9.2). There is one probe per crate we use, in
+`examples/gaps_<crate>.rs`, with one check per FINDINGS entry. Open gaps per
+probe:
+- sim-thermostat: 26
+- sim-therm-env: 10
+- sim-core + sim-mjcf: 27
+- sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
+- sim-soft + sim-coupling: 42
+
+Next: 3.5 polish.
 
 ## Step 1 result
 
@@ -548,6 +553,43 @@ Amir's Persian Kitchen every night, plus a "Give away" picker for Upddayett's th
   (kidney exchanges cap loops for the same reason).
 - Done when: screenshots show items on the counter mid-cycle and delivered
   after; item counts conserve (nothing duplicated or lost; assert it).
+
+**3.4 done (2026-10-06).** A folding table with a cardboard ESCROW sign
+stands left of the washer. Every item is a crate in its owner's coat color,
+stacked at its holder's feet. When a cycle starts the crates fly onto the
+counter; when the drum stops they fly to whoever the i9's call gives them
+to, and the rest go home. On a battery night the cells' crate sits by the
+washer. Night 1: 17 items held, 15 changed hands in 6 trades and 1 gift, 2
+went home.
+- **Library:** `trade::escrow::settle(world, cycles, bits)` returns who holds
+  each item, which chosen trades went through and which were called off. The
+  most valuable chosen trade claims its items first; a later one that needs
+  a claimed item is called off whole, and everyone in it keeps their things.
+  The i9's latch is clash-free in practice, so the game hasn't hit this
+  yet; the strips at rest can clash.
+- **Conservation, asserted:** `Settlement::check` runs on every settle. It
+  checks that:
+  - every item ends with exactly one person;
+  - no item moves twice;
+  - a moved item went where its trade said, from its real owner;
+  - every per-person count adds up.
+
+  The game also asserts one crate per item every frame. Tests:
+  - every night × (open, battery, give-away) × 200 random strip patterns,
+    clashes included;
+  - the best set goes through whole, and trades swap one for one;
+  - a clash is called off whole;
+  - the check catches a counter that cheats (a missing leg, a double move).
+- **The why:**
+  - HOW IT WORKS has one short line: "The counter holds every item during
+    the spin, then hands each trade over whole, or not at all."
+  - Hovering it, or the counter's result line under THE i9 CALLS IT, gives
+    the reason: a 4-way swap only works if everyone delivers, loops stop at
+    4, and kidney exchanges cap their loops for the same reason.
+- Seen, for 3.5: on a night with a long i9 call (night 1: 6 trades), the
+  TRADES window grows down over HOW IT WORKS. Its scroll area keeps a
+  minimum of 80 px.
+- Tests: 25 in the library (2 new), 2.9 s.
 
 ### 3.5 Visual polish
 

@@ -7,6 +7,7 @@
 //! strips that CortenForge's thermostat shakes and cools ([`machine`]).
 
 pub mod cycles;
+pub mod escrow;
 pub mod machine;
 pub mod qubo;
 pub mod salties;
@@ -912,5 +913,87 @@ mod tests {
         assert!(a.temperature(399.0) > a.cold, "still shaking hot when the power goes");
         assert_eq!(a.temperature(400.0), 0.0);
         assert_eq!(Anneal::default().total_time(), 1020.0, "no cut, the full cycle");
+    }
+
+    #[test]
+    fn the_counter_conserves_every_item() {
+        let mut rng = 0x9e37_79b9_7f4a_7c15u64;
+        let mut clashes = 0;
+        for night in NIGHTS {
+            let mut w = world::laundromat(night);
+            let cells = w.find_item(salties::BATTERY_CELLS).unwrap();
+            for variant in 0..3 {
+                match variant {
+                    1 => w.set_held(cells, true),
+                    2 => {
+                        w.set_held(cells, false);
+                        let upd = w.find_npc("upddayett").unwrap();
+                        if let Some(&item) = w.giveable(upd).first() {
+                            w.set_gift(item, true);
+                        }
+                    }
+                    _ => {}
+                }
+                let tc = TradeComputer::new(w.clone(), 5.0, 1.6);
+                let n = tc.cycles.len();
+                // The best set goes through whole, and trades swap one for one.
+                let best = tc.ground_state();
+                let s = escrow::settle(&tc.world, &tc.cycles, best);
+                assert_eq!(s.done, {
+                    let mut c = qubo::chosen(best, n);
+                    c.sort_by(|&a, &b| tc.cycles[b].value().total_cmp(&tc.cycles[a].value()));
+                    c
+                });
+                assert!(s.voided.is_empty());
+                let start: Vec<usize> = (0..tc.world.npcs.len()).map(|p| tc.world.items.iter().filter(|it| it.owner == p).count()).collect();
+                let end: Vec<usize> = (0..tc.world.npcs.len()).map(|p| s.owner.iter().filter(|&&o| o == p).count()).collect();
+                let gifts: Vec<_> = s.done.iter().filter(|&&c| tc.cycles[c].is_gift()).collect();
+                if gifts.is_empty() {
+                    assert_eq!(start, end, "night {night}: trades swap one for one");
+                }
+                assert_eq!(end.iter().sum::<usize>(), tc.world.items.len());
+                if variant == 1 {
+                    assert_eq!(s.owner[cells], tc.world.items[cells].owner, "the battery's cells stay in the drum");
+                }
+                // Any strip pattern at all, clashes included, settles without losing anything.
+                for _ in 0..200 {
+                    rng ^= rng << 13;
+                    rng ^= rng >> 7;
+                    rng ^= rng << 17;
+                    let bits = (rng as u32) & ((1u32 << n) - 1);
+                    let s = escrow::settle(&tc.world, &tc.cycles, bits);
+                    assert_eq!(s.done.len() + s.voided.len(), qubo::chosen(bits, n).len());
+                    assert_eq!(s.voided.is_empty(), !tc.evaluate(bits).1, "night {night}: called off iff two trades want one item");
+                    clashes += s.voided.len();
+                }
+            }
+        }
+        assert!(clashes > 0, "the random patterns should include clashes");
+    }
+
+    #[test]
+    fn a_clash_is_called_off_whole() {
+        let tc = tc(1);
+        let w = &tc.world;
+        let (a, b) = (0..tc.cycles.len())
+            .flat_map(|a| (a + 1..tc.cycles.len()).map(move |b| (a, b)))
+            .find(|&(a, b)| tc.cycles[a].conflicts(&tc.cycles[b]) && tc.cycles[a].value() > tc.cycles[b].value())
+            .expect("night 1 has two trades that want the same item");
+        let s = escrow::settle(w, &tc.cycles, (1 << a) | (1 << b));
+        assert_eq!((s.done, s.voided), (vec![a], vec![b]), "the bigger trade goes through, the other is called off");
+        for l in &tc.cycles[b].legs {
+            if !tc.cycles[a].legs.iter().any(|m| m.item == l.item) {
+                assert_eq!(s.owner[l.item], l.from, "the {} goes home", w.items[l.item].name);
+            }
+        }
+        // And the check catches a counter that cheats.
+        let mut bad = escrow::settle(w, &tc.cycles, 1 << a);
+        let l = tc.cycles[a].legs[0];
+        bad.owner[l.item] = l.from;
+        assert!(bad.check(w, &tc.cycles).is_err(), "a trade went through without its first leg");
+        let mut bad = escrow::settle(w, &tc.cycles, 0);
+        bad.done.push(a);
+        bad.done.push(a);
+        assert!(bad.check(w, &tc.cycles).is_err(), "one item moved twice");
     }
 }

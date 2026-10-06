@@ -82,7 +82,8 @@ pub fn drive(
     let name = match *stage {
         0 if p >= 0.15 || done => Some("1_spinning_hot"),
         1 if p >= 0.6 || done => Some("2_cooling"),
-        2 if done && f >= *since + 60 => Some("3_locked"),
+        // Long enough for the crates to land with their new holders.
+        2 if done && f >= *since + 120 => Some("3_locked"),
         _ => None,
     };
     if !done || *stage < 2 {

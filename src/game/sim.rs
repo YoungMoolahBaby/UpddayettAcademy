@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
-use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, machine, salties, world};
+use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, salties, world};
 
 /// What the drum is doing.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -64,6 +64,8 @@ pub struct Laundromat {
     pub coil: Option<Magnet>,
     /// The i9's spin check for the current (or last) cycle.
     pub spin_check: SpinCheck,
+    /// What the counter (the escrow) did with the i9's call, once the drum stops.
+    pub settled: Option<escrow::Settlement>,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -149,6 +151,7 @@ impl Laundromat {
             cut_at: None,
             coil: None,
             spin_check: SpinCheck::default(),
+            settled: None,
             tc,
             machine,
             physics,
@@ -436,8 +439,33 @@ impl Laundromat {
         self.machine = self.board(self.seed);
         self.cut_at = None;
         self.latch = Latch::new();
+        self.settled = None;
         self.mode = Mode::Manual;
         info!("new load: seed {}, strips re-randomized", self.seed);
+    }
+
+    /// What the counter did with the i9's call, for the result panel and the log.
+    pub fn counter_lines(&self) -> Vec<String> {
+        let Some(s) = &self.settled else { return vec![] };
+        let w = &self.tc.world;
+        let gifts = s.done.iter().filter(|&&c| self.tc.cycles[c].is_gift()).count();
+        let trades = s.done.len() - gifts;
+        let on_counter = (0..w.items.len()).filter(|&i| escrow::escrowed(w, i)).count();
+        let moved = s.moved(w);
+        let plural = |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
+        let mut lines = vec![format!(
+            "The counter held all {on_counter} items through the spin, then {} changed hands in {}{}; {} went home.",
+            moved,
+            plural(trades, "trade", "trades"),
+            if gifts > 0 { format!(" and {}", plural(gifts, "gift", "gifts")) } else { String::new() },
+            on_counter - moved
+        )];
+        for &c in &s.voided {
+            let cy = &self.tc.cycles[c];
+            let taken = cy.legs.iter().find(|l| s.owner[l.item] != w.items[l.item].owner).map_or("an item", |l| w.items[l.item].name);
+            lines.push(format!("It called off {}: the {taken} was already promised to a bigger trade. Everyone in it got their own things back.", cy.short(w)));
+        }
+        lines
     }
 
     /// Set or clear the want. That rewires the springs, and couplings can't
@@ -529,6 +557,9 @@ impl Laundromat {
             mask(self.ground),
             if self.tc.is_optimal(self.latch.best_bits) { "BEST" } else { "missed" }
         );
+        for line in self.counter_lines() {
+            info!("  {line}");
+        }
         if let Some(w) = self.want_text() {
             let got = self.tc.delivers_want(self.latch.best_bits);
             info!(
@@ -578,6 +609,7 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
                 if t >= lm.anneal.total_time() {
                     lm.latch.final_bits = lm.machine.bits();
                     lm.mode = Mode::Done;
+                    lm.settled = Some(escrow::settle(&lm.tc.world, &lm.tc.cycles, lm.latch.best_bits));
                     lm.log_result();
                     continue;
                 }

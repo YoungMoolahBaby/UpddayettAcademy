@@ -336,7 +336,7 @@ No crypto ads.
 
 ### Candidate ideas (not decided)
 
-- **The laundry counter is the escrow.** A 4-way swap only works if everyone
+- **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone
   delivers or nobody does. Customers drop items off with their laundry, the
   machine runs, everyone picks up, so the swap settles atomically.
   It's the same reason kidney exchanges cap cycle length (every surgery in
