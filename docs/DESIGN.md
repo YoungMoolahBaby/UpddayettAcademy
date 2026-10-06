@@ -242,6 +242,10 @@ business cards.
    when fed) count 1.5x as flourishing, but only for people whose needs are
    covered tonight: feed them first. The drum routes the gift where it earns
    the most Karma, and maximizes Goo from trades + Karma from gifts.
+   **Upddayett can give one of his things away too** (built, Step 3.3d):
+   his Mtn Goo, his spare phone or his kale. It costs him its Goo and takes
+   it out of the trades; the drum sends it where it does the most good (his
+   phone goes to Vape Lady, who has none: a need).
 6. **Every night is different** (built, Step 3.3a). Weather, who's hungry and
    whose pigeons need feeding are rolled per night; values and tags follow
    from rules, not a fixed table. Ray isn't always full.

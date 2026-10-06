@@ -5,10 +5,10 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step; 3.3a, 3.3b, the costly-want
-clamp and 3.3c done). Next: **3.3d Give-away picker**.
-After 3.3d: **3.6 The Salties** (sabotage nights; planned below).
+Step 3 so far (see the Step 3 plan below): 3.0, 3.1 and all of 3.3 done
+(3.3a-d plus the costly-want clamp); 3.2 deferred to a later
+voice-and-music step.
+Next action: **3.6 The Salties** (sabotage nights; planned below).
 
 ## Step 1 result
 
@@ -473,6 +473,46 @@ Upddayett's thumb on the strip again, as in Step 1.
   benched night, stays the same (a test checks 200 nights).
 - Gift lines read "Upddayett (hungry) gets the tray of ...".
 - Tests: 13, 1.5 s.
+
+**3.3d done (2026-10-06).** Upddayett can give one of his things away:
+- **Picker:** UPDDAYETT GIVES AWAY... under I WANT in SPIN CYCLE: nothing,
+  his 12-pack of Mtn Goo, his cracked Android phone or his kale (whatever
+  someone wants tonight; hover shows what it costs him and who wants it).
+  The banner lists both donors; HOW IT WORKS gains "A give-away". The pick
+  carries over to the next night, and so does a want if something still
+  delivers it.
+- **Library:** `World::set_gift(item, on)` marks the item a gift and
+  re-derives the night (owner value 0, out of the trades, a gift strip
+  from him); `World::giveable(npc)` lists what has takers. Nothing else
+  changes value (tested on 24 nights, and taking it back restores the night).
+- **Two donors share the gift slots:** `pick_gifts` now gives every gift
+  item its best strip first, then the best per other recipient, then the
+  rest, so Amir's food can't crowd out Upddayett's gift (or the reverse).
+  One donor picks the same strips as before.
+- **What it does:** the gift costs Upddayett his own value for it (4-6
+  Goo) but the block barely loses Goo: the trades that used the item are
+  replaced by others, and the recipient's gain counts. Night 1, phone:
+  +44 Goo + 15 Karma (vs +43 + 8 keeping it), since Vape Lady has no phone
+  and his phone meets a need (relief 7, 1x). The Goo goes to a treat
+  (1.5x once needs are covered); the kale to whoever is hungry, or to
+  Pigeon Lady's pigeons.
+- **Reliability** (Normal, 48 runs x nights 1-10, `trade_cli bench --give`):
+  keeping it all 81%, giving the Goo 78%, the phone 81%, the kale 65%
+  (min 31% on night 5). Night 4 stays hard (38-69%).
+- **Known limit: the kale.** Its gift strips are the weakest on the board
+  (night 5: 4 Karma to Pigeon Lady vs 3 to Tamara, against trades up to
+  10), so the drum often settles on the wrong one of a 1-point choice
+  (mean 42.7 of 44). Delicates gets night 5 to 77% (mean 43.8). Same
+  family as the hard nights: small near-ties between weak strips. Fix
+  candidates there apply here too (latch-and-reheat, a slower program on
+  hard boards).
+- **Fixed:** a gift's reason came from the recipient's first condition, so
+  the phone read "Vape Lady (hungry)"; `World::why` now names the condition
+  the want answers ("no phone"). Gift lines show each gift's own Karma
+  (they all showed the night's total once there were two).
+- `UPD_GIVE=phone` gives an item away in screenshot mode; `trade_cli
+  --give upd:phone` does it in the CLI.
+- Tests: 14, 1.6 s.
 
 Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
 (`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.

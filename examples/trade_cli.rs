@@ -13,6 +13,7 @@
 //!   --night N        which night (default 1)
 //!
 //!   --want WHO:WHAT  backward mode, e.g. --want upd:hub
+//!   --give WHO:WHAT  WHO gives WHAT away tonight (a gift strip), e.g. --give upd:phone
 //!   --clamp C        want clamp, x the well-flattening field (0 = off)  --margin M
 //!   --seed N  --runs N
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
@@ -33,6 +34,7 @@ struct Opts {
     gifts: usize,
     chain: usize,
     want: Option<String>,
+    give: Option<String>,
     seed: u64,
     night: u64,
     runs: usize,
@@ -52,6 +54,7 @@ fn parse() -> Opts {
         gifts: trade::MAX_BITS,
         chain: trade::cycles::MAX_CHAIN,
         want: None,
+        give: None,
         seed: 1,
         night: 1,
         runs: 48,
@@ -71,6 +74,7 @@ fn parse() -> Opts {
         let num = |s: String| s.parse::<f64>().unwrap_or_else(|_| panic!("bad number {s}"));
         match a {
             "--want" => o.want = Some(val()),
+            "--give" => o.give = Some(val()),
             "--bench" => o.bench = true,
             "--costly" => o.costly = true,
             "--margin" => o.margin = Some(num(val())),
@@ -98,7 +102,16 @@ fn parse() -> Opts {
 }
 
 fn setup(o: &Opts) -> TradeComputer {
-    let mut tc = TradeComputer::with_board(trade::world::laundromat(o.night), o.beta, o.penalty, o.gifts, o.chain);
+    let mut w = trade::world::laundromat(o.night);
+    if let Some(g) = &o.give {
+        let (who, what) = g.split_once(':').expect("--give WHO:WHAT");
+        let npc = w.find_npc(who).unwrap_or_else(|| panic!("nobody called {who}"));
+        let item = w.find_item(what).unwrap_or_else(|| panic!("no item like {what}"));
+        assert_eq!(w.items[item].owner, npc, "{} doesn't have the {}", w.npcs[npc].name, w.items[item].name);
+        w.set_gift(item, true);
+        println!("{} gives away the {}.", w.npcs[npc].name, w.items[item].name);
+    }
+    let mut tc = TradeComputer::with_board(w, o.beta, o.penalty, o.gifts, o.chain);
     tc.delta_v = o.physics.delta_v;
     if let Some(c) = o.clamp {
         tc.want_clamp = c;
@@ -398,7 +411,8 @@ fn main() -> Result<(), trade::Error> {
                 let best = tc.forward_best;
                 karma.push(tc.tally(best).karma);
                 // Who got the food first, and were they hungry?
-                if let Some(c) = qubo::chosen(best, tc.cycles.len()).into_iter().map(|i| &tc.cycles[i]).find(|c| c.is_gift()) {
+                let food = |c: &&trade::Cycle| c.is_gift() && tc.world.npcs[c.legs[0].from].business;
+                if let Some(c) = qubo::chosen(best, tc.cycles.len()).into_iter().map(|i| &tc.cycles[i]).find(food) {
                     gift_won += 1;
                     if tc.world.night.hungry[c.legs[0].to] {
                         fed_hungry += 1;

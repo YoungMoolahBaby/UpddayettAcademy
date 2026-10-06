@@ -291,6 +291,39 @@ pub fn panels(
                     } else if !small {
                         ui.small("No want: the machine just finds the best trades for everyone.");
                     }
+
+                    // Upddayett gives one of his things away: a gift strip of
+                    // his own, routed by Karma like Amir's food.
+                    ui.separator();
+                    ui.label(egui::RichText::new("UPDDAYETT GIVES AWAY...").strong().color(GIFT_EGUI));
+                    let mut give = lm.give;
+                    let name = |item: usize| lm.tc.world.items[item].name;
+                    ui.horizontal_wrapped(|ui| {
+                        egui::ComboBox::from_id_salt("give_what")
+                            .width(side(200.0, 150.0))
+                            .selected_text(give.map_or("nothing (keeps it all)", name))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut give, None, "nothing (keeps it all)");
+                                for &(item, cost) in &lm.give_menu {
+                                    let takers: Vec<&str> = (0..lm.tc.world.npcs.len())
+                                        .filter(|&k| lm.tc.world.items[item].owner != k && lm.tc.world.value[k][item] > 0.0)
+                                        .map(|k| lm.tc.world.npcs[k].name)
+                                        .collect();
+                                    ui.selectable_value(&mut give, Some(item), name(item))
+                                        .on_hover_text(format!("costs him {cost:.0} Goo; wanted by {}", takers.join(", ")));
+                                }
+                            });
+                    });
+                    if give != lm.give {
+                        lm.set_give(give);
+                    }
+                    if let Some(item) = lm.give {
+                        let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
+                        let text = format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.");
+                        ui.label(egui::RichText::new(text).small().color(GIFT_EGUI));
+                    } else if !small {
+                        ui.small("Give something away and the drum sends it where it does the most good.");
+                    }
                 });
                 let mut watch = lm.watch;
                 if ui
@@ -344,6 +377,7 @@ pub fn panels(
                  a treat or a tool counts 1.5x, once that person's needs are covered. The drum sends the gift where it does the most good.",
             );
             rule(ui, "A want", GOLD, "gets delivered the cheapest way. Its price is what everyone else gives up.");
+            rule(ui, "A give-away", GIFT_EGUI, "costs the giver its Goo and leaves the trades. It earns Karma wherever the drum sends it.");
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());
 
@@ -373,8 +407,8 @@ pub fn panels(
                 }
                 let t = lm.tc.tally(best);
                 ui.label(format!("In total: +{:.0} Goo, and nobody loses.", t.goo));
-                for line in lm.tc.gift_lines(best) {
-                    ui.label(egui::RichText::new(format!("♥ Gift: {line}. Karma +{:.1}", t.karma)).color(GIFT_EGUI));
+                for (line, karma) in lm.tc.gift_lines(best) {
+                    ui.label(egui::RichText::new(format!("♥ Gift: {line}. Karma +{karma:.1}")).color(GIFT_EGUI));
                 }
                 if let Some((npc, item)) = lm.tc.want {
                     let (who, what) = (lm.tc.world.npcs[npc].name, lm.tc.world.items[item].name);

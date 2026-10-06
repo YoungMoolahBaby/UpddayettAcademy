@@ -2,6 +2,7 @@
 //! `UPD_PROGRAM=0..3` picks the wash program (default Normal);
 //! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
 //! `UPD_NEXT=1` goes to the next night first (checks the night switch).
+//! `UPD_GIVE=what` (e.g. `phone`) has Upddayett give that away (before the want).
 //! For checking the look without sitting in front of the window.
 
 use bevy::prelude::*;
@@ -30,6 +31,12 @@ pub fn drive(
         }
         if let Some(p) = std::env::var("UPD_PROGRAM").ok().and_then(|s| s.parse::<usize>().ok()) {
             lm.program = p.min(super::sim::PROGRAMS.len() - 1);
+        }
+        if let Ok(what) = std::env::var("UPD_GIVE") {
+            match lm.give_menu.iter().map(|&(i, _)| i).find(|&i| lm.tc.world.items[i].name.to_lowercase().contains(&what.to_lowercase())) {
+                Some(item) => lm.set_give(Some(item)),
+                None => error!("UPD_GIVE: Upddayett has nothing like {what:?} to give"),
+            }
         }
         if let Some((who, what)) = std::env::var("UPD_WANT").ok().as_deref().and_then(|w| w.split_once(':')) {
             let npc = lm.tc.world.find_npc(who);

@@ -178,10 +178,44 @@ impl World {
         self.set_night(night);
     }
 
+    /// `npc`'s things that someone else wants tonight: what they could give
+    /// away (so a gift strip can go out).
+    pub fn giveable(&self, npc: usize) -> Vec<usize> {
+        (0..self.items.len())
+            .filter(|&i| {
+                let it = &self.items[i];
+                it.owner == npc && !it.gift && (0..self.npcs.len()).any(|k| k != npc && self.value[k][i] > 0.0)
+            })
+            .collect()
+    }
+
+    /// Give `item` away tonight, or take it back. A gift starts a gift chain,
+    /// leaves the trades (nobody swaps something already promised), and its
+    /// owner asks nothing for it.
+    pub fn set_gift(&mut self, item: usize, gift: bool) {
+        self.items[item].gift = gift;
+        self.set_night(self.night.clone());
+    }
+
     /// What `npc` wanting `item` means tonight, if they want it at all.
     pub fn tag(&self, npc: usize, item: usize) -> Option<Tag> {
         let w = self.wants.iter().find(|w| w.npc == npc && w.item == item)?;
         Some(rule(w.use_, &self.npcs[npc], npc, &self.night).1)
+    }
+
+    /// Why `npc` wants `item` tonight, in a word or two: the condition for a
+    /// need ("hungry", "no phone"), else "purpose" or "a treat".
+    pub fn why(&self, npc: usize, item: usize) -> Option<&'static str> {
+        let w = self.wants.iter().find(|w| w.npc == npc && w.item == item)?;
+        Some(match (rule(w.use_, &self.npcs[npc], npc, &self.night).1, w.use_) {
+            (Tag::Need, Use::Eat) => "hungry",
+            (Tag::Need, Use::WarmUp) => "cold",
+            (Tag::Need, Use::FeedAnimals) => "pigeons hungry",
+            (Tag::Need, Use::Lifeline) => "no phone",
+            (Tag::Need, _) => "need",
+            (Tag::Purpose, _) => "purpose",
+            (Tag::Pleasure, _) => "a treat",
+        })
     }
 
     /// Are `npc`'s basic needs covered tonight? (Not hungry, not cold

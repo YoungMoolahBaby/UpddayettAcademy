@@ -119,23 +119,31 @@ pub const MAX_BITS: usize = MAX_EXACT_BITS;
 /// Strips kept free for gift chains even on a night full of trades.
 pub const MIN_GIFT_SLOTS: usize = 4;
 
-/// Up to `slots` gift chains: first the best chain for each different first
-/// recipient (so the drum really chooses *who* gets the gift, which is the
-/// routing), then the rest by Karma. `gifts` comes sorted by Karma.
+/// Up to `slots` gift chains: first the best chain for each gift (so every
+/// donor gets a strip), then the best for each other first recipient (so the
+/// drum really chooses *who* gets the gift, which is the routing), then the
+/// rest by Karma. `gifts` comes sorted by Karma.
 fn pick_gifts(gifts: Vec<Cycle>, slots: usize) -> Vec<Cycle> {
-    let mut picked: Vec<Cycle> = vec![];
-    let mut rest = vec![];
-    for g in gifts {
-        let first = (g.legs[0].item, g.legs[0].to);
-        if picked.len() < slots && !picked.iter().any(|p| (p.legs[0].item, p.legs[0].to) == first) {
-            picked.push(g);
-        } else {
-            rest.push(g);
-        }
-    }
-    let room = slots - picked.len();
-    picked.extend(rest.into_iter().take(room));
-    picked
+    let (mut items, mut firsts) = (vec![], vec![]);
+    let mut ranked: Vec<(u8, Cycle)> = gifts
+        .into_iter()
+        .map(|g| {
+            let first = (g.legs[0].item, g.legs[0].to);
+            let rank = if !items.contains(&first.0) {
+                0
+            } else if !firsts.contains(&first) {
+                1
+            } else {
+                2
+            };
+            items.push(first.0);
+            firsts.push(first);
+            (rank, g)
+        })
+        .collect();
+    // Stable: each rank stays in Karma order.
+    ranked.sort_by_key(|(rank, _)| *rank);
+    ranked.into_iter().take(slots).map(|(_, g)| g).collect()
 }
 
 /// What a set of trades and gifts does, for display.
@@ -351,22 +359,20 @@ impl TradeComputer {
         if t.karma > 0.0 { format!("{:.0} Goo + {:.1} Karma", t.goo, t.karma) } else { format!("{:.0} Goo", t.goo) }
     }
 
-    /// Who the chosen gifts reached and what it did for them:
-    /// ["Shopping-Cart Guy (hungry) gets the tray of adas polo", ...].
-    pub fn gift_lines(&self, bits: u32) -> Vec<String> {
+    /// Who the chosen gifts reached, what it did for them, and the Karma
+    /// each hand-off earned:
+    /// [("Shopping-Cart Guy (hungry) gets the tray of adas polo", 8.0), ...].
+    pub fn gift_lines(&self, bits: u32) -> Vec<(String, f64)> {
         let w = &self.world;
         qubo::chosen(bits, self.cycles.len())
             .into_iter()
             .map(|i| &self.cycles[i])
             .filter(|c| c.is_gift())
-            .flat_map(|c| c.legs.iter())
-            .map(|l| {
-                let why = match w.tag(l.to, l.item) {
-                    Some(world::Tag::Need) => w.conditions(l.to).first().copied().unwrap_or("need"),
-                    Some(world::Tag::Purpose) => "purpose",
-                    _ => "a treat",
-                };
-                format!("{} ({why}) gets the {}", w.npcs[l.to].name, w.items[l.item].name)
+            .flat_map(|c| c.legs.iter().zip(&c.gains))
+            .map(|(l, gain)| {
+                let why = w.why(l.to, l.item).unwrap_or("a treat");
+                let karma = cycles::karma_weight(w, l.to, l.item).1 * gain;
+                (format!("{} ({why}) gets the {}", w.npcs[l.to].name, w.items[l.item].name), karma)
             })
             .collect()
     }
@@ -651,5 +657,41 @@ mod tests {
             assert_eq!(night, old, "night {seed}");
         }
         assert!(was_hungry > 0, "the old roll did make it hungry");
+    }
+
+    #[test]
+    fn upddayett_gives_his_things_away() {
+        for night in NIGHTS {
+            let w = world::laundromat(night);
+            let upd = w.find_npc("upddayett").unwrap();
+            let polo = w.find_item("adas polo").unwrap();
+            let mine = w.giveable(upd);
+            assert_eq!(mine.len(), 3, "night {night}: goo, phone and kale all have takers");
+            for &item in &mine {
+                let mut given = w.clone();
+                given.set_gift(item, true);
+                assert_eq!(given.value[upd][item], 0.0, "he asks nothing for it");
+                for (k, row) in given.value.iter().enumerate() {
+                    for (i, v) in row.iter().enumerate() {
+                        if (k, i) != (upd, item) {
+                            assert_eq!(*v, w.value[k][i], "giving changes nothing else");
+                        }
+                    }
+                }
+                let tc = TradeComputer::new(given.clone(), 5.0, 1.6);
+                let moves = |c: &Cycle| c.legs.iter().any(|l| l.item == item);
+                assert!(tc.cycles.iter().filter(|c| moves(c)).all(|c| c.is_gift() && c.legs[0].from == upd), "a promised gift leaves the trades");
+                assert!(tc.cycles.iter().any(|c| c.is_gift() && c.legs[0].item == polo), "Amir's still gets a strip");
+                let sent = qubo::chosen(tc.forward_best, tc.cycles.len()).into_iter().any(|i| moves(&tc.cycles[i]));
+                assert!(sent, "night {night}: nothing else wants the strip, so the gift goes out");
+                if given.items[item].name.contains("phone") {
+                    let (line, karma) = tc.gift_lines(tc.forward_best).into_iter().find(|(l, _)| l.contains("phone")).unwrap();
+                    assert_eq!(line, "Vape Lady (no phone) gets the cracked Android phone", "the reason is the phone, not her hunger");
+                    assert_eq!(karma, given.value[given.find_npc("vape lady").unwrap()][item], "a need met counts 1x");
+                }
+                given.set_gift(item, false);
+                assert_eq!(given.value, w.value, "taking it back restores the night");
+            }
+        }
     }
 }

@@ -42,6 +42,11 @@ pub struct Laundromat {
     pub want_menu: Vec<Vec<(usize, f64)>>,
     /// Whose wants the picker is showing.
     pub picker_npc: usize,
+    /// What Upddayett gives away tonight, if anything.
+    pub give: Option<usize>,
+    /// What he could give away (someone wants it), with what it costs him
+    /// (his own value for it tonight, in Goo).
+    pub give_menu: Vec<(usize, f64)>,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -64,13 +69,24 @@ pub const PROGRAMS: [WashProgram; 4] = [
     WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%" },
 ];
 
-/// Tonight's trade computer for night `night`.
-fn open(night: u64) -> TradeComputer {
-    let tc = TradeComputer::new(world::laundromat(night), 5.0, 1.6);
+/// Upddayett, in any night's cast.
+fn upddayett(w: &world::World) -> usize {
+    w.find_npc("upddayett").expect("Upddayett runs the place")
+}
+
+/// Tonight's trade computer for night `night`, with Upddayett giving `give`
+/// away (if anything).
+fn open(night: u64, give: Option<usize>) -> TradeComputer {
+    let mut w = world::laundromat(night);
+    if let Some(item) = give {
+        w.set_gift(item, true);
+    }
+    let tc = TradeComputer::new(w, 5.0, 1.6);
     let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
     info!(
-        "night {night} (UPD_SEED={night} replays it): {}, {} trades + {gifts} gifts{}",
+        "night {night} (UPD_SEED={night} replays it): {}{}, {} trades + {gifts} gifts{}",
         tc.world.weather(),
+        give.map_or(String::new(), |item| format!(", Upddayett gives away the {}", tc.world.items[item].name)),
         tc.cycles.len() - gifts,
         if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
     );
@@ -92,11 +108,13 @@ impl Laundromat {
         let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let tc = open(night);
+        let tc = open(night, None);
         let machine = tc.machine(physics, night).expect("build the slap-bit board");
         let mut lm = Self {
             want_menu: vec![],
             picker_npc: 0,
+            give: None,
+            give_menu: vec![],
             tc,
             machine,
             physics,
@@ -131,20 +149,50 @@ impl Laundromat {
                     .collect()
             })
             .collect();
+        // What he'd give up, priced on the night as if he kept everything.
+        let mut kept = tc.world.clone();
+        if let Some(item) = self.give {
+            kept.set_gift(item, false);
+        }
+        let upd = upddayett(&kept);
+        self.give_menu = kept.giveable(upd).into_iter().map(|item| (item, kept.value[upd][item])).collect();
         self.ground = tc.ground_state();
         self.activity = vec![0.0; tc.cycles.len()];
     }
 
     /// Close up and open tomorrow: new conditions, new values, a new board.
-    /// A want carries over if something can still deliver it.
+    /// A want and a give-away carry over if they still work.
     pub fn next_night(&mut self) {
         if matches!(self.mode, Mode::Cycle { .. }) {
             return;
         }
-        let want = self.tc.want;
         self.night += 1;
         self.seed = self.night;
-        self.tc = open(self.night);
+        self.reopen();
+    }
+
+    /// Upddayett gives `give` away tonight (or keeps everything). The item
+    /// leaves the trades and gets a gift strip, so the board is rebuilt
+    /// from scratch (it has a different number of strips).
+    pub fn set_give(&mut self, give: Option<usize>) {
+        if matches!(self.mode, Mode::Cycle { .. }) || give == self.give {
+            return;
+        }
+        self.give = give;
+        self.reopen();
+        let what = give.map_or("nothing".to_string(), |item| format!("the {}", self.tc.world.items[item].name));
+        info!("Upddayett gives away {what}");
+    }
+
+    /// Open tonight's board (for `night`, with `give`), keeping the want if
+    /// something can still deliver it.
+    fn reopen(&mut self) {
+        let want = self.tc.want;
+        let upd = upddayett(&self.tc.world);
+        if self.give.is_some_and(|item| !world::laundromat(self.night).giveable(upd).contains(&item)) {
+            self.give = None;
+        }
+        self.tc = open(self.night, self.give);
         self.machine = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
         self.latch = Latch::new();
         self.mode = Mode::Manual;
