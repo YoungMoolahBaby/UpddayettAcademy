@@ -218,7 +218,7 @@ pub fn draw(
             p.text(
                 screen.right_bottom() + egui::vec2(-16.0, -14.0),
                 egui::Align2::RIGHT_BOTTOM,
-                "streamed live from the Turk St library computer",
+                "streamed live from the Market St library computer",
                 ui_font(h * 0.018),
                 egui::Color32::from_gray(150),
             );

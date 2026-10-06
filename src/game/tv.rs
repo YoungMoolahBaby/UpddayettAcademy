@@ -1,7 +1,7 @@
 //! The laundromat TV: a wall set under the neon sign whose screen is Bevy UI
 //! rendered to a texture. It flips between The Shrug Network (tonight's real
 //! numbers, shrugged off) and PromiseTV (fictional candidates promising
-//! everyone something Turk St has one of). The copy is `trade::tv`.
+//! everyone something Market St has one of). The copy is `trade::tv`.
 //! `UPD_TV=shrug|promise` holds one channel (for screenshots).
 
 use bevy::asset::RenderAssetUsages;

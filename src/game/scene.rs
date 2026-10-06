@@ -1,4 +1,4 @@
-//! Suds & Duds on Turk Street: the room, the washer, the slap-bit board on
+//! Suds & Duds on Market Street: the room, the washer, the slap-bit board on
 //! top of it, the i9, and the customers standing around.
 
 use std::f32::consts::{FRAC_PI_2, PI, TAU};

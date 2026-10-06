@@ -284,7 +284,7 @@ business cards.
    8 (on nights it never trained on), and it helps most on the hard nights.
 
 
-### The regulars (Suds & Duds, Turk Street)
+### The regulars (Suds & Duds, Market Street)
 
 | Customer | Sleeps out | Notes |
 | --- | --- | --- |
@@ -342,7 +342,7 @@ Every laundromat has a TV bolted in the corner. The Suds & Duds has two
 parody channels, and between them they make the drum the only honest thing
 in the room:
 - **The Shrug Network**, comedically apathetic news. It reads tonight's real
-  numbers and shrugs: "4 hungry on Turk Street tonight. Anyway, a
+  numbers and shrugs: "4 hungry on Market Street tonight. Anyway, a
   billionaire bought a second moon." The headlines are true (they come from
   the night's roll); the indifference is the joke. The drum, meanwhile,
   sends the food to whoever is hungry.

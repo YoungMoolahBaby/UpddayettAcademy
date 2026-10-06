@@ -149,13 +149,12 @@ Also open:
   workarounds.
 - Ads: play 2-3 per launch instead of all six (~2.5 min)? No verdict yet
   on pace 1.0 vs the default 2.1.
-- Rework the OKAYZA ad (2026-10-06, user). Today it treats
-  "moderate-to-severe Being Fine" as the illness (src/game/ads.rs:656-790).
-  Make the joke about the real thing instead: drugs for real conditions,
-  advertised with sunny footage while the narrator calmly reads an
-  alarming list of side effects. Lots of people aren't fine, and medicine
-  is still getting where it needs to be. So the target is the ad format,
-  not the patients and not medicine itself. Keep the fictional brand.
+- **Done (2026-10-06): the OKAYZA rework.** The user asked for it: the old
+  ad treated "moderate-to-severe Being Fine" as the illness. Lots of people
+  aren't fine, and medicine is still getting where it needs to be, so the
+  joke now targets the ad format, not the patients and not medicine (see
+  3.5 "OKAYZA"). In the same change, Turk Street became **Market Street**
+  everywhere (user).
 - The dates in PLAN 3.3d / 3.6 notes written as 2026-10-06 were UTC and
   mean the evening of 2026-10-05 (fix offered, no answer).
 
@@ -449,7 +448,7 @@ The design below stands; the current two placeholder lines stay meanwhile.
     filled from the night roll. Learn from **Tracery** (Kate Compton's
     generative grammar: `#rule#` blanks, nested rules, modifiers like
     `.capitalize`), which has a Rust crate, `tracery`. Each night builds
-    the grammar from its facts (`#hungry#` = "4 hungry on Turk Street"),
+    the grammar from its facts (`#hungry#` = "4 hungry on Market Street"),
     and the pugs' banter is more rules. Check the crate before taking it
     on; a small expander of our own in `src/trade/tv.rs` is the fallback.
 
@@ -760,7 +759,7 @@ went home.
   texture) with a scrolling chyron, flipping between two parody channels.
   Text only; spoken lines wait for the 3.2 voice step.
   - **The Shrug Network** (comedically apathetic news): headlines built
-    from tonight's real roll ("4 hungry on Turk Street tonight. Anyway, a
+    from tonight's real roll ("4 hungry on Market Street tonight. Anyway, a
     billionaire bought a second moon."). Every number comes from
     `World::night` / `conditions`, like the AI-line rule.
   - **PromiseTV** (false promises): political ads for fictional candidates
@@ -836,9 +835,9 @@ went home.
     - **Two attack ads** (user: "a political ad for each side where they're
       shitting on the other for a reasonable take"). The PromiseTV candidates
       attack each other for something perfectly reasonable:
-      - Glorbman on Plinko: "says she'll fix the potholes on Turk St." Then
-        FIX. THEM.; "FACT: These potholes have served Turk St for 40 years
-        (Turk St Gazette, probably)"; "TOO SMOOTH. TOO FAST. TOO FAR."
+      - Glorbman on Plinko: "says she'll fix the potholes on Market St." Then
+        FIX. THEM.; "FACT: These potholes have served Market St for 40 years
+        (Market St Gazette, probably)"; "TOO SMOOTH. TOO FAST. TOO FAR."
       - Plinko on Glorbman: "read the bill before he voted on it." Then ALL
         400 PAGES.; "What was he looking for? He won't say.* (*He said
         'typos.')"; "TOO CAREFUL. TOO PREPARED. TOO LITERATE."
@@ -849,13 +848,24 @@ went home.
       length, so neither side gets the nicer ad. They play back to back.
       There are no parties or real politicians, and both are mocked for
       attack-ad behavior, not policy.
-    - **OKAYZA (mehprozine)**, the pharma spot: "Do you suffer from
-      moderate-to-severe Being Fine?" in the rain. Over a sunny kite montage,
-      the side effects: feeling great; feeling nothing; growing a second,
-      smaller, more successful you (he shows up in a tiny suit);
-      uncontrollable pugcasting; sudden fluency in dolphin; "death, but in a
-      chill way"; "tell your doctor if your doctor is a raccoon". End slate:
-      "Because 'fine' is a diagnosis."
+    - **OKAYZA (mehprozine)**, the pharma spot (reworked 2026-10-06; the
+      first cut, "Do you suffer from moderate-to-severe Being Fine?", made
+      fun of the wrong thing). It opens sincere: in the rain, "Some days,
+      you're not fine. That's real." Then it does what pharma ads do:
+      - "Okayza may help.*"
+      - a sunny kite montage while the narrator calmly reads nausea, dry
+        mouth, wet mouth, hair in new and exciting places, a rash shaped
+        like a smaller rash, spontaneous pugcasting, "and the very thing
+        Okayza treats";
+      - laughing alone at a salad through "Tell your doctor if you've
+        recently been near a fungus, a cave, or a boat", "allergic to
+        Okayza", "rare but serious reactions" and "Anyway, look at this
+        salad!";
+      - COVERED BY MOST PLANS* / *NOT YOURS ("Ask your insurance. Your
+        insurance will ask you.");
+      - the end slate: "Medicine is getting there." Fine print: Okayza is
+        fictional, real conditions are real, so talk to a real doctor, and
+        the sugar pill is very proud.
     - **Pacing:** the user found the first cut far too fast. Every shot now
       holds 2.1x its written length (`ads::PACE`; the user found 1.8x too fast and 2.5x a little slow), so each shot holds ~4-6 s and each ad runs ~25-30 s.
       The slams and flashes stay quick, and the fine print crawls slower.
@@ -875,15 +885,15 @@ went home.
   - **The Shrug Network:** facts from tonight's roll (hungry count, cold
     and how many sleep out, hungry flocks, give-aways, trades on the board,
     the dumb Salties' brag), each followed by "Anyway, ..." and a shrug
-    picked by the night's seed. Night 1: "4 HUNGRY ON TURK ST TONIGHT.
+    picked by the night's seed. Night 1: "4 HUNGRY ON MARKET ST TONIGHT.
     Anyway, a celebrity's pug launched a pugcast." The banner says 4 hungry.
   - **PromiseTV:** four fictional candidates (Glorbman, Councilwoman Plinko,
-    Chet Sprockett, Mayor Dumpleton) each promise everyone one item Turk St
+    Chet Sprockett, Mayor Dumpleton) each promise everyone one item Market St
     has one of: the hub motor, the Wi-Fi password, the soldering iron, the
     sleeping bag. There are no parties. While an ad is on:
     - Upddayett heckles from his name card: "Who's giving it up, Glorb?
       There's one, and it's Shopping-Cart Guy's."
-    - I WANT checks the promise against the picker's real price ("Turk St
+    - I WANT checks the promise against the picker's real price ("Market St
       has 1. Checked: for Upddayett it costs the block 2 Goo"), and a
       "Want it" button puts it in the picker.
     - Night 1 with the hub wanted: the drum got Upddayett the hub motor for

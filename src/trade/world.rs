@@ -284,7 +284,7 @@ impl World {
     }
 }
 
-/// The regulars at the Suds & Duds on Turk Street, on night `seed`. Values
+/// The regulars at the Suds & Duds on Market Street, on night `seed`. Values
 /// are in Goo: what a can of Mtn Goo (the neon-green parody soda) is worth
 /// to that person. Bases are for a neutral night; the night scales them.
 pub fn laundromat(seed: u64) -> World {

@@ -348,7 +348,7 @@ pub fn panels(
                             ui.spacing_mut().item_spacing.x = 4.0;
                             ui.label(egui::RichText::new("ON TV").small().strong().color(PROMISE));
                             ui.label(
-                                egui::RichText::new(format!("{}: \"{}\" Turk St has {supply}. Checked: {check}.", p.candidate, p.pitch))
+                                egui::RichText::new(format!("{}: \"{}\" Market St has {supply}. Checked: {check}.", p.candidate, p.pitch))
                                     .small()
                                     .color(PROMISE),
                             );

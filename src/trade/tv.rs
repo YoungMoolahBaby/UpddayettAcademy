@@ -1,5 +1,5 @@
 //! What's on the laundromat TV. The Shrug Network reads tonight's real
-//! numbers and shrugs them off; PromiseTV promises everyone something Turk St
+//! numbers and shrugs them off; PromiseTV promises everyone something Market St
 //! has exactly one of. Every number comes from the night's roll, so the news
 //! is true and only the indifference is the joke. Parody names only.
 
@@ -40,10 +40,10 @@ pub fn shrug(w: &World, trades: usize, brag: Option<&str>) -> Vec<Headline> {
     let out_cold = (0..n).filter(|&k| w.conditions(k).contains(&"cold")).count();
     let flocks = w.night.animals_hungry.iter().filter(|h| **h).count();
     let mut facts = vec![match hungry {
-        0 => "Nobody hungry on Turk St tonight.".to_string(),
-        h => format!("{h} hungry on Turk St tonight."),
+        0 => "Nobody hungry on Market St tonight.".to_string(),
+        h => format!("{h} hungry on Market St tonight."),
     }];
-    facts.push(if w.night.cold { format!("Cold night: {out_cold} sleeping out.") } else { "A mild night on Turk St.".into() });
+    facts.push(if w.night.cold { format!("Cold night: {out_cold} sleeping out.") } else { "A mild night on Market St.".into() });
     if flocks > 0 {
         facts.push(format!("{flocks} {} of pigeons hungry.", if flocks == 1 { "flock" } else { "flocks" }));
     }
@@ -60,7 +60,7 @@ pub fn shrug(w: &World, trades: usize, brag: Option<&str>) -> Vec<Headline> {
 }
 
 /// A PromiseTV ad: a fictional candidate promises everyone an item that
-/// Turk St has one of.
+/// Market St has one of.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Promise {
     pub candidate: &'static str,
@@ -87,7 +87,7 @@ pub fn promises(w: &World) -> Vec<Promise> {
 }
 
 impl Promise {
-    /// How many of the promised thing Turk St actually has.
+    /// How many of the promised thing Market St actually has.
     pub fn supply(&self, w: &World) -> usize {
         let name = w.items[self.item].name;
         w.items.iter().filter(|it| it.name == name).count()

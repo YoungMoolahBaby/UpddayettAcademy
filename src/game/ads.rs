@@ -375,7 +375,7 @@ const GOO_BEATS: [Beat; 5] = [
                 st,
                 t,
                 "Mtn Goo is not a food. Side effects may include hyperfocus, green teeth, typing very fast and starting four projects at 3 a.m. \
-                 Do not operate a washing machine. On Turk St the empty can is worth more than the full one.",
+                 Do not operate a washing machine. On Market St the empty can is worth more than the full one.",
             );
         },
     },
@@ -577,7 +577,7 @@ const ATTACK_PLINKO: [Beat; 5] = [
             mugshot(st, st.at(0.4, -0.08), st.h() * 0.55, t);
             slam(st, t, 0.0, st.at(-0.35, -0.12), "COUNCILWOMAN", st.h() * 0.06, Color32::WHITE, ATTACK_RED);
             slam(st, t, 0.2, st.at(-0.35, -0.02), "PLINKO", st.h() * 0.1, Color32::WHITE, ATTACK_RED);
-            caption(st, "NARRATOR:", "Councilwoman Plinko says she'll fix the potholes on Turk St.");
+            caption(st, "NARRATOR:", "Councilwoman Plinko says she'll fix the potholes on Market St.");
         },
     },
     Beat {
@@ -594,7 +594,7 @@ const ATTACK_PLINKO: [Beat; 5] = [
             st.fill(Color32::from_rgb(20, 18, 18));
             road(st);
             st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.06), st.at(2.0, 0.24)), 0.0, Color32::from_black_alpha(200));
-            fact(st, t, "These potholes have served Turk St for 40 years.", "(Turk St Gazette, probably)");
+            fact(st, t, "These potholes have served Market St for 40 years.", "(Market St Gazette, probably)");
         },
     },
     Beat {
@@ -703,6 +703,25 @@ fn side_effects(st: &Stage, t: f32, lines: &[&str]) {
     caption(st, "NARRATOR:", lines[k]);
 }
 
+/// A salad bowl, for laughing at (every pharma ad has one).
+fn salad(st: &Stage, at: Pos2, s: f32) {
+    st.p.circle_filled(at + vec2(0.0, -s * 0.05), s * 0.42, Color32::from_rgb(70, 170, 60));
+    for (dx, dy, c) in [(-0.2, -0.2, (220, 60, 50)), (0.15, -0.25, (240, 200, 60)), (0.05, -0.12, (220, 60, 50)), (-0.05, -0.32, (120, 210, 80))] {
+        st.p.circle_filled(at + vec2(dx * s, dy * s), s * 0.09, Color32::from_rgb(c.0, c.1, c.2));
+    }
+    let bowl: Vec<_> = (0..=12)
+        .map(|k| {
+            let a = k as f32 / 12.0 * std::f32::consts::PI;
+            at + vec2(-a.cos() * s * 0.5, a.sin() * s * 0.35)
+        })
+        .collect();
+    st.p.add(Shape::convex_polygon(bowl, Color32::WHITE, Stroke::NONE));
+}
+
+/// Some days aren't fine, and the ad means that part. Then it does what
+/// pharma ads do: sunshine, kites, a salad, and a calm voice reading a list
+/// that should not be read calmly. The joke is the format, not the patients
+/// and not medicine (PLAN "Also open", 2026-10-06).
 const OKAYZA_BEATS: [Beat; 6] = [
     Beat {
         secs: 2.6,
@@ -714,15 +733,7 @@ const OKAYZA_BEATS: [Beat; 6] = [
                 st.p.line_segment([st.at(x, y), st.at(x - 0.01, y + 0.05)], Stroke::new(2.0, Color32::from_rgb(160, 170, 190)));
             }
             person(st, st.at(0.0, 0.05), st.h() * 0.5, Color32::from_gray(120), false);
-            caption(st, "NARRATOR:", "Do you suffer from moderate-to-severe Being Fine?");
-        },
-    },
-    Beat {
-        secs: 1.8,
-        paint: |st, t| {
-            st.fill(Color32::from_rgb(40, 44, 52));
-            slam(st, t, 0.0, st.at(0.0, -0.08), "MODERATE-TO-SEVERE", st.h() * 0.1, Color32::WHITE, Color32::BLACK);
-            slam(st, t, 0.5, st.at(0.0, 0.06), "BEING FINE?", st.h() * 0.12, Color32::WHITE, Color32::BLACK);
+            caption(st, "NARRATOR:", "Some days, you're not fine. That's real.");
         },
     },
     Beat {
@@ -733,7 +744,7 @@ const OKAYZA_BEATS: [Beat; 6] = [
             slam(st, t, 0.0, st.at(0.0, -0.26), "OKAYZA", st.h() * 0.18, OKAYZA_TEAL, Color32::BLACK);
             st.p.text(st.at(0.0, -0.12), Align2::CENTER_CENTER, "(mehprozine)", FontId::proportional(st.h() * 0.035), Color32::from_gray(200));
             capsule(st, st.at(0.0, 0.1), st.h() * 0.4, t * 2.0);
-            caption(st, "NARRATOR:", "Ask your doctor about Okayza.");
+            caption(st, "NARRATOR:", "Okayza may help.* Ask your doctor.");
         },
     },
     Beat {
@@ -751,32 +762,42 @@ const OKAYZA_BEATS: [Beat; 6] = [
                 st,
                 t,
                 &[
-                    "Side effects may include feeling great,",
-                    "feeling nothing,",
-                    "growing a second, smaller, more successful you,",
-                    "uncontrollable pugcasting,",
-                    "and sudden fluency in dolphin.",
+                    "Side effects may include nausea, dizziness, dry mouth, wet mouth,",
+                    "hair loss, hair gain, hair in new and exciting places,",
+                    "a rash shaped like a smaller rash,",
+                    "spontaneous pugcasting,",
+                    "and the very thing Okayza treats.",
                 ],
             );
         },
     },
     Beat {
-        secs: 3.2,
+        secs: 3.6,
         paint: |st, t| {
             meadow(st);
-            person(st, st.at(-0.2, 0.2), st.h() * 0.45, OKAYZA_TEAL, true);
-            // The second, smaller, more successful you, in a tiny suit.
-            person(st, st.at(0.15, 0.28), st.h() * 0.25, Color32::from_rgb(30, 30, 40), true);
+            // Laughing at a salad, alone, in a field, as one does.
+            let shake = (t * 18.0).sin() * st.h() * 0.004;
+            person(st, st.at(-0.15, 0.2) + vec2(0.0, shake), st.h() * 0.45, OKAYZA_TEAL, true);
+            salad(st, st.at(0.15, 0.16), st.h() * 0.14);
             side_effects(
                 st,
                 t,
                 &[
-                    "Death may occur, but in a chill way.",
+                    "Tell your doctor if you've recently been near a fungus, a cave, or a boat.",
                     "Do not take Okayza if you are allergic to Okayza.",
-                    "Tell your doctor if your doctor is a raccoon.",
-                    "Okayza: it's fine.",
+                    "Rare but serious reactions can happen.",
+                    "Anyway, look at this salad!",
                 ],
             );
+        },
+    },
+    Beat {
+        secs: 2.4,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(40, 44, 52));
+            slam(st, t, 0.0, st.at(0.0, -0.08), "COVERED BY MOST PLANS*", st.h() * 0.09, Color32::WHITE, Color32::BLACK);
+            slam(st, t, 0.9, st.at(0.0, 0.06), "*NOT YOURS", st.h() * 0.11, OKAYZA_TEAL, Color32::BLACK);
+            caption(st, "NARRATOR:", "Ask your insurance. Your insurance will ask you.");
         },
     },
     Beat {
@@ -785,12 +806,12 @@ const OKAYZA_BEATS: [Beat; 6] = [
             st.fill(Color32::WHITE);
             capsule(st, st.at(-0.45, -0.02), st.h() * 0.3, -0.4);
             slam(st, t, 0.0, st.at(0.15, -0.08), "OKAYZA", st.h() * 0.16, OKAYZA_TEAL, OKAYZA_DARK);
-            st.p.text(st.at(0.15, 0.06), Align2::CENTER_CENTER, "Because \"fine\" is a diagnosis.", FontId::proportional(st.h() * 0.045), Color32::from_gray(40));
+            st.p.text(st.at(0.15, 0.06), Align2::CENTER_CENTER, "Medicine is getting there.", FontId::proportional(st.h() * 0.045), Color32::from_gray(40));
             fine_print(
                 st,
                 t,
-                "Okayza is not a drug. Okayza is not available. Results not typical. Results not anything. \
-                 Ask your doctor, then ask a second doctor why the first one laughed.",
+                "*May. Okayza is fictional; real conditions are real, so talk to a real doctor. \
+                 In studies, Okayza beat a sugar pill by a little, and the sugar pill is very proud of itself.",
             );
         },
     },
