@@ -21,7 +21,9 @@ Read first:
 - Favor CortenForge's strength, simulation quality, over raw speed. No
   brute-force GPU RL.
 - Log friction (missing docs, panics, confusing APIs) in `docs/FINDINGS.md`
-  with file:line references to the crate sources.
+  with file:line references to the crate sources: under its crate in the
+  friction log, starting with its type (bug, docs, API, perf, setup, works) and
+  the date.
 
 ## Build notes
 

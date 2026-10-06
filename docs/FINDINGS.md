@@ -1,13 +1,23 @@
 # CortenForge 0.9.0: end-user findings
 
 Feedback gathered while using the published crates as an outside user would
-(crates.io sources and docs only). Newest at the bottom of each section.
+(crates.io sources and docs only).
+
+How to read it:
+- **Dates** are when a finding was logged (local time, from git history).
+  In the build sections the date and crate are on each heading, since
+  everything under it shares them. Newest at the bottom of each section.
+- **The friction log** is grouped by crate. Each entry starts with its type
+  and date: **bug** (wrong results or a crash), **docs** (missing or
+  misleading docs), **API** (works, but awkward or missing a piece),
+  **perf**, **setup**, or **works** (worth keeping as is). Bugs and doc gaps
+  are the upstream fix list.
 
 ## Probe results
 
 Probes live in `examples/` and run with `cargo run --release --example <name>`.
 
-### `probe_therm` (sim-thermostat): feasible, fast, validated
+### `probe_therm` (sim-thermostat, 2026-10-04): feasible, fast, validated
 
 - Kramers check (delta_v 3, kT 1, M 1): measured switching rate 7-12% below the
   KGH prediction, within the crate's 25% tolerance. dt 0.01 gives the same rate
@@ -24,7 +34,7 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
 - Low temperature (kT 0.3) freezes into the random starting state, so an
   anneal is needed. At kT >= 1, magnetization matches exact Ising within ~0.04.
 
-### `probe_soft` (sim-soft + sim-coupling): accurate, slow, narrow
+### `probe_soft` (sim-soft + sim-coupling, 2026-10-04): accurate, slow, narrow
 
 - Every gradient matched central finite differences: trajectory material
   gradient ~1e-7 relative error, single-step and control gradients exactly. A
@@ -40,7 +50,9 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   loads and pinned vertices. No soft-soft contact (self-contact listed as
   future). Friction exists but has no gradients.
 
-### Step 1: trade computer (sim-thermostat), works
+## Building the game
+
+### Step 1: trade computer (sim-thermostat, 2026-10-05): works
 
 - 14-bit maximum-weight independent set (QUBO -> Ising -> coupled double
   wells): the i9 latch finds the exact optimum in 95% of 192 seeded runs, at
@@ -52,7 +64,7 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   become metastable. That's expected soft-spin physics, but the crate doesn't
   warn about it (see friction log).
 
-### Step 2: Bevy game, CortenForge plays well with others
+### Step 2: Bevy game (2026-10-05): CortenForge plays well with others
 
 - `Model`, `Data` and the installed `PassiveStack` are `Send + Sync`, so
   the whole CortenForge machine dropped straight into a Bevy `Resource` with
@@ -66,7 +78,7 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   must set `EguiGlobalSettings::auto_create_primary_context = false` and
   tag the main camera `PrimaryEguiContext`.
 
-### Step 3 so far: lessons from a real workload
+### Step 3 so far (sim-thermostat, 2026-10-05): lessons from a real workload
 
 - The thermostat holds up as the problem grows: 17-20 strip boards with
   ~80 springs still anneal in under a second, and the physics behaves like
@@ -106,61 +118,100 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
 
 ## Friction log
 
-- The facade is easy: one crate, and `load_model` -> `make_data` -> `step` is a
-  clean MuJoCo-style path. Both probes compiled first try using facade paths only.
-- Top-level docs are thin: the `sim` README is 9 lines, the prelude exports
-  only the coupling driver, and no crate ships an `examples/` folder. Docs cite
-  repo files that aren't shipped (`docs/keystone/*`, the book).
-- `sim-thermostat`: docs cite internal roadmap labels ("Phase 3", "D1",
+### `cortenforge` (facade) and docs overall
+
+- **works** (2026-10-04): the facade is easy: one crate, and `load_model`
+  -> `make_data` -> `step` is a clean MuJoCo-style path. Both probes
+  compiled first try using facade paths only.
+- **docs** (2026-10-04): top-level docs are thin: the `sim` README is 9
+  lines, the prelude exports only the coupling driver, and no crate ships an
+  `examples/` folder. Docs cite repo files that aren't shipped
+  (`docs/keystone/*`, the book).
+
+### `sim-thermostat`
+
+- **docs** (2026-10-04): docs cite internal roadmap labels ("Phase 3", "D1",
   "spec §3", "Ch 32 §4.6", "Route 2"). Every code example is `ignore` with an
-  undefined `model` (lib.rs:40-63, double_well.rs:38-55). Its tests' fixtures
-  need sim-core's `test-fixtures` feature, which the facade doesn't forward;
-  `therm_env::generate_mjcf` (therm_env builder.rs:22) is the workaround, found
-  only by reading source. The therm_env README is boilerplate.
-- `sim-thermostat`: no clamp API or gate/penalty library; couplings can't
-  change after install; an `ExternalField` above ~1.54 * delta_v / x0
+  undefined `model` (lib.rs:40-63, double_well.rs:38-55).
+- **docs** (2026-10-04): the tests' fixtures need sim-core's `test-fixtures`
+  feature, which the facade doesn't forward; `therm_env::generate_mjcf`
+  (therm_env builder.rs:22) is the workaround, found only by reading source.
+  The therm_env README is boilerplate.
+- **API** (2026-10-04): no clamp API or gate/penalty library; couplings
+  can't change after install.
+- **API** (2026-10-04): an `ExternalField` above ~1.54 * delta_v / x0
   silently deletes the well; `ExternalField::new` doesn't check its length
-  (external_field.rs:38,62); `exact_distribution`/`GibbsSampler` cap at
-  n <= 20 (ising.rs:37); the bit convention is documented only at
-  ising.rs:17-34; `kramers_rate` counting convention unclear vs
+  (external_field.rs:38,62).
+- **API** (2026-10-04): `exact_distribution`/`GibbsSampler` cap at n <= 20
+  (ising.rs:37).
+- **docs** (2026-10-04): the bit convention is documented only at
+  ising.rs:17-34; the `kramers_rate` counting convention is unclear vs
   `kramers_rate_turnover` (double_well.rs:180-192).
-- `sim-soft`: the SDF mesher keeps every grid vertex (18,696 kept, 561 used;
-  sdf_meshed_tet_mesh.rs:26-30). `replay_step` panics on a solver stall
-  (newton.rs:723) instead of returning an error; `try_replay_step` is easy to
-  miss. `PenaltyRigidContact::with_params` is a "testing surface" and the
-  default contact band is crate-private (penalty.rs:262-268).
-  `StaggeredCoupling::new` takes 11 positional arguments, a magic body index of
-  1, and hard-wires lambda = 4 mu (construct.rs:29-49). `Tensor` must come from
-  `sim::ml_chassis`, unmentioned in sim-soft. Gradients are unavailable with
-  friction, F-bar or Tet10. `sim_core::Data` isn't `Clone`, so gradient calls
-  consume the scene. A stray `eprintln` ("faer LU fallback fired...") prints
-  from the library.
-- RL: the `Policy` / `DifferentiablePolicy` / `ValueFn` traits are a clean
-  seam, but PPO calls per-sample `forward` / `log_prob_gradient` instead of the
-  batch methods, which blocks GPU or SIMD backends from helping. SAC/TD3 batch
-  their critic gradients. The `Algorithm` docs tell Bevy users to write their
-  own training loops, but no published example shows how.
-- `sim-thermostat`: `PairwiseCoupling` docs promise that a coupled bistable
-  array's "equilibrium statistics match the Ising model"
+- **docs** (2026-10-05): `PairwiseCoupling` docs promise that a coupled
+  bistable array's "equilibrium statistics match the Ising model"
   (pairwise_coupling.rs:8-10), validated only on a uniform-J 4-chain. They
   never state the condition: couplings and fields small compared with dV
   (positions stay near +-x0). In an antiferromagnetic QUBO with degree ~5,
   following the naive mapping gave 100% wrong answers. A one-line rule of
   thumb, or a helper that maps a QUBO/Ising problem to components and warns
   when |h| + sum|J| nears the well-flattening tilt, would have saved an hour
-  of sweeps. A "latch the lowest-energy state seen" helper would also help:
-  every annealing user needs one.
-- **Bug, `sim-thermostat`: `ising::exact_distribution` overflows to NaN.**
-  It computes `exp(-E/kT)` for every state and normalizes by the sum
+  of sweeps.
+- **API** (2026-10-05): a "latch the lowest-energy state seen" helper would
+  help: every annealing user needs one.
+- **bug** (2026-10-05): `ising::exact_distribution` overflows to NaN. It
+  computes `exp(-E/kT)` for every state and normalizes by the sum
   (ising.rs:83-90) with no max-energy shift (log-sum-exp). On a 20-spin
   problem at low temperature (beta 7, kT 0.35 here) `-E/kT` passes ~709,
   `exp` returns infinity, and every probability becomes `inf/inf = NaN`,
   silently, with no error. Fix: subtract the minimum energy before
   exponentiating. Workaround here: treat any non-finite probability as
   "solver unavailable" (`TradeComputer::exact_ground_state`).
-- `WellState::from_position` (well_state.rs:28) takes the threshold as a bare `f64` with no
-  suggested default; 0.5 x x0 (from the crate's tests) worked.
-- Windows 11 with Smart App Control enforcing: nothing builds (build scripts
-  fail with os error 4551). Getting-started notes should say to turn it off.
-  After that, the first release build of `cortenforge` took 2 min 18 s on a
-  Ryzen 5 5600.
+- **API** (2026-10-05): `WellState::from_position` (well_state.rs:28) takes
+  the threshold as a bare `f64` with no suggested default; 0.5 x x0 (from
+  the crate's tests) worked.
+- **docs** (2026-10-05): nothing says two components of the same type can
+  share a `PassiveStack` (it works; a line in stack.rs would settle it).
+  See Step 3.
+- **API** (2026-10-05): a component can't report its force at a given
+  `qpos` without a `Model` and `Data`, so a force-balance check means
+  re-deriving each force from its formula (double_well.rs:208). See Step 3.
+- **docs** (2026-10-05): writing your own `PassiveComponent` is easy but
+  undocumented; a short example would make it discoverable (found by
+  reading component.rs). See Step 3.
+
+### `sim-soft`
+
+- **perf** (2026-10-04): the SDF mesher keeps every grid vertex (18,696
+  kept, 561 used; sdf_meshed_tet_mesh.rs:26-30).
+- **bug** (2026-10-04): `replay_step` panics on a solver stall
+  (newton.rs:723) instead of returning an error; `try_replay_step` is easy
+  to miss.
+- **API** (2026-10-04): `PenaltyRigidContact::with_params` is a "testing
+  surface" and the default contact band is crate-private
+  (penalty.rs:262-268).
+- **API** (2026-10-04): `StaggeredCoupling::new` takes 11 positional
+  arguments, a magic body index of 1, and hard-wires lambda = 4 mu
+  (construct.rs:29-49).
+- **docs** (2026-10-04): `Tensor` must come from `sim::ml_chassis`,
+  unmentioned in sim-soft.
+- **API** (2026-10-04): gradients are unavailable with friction, F-bar or
+  Tet10. `sim_core::Data` isn't `Clone`, so gradient calls consume the
+  scene.
+- **bug** (2026-10-04): a stray `eprintln` ("faer LU fallback fired...")
+  prints from the library.
+
+### `sim-rl`
+
+- **perf** (2026-10-04): the `Policy` / `DifferentiablePolicy` / `ValueFn`
+  traits are a clean seam, but PPO calls per-sample `forward` /
+  `log_prob_gradient` instead of the batch methods, which blocks GPU or
+  SIMD backends from helping. SAC/TD3 batch their critic gradients.
+- **docs** (2026-10-04): the `Algorithm` docs tell Bevy users to write their
+  own training loops, but no published example shows how.
+
+### Platform
+
+- **setup** (2026-10-04): Windows 11 with Smart App Control enforcing:
+  nothing builds (build scripts fail with os error 4551). Getting-started
+  notes should say to turn it off. After that, the first release build of
+  `cortenforge` took 2 min 18 s on a Ryzen 5 5600.
