@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
 use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, salties, world};
+use cortenforge_play::trade::smart::{self, SmartWash};
 
 /// What the drum is doing.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -70,6 +71,12 @@ pub struct Laundromat {
     pub scope: Option<usize>,
     /// Every strip's qpos, sampled every [`TRACE_DT`] of sim time, newest last.
     pub trace: std::collections::VecDeque<Sample>,
+    /// The learned drum program (the Smart program runs it).
+    pub smart: SmartWash,
+    /// The smart drum: when it next reads the board, and the setting it holds.
+    pub drum: (f64, f64),
+    /// The drum setting (kT) when the breaker tripped this cycle.
+    pub stopped_kt: Option<f64>,
 }
 
 /// One scope sample: sim time, the drum's kT, every strip's deflection.
@@ -90,13 +97,17 @@ pub struct WashProgram {
     /// `trade_cli bench --runs 48 --time <duration> --night 1..=10` (480
     /// runs per program across 10 nights, with gift strips, 2026-10-05).
     pub i9_rate: &'static str,
+    /// The smart wash: the learned program sets the drum from the board
+    /// ([`smart::SmartWash`]) instead of the clock.
+    pub smart: bool,
 }
 
-pub const PROGRAMS: [WashProgram; 4] = [
-    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%" },
-    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%" },
-    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%" },
-    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%" },
+pub const PROGRAMS: [WashProgram; 5] = [
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%", smart: false },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%", smart: false },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%", smart: false },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%", smart: false },
+    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "80%", smart: true },
 ];
 
 /// Upddayett, in any night's cast.
@@ -168,6 +179,9 @@ impl Laundromat {
             settled: None,
             scope: None,
             trace: Default::default(),
+            smart: SmartWash::learned(PROGRAMS[2].duration),
+            drum: (0.0, 0.0),
+            stopped_kt: None,
             tc,
             machine,
             physics,
@@ -309,7 +323,7 @@ impl Laundromat {
                 vec![("\"Magnet stuff, baby.\"".into(), roast)]
             }
             Some(Sabotage::PowerCut(at)) => {
-                let t = self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t;
+                let t = self.kt_at_cut(at);
                 let roast = if self.battery {
                     format!("A flare doesn't flip breakers. A hand does: {:.0}% in. Six 18650s finished the cycle{}.", 100.0 * at, self.held_text())
                 } else {
@@ -343,7 +357,7 @@ impl Laundromat {
                 vec![(String::new(), roast)]
             }
             Some(Sabotage::QuietCut(at)) => {
-                let t = self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t;
+                let t = self.kt_at_cut(at);
                 let roast = if self.battery {
                     format!("No brag, no flicker: they knew where the panel was. Tripped {:.0}% in. Six 18650s finished the cycle{}.", 100.0 * at, self.held_text())
                 } else {
@@ -530,11 +544,16 @@ impl Laundromat {
         self.anneal.cut = cut.filter(|_| !self.battery);
         self.cut_at = cut.map(|at| self.machine.time() + at * p.duration);
         self.mode = Mode::Cycle { start: self.machine.time() };
+        self.drum = (0.0, 0.0);
+        self.stopped_kt = None;
+        let how = if p.smart {
+            format!("learned program, params {:?}", self.smart.params())
+        } else {
+            format!("kT x{} -> x{}", self.anneal.hot, self.anneal.cold)
+        };
         info!(
-            "spin cycle: {} (kT x{} -> x{} over {} units; i9 finds the best set {} of the time), watching at {:.0} units/s",
+            "spin cycle: {} ({how} over {} units; i9 finds the best set {} of the time), watching at {:.0} units/s",
             p.name,
-            self.anneal.hot,
-            self.anneal.cold,
             p.duration,
             p.i9_rate,
             self.speed()
@@ -542,6 +561,27 @@ impl Laundromat {
         if let Some(w) = self.want_text() {
             info!("  with want: {w}");
         }
+    }
+
+    /// The Smart program's drum setting at `t` into the cycle: it reads the
+    /// board every [`smart::SAMPLE`] units and holds in between, as it did
+    /// in training. A tripped breaker still stops it.
+    fn smart_drum(&mut self, t: f64) -> f64 {
+        if t >= self.anneal.stop_time() {
+            if self.anneal.cut.is_some() && self.stopped_kt.is_none() {
+                self.stopped_kt = Some(self.drum.1 * self.physics.k_b_t);
+            }
+            return 0.0;
+        }
+        if t >= self.drum.0 - 1e-9 {
+            self.drum = (self.drum.0 + smart::SAMPLE, self.smart.temperature(t, self.machine.positions()));
+        }
+        self.drum.1
+    }
+
+    /// The drum's kT when the breaker tripped `at` (0..1) through the cycle.
+    fn kt_at_cut(&self, at: f64) -> f64 {
+        self.stopped_kt.unwrap_or_else(|| self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t)
     }
 
     /// Sim time units per real second right now.
@@ -635,7 +675,8 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
                     lm.log_result();
                     continue;
                 }
-                lm.machine.set_temperature(lm.anneal.temperature(t));
+                let kt = if PROGRAMS[lm.program].smart { lm.smart_drum(t) } else { lm.anneal.temperature(t) };
+                lm.machine.set_temperature(kt);
             }
         }
         lm.machine.step().expect("sim step");

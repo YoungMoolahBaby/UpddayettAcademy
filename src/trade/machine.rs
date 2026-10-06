@@ -81,6 +81,60 @@ pub fn max_safe_field(delta_v: f64) -> f64 {
     8.0 * delta_v / (3.0 * 3f64.sqrt())
 }
 
+/// The board as a CortenForge model: one strip per bit, the springs, the
+/// trade biases, anything `extra`, and the drum (a Langevin thermostat whose
+/// temperature follows `ctrl[0]`). [`Machine`] runs one; the smart wash
+/// trains on a batch of them ([`super::smart`]).
+pub fn board_model(ising: &Ising, physics: Physics, seed: u64, extra: Option<Box<dyn PassiveComponent>>) -> Result<Model, Error> {
+    let n = ising.n;
+    // One actuator slot so ctrl[0] exists; it drives temperature, not force.
+    let xml = generate_mjcf(n, 1, physics.dt, (0.0, 10.0));
+    let mut model = load_model(&xml)?;
+    let mut b = PassiveStack::builder();
+    for i in 0..n {
+        b = b.with(DoubleWellPotential::new(physics.delta_v, 1.0, i));
+    }
+    if !ising.edges.is_empty() {
+        b = b.with(PairwiseCoupling::new(ising.j.clone(), ising.edges.clone()));
+    }
+    assert_eq!(ising.h.len(), n, "ExternalField needs one entry per bit");
+    b = b.with(ExternalField::new(ising.h.clone()));
+    if let Some(extra) = extra {
+        b = b.with_arc(extra.into());
+    }
+    b = b.with(
+        LangevinThermostat::new(DVector::from_element(n, physics.gamma), physics.k_b_t, seed, 0).with_ctrl_temperature(0),
+    );
+    b.build().install(&mut model);
+    Ok(model)
+}
+
+/// Start every strip in a random well, at rest: the laundry goes in unsorted.
+pub fn load_laundry(data: &mut Data, n: usize, seed: u64) {
+    let mut s = seed ^ 0x9E37_79B9_7F4A_7C15;
+    for i in 0..n {
+        s ^= s << 13;
+        s ^= s >> 7;
+        s ^= s << 17;
+        data.qpos[i] = if s & 1 == 1 { 1.0 } else { -1.0 };
+        data.qvel[i] = 0.0;
+    }
+}
+
+/// The Hall sensors: the bits as a mask (strip in the right well = trade
+/// on), or `None` while any strip is still on the barrier.
+pub fn read_bits(x: &[f64]) -> Option<u32> {
+    let mut bits = 0;
+    for (i, &x) in x.iter().enumerate() {
+        match WellState::from_position(x, 0.5) {
+            WellState::Right => bits |= 1 << i,
+            WellState::Left => {}
+            _ => return None,
+        }
+    }
+    Some(bits)
+}
+
 pub struct Machine {
     pub n: usize,
     pub physics: Physics,
@@ -109,37 +163,9 @@ impl Machine {
 
     fn build(ising: &Ising, physics: Physics, seed: u64, extra: Option<Box<dyn PassiveComponent>>) -> Result<Self, Error> {
         let n = ising.n;
-        // One actuator slot so ctrl[0] exists; it drives temperature, not force.
-        let xml = generate_mjcf(n, 1, physics.dt, (0.0, 10.0));
-        let mut model = load_model(&xml)?;
+        let model = board_model(ising, physics, seed, extra)?;
         let mut data = model.make_data();
-        let mut b = PassiveStack::builder();
-        for i in 0..n {
-            b = b.with(DoubleWellPotential::new(physics.delta_v, 1.0, i));
-        }
-        if !ising.edges.is_empty() {
-            b = b.with(PairwiseCoupling::new(ising.j.clone(), ising.edges.clone()));
-        }
-        assert_eq!(ising.h.len(), n, "ExternalField needs one entry per bit");
-        b = b.with(ExternalField::new(ising.h.clone()));
-        if let Some(extra) = extra {
-            b = b.with_arc(extra.into());
-        }
-        b = b.with(
-            LangevinThermostat::new(DVector::from_element(n, physics.gamma), physics.k_b_t, seed, 0)
-                .with_ctrl_temperature(0),
-        );
-        b.build().install(&mut model);
-
-        // Start every strip in a random well: the laundry goes in unsorted.
-        let mut s = seed ^ 0x9E37_79B9_7F4A_7C15;
-        for i in 0..n {
-            s ^= s << 13;
-            s ^= s >> 7;
-            s ^= s << 17;
-            data.qpos[i] = if s & 1 == 1 { 1.0 } else { -1.0 };
-            data.qvel[i] = 0.0;
-        }
+        load_laundry(&mut data, n, seed);
         data.ctrl[0] = 1.0;
         data.forward(&model)?;
         Ok(Self { n, physics, model, data })

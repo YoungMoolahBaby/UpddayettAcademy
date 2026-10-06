@@ -725,6 +725,15 @@ crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
   `effective_temperature`, `n_particles` and `config_k_b_t`. There's also
   no handle to the stack, so `disable_stochastic` for a noise-free eval
   isn't reachable from either env. *(probe: build_vec loses the accessors)*
+- **API** (2026-10-06, Step 4): the observation is fixed at `[qpos..,
+  qvel..]` (341-345), with no hook to add `time()` or `ctrl` or drop the
+  velocities. A policy can't tell how far through the episode it is, and
+  its input size changes with the particle count, so one policy can't run
+  on boards of 17 and 20 strips. The builder would carry the board itself
+  (`with` takes the `PairwiseCoupling` and `ExternalField` fine), but the
+  smart wash had to skip it: our board model plus `VecEnv::builder` with
+  its own `ObservationSpace` (time, then qpos) took about 40 lines
+  (src/trade/smart.rs `wash_env`).
 
 #### Docs
 
@@ -1206,6 +1215,16 @@ sim-core). The envs handle that differently:
   (vec_env.rs:276-285), so later envs skip their `on_reset` and `forward`.
   From the source; not run.
 
+- **API** (2026-10-06, Step 4): the reward, done and truncated hooks are
+  `Fn(&Model, &Data)` shared by every env (vec_env.rs:340-358), with no env
+  index and no episode state; `on_reset` gets the index (373), the reward
+  doesn't. A reward that depends on the episode so far needs a side table.
+  The smart wash pays only when the i9's latch improves (the best answer
+  seen so far), so it keeps a `Mutex<HashMap>` keyed by each env's `Data`
+  address and spots a new episode by `time` going back (src/trade/smart.rs
+  `wash_env`). It works because the batch never moves its `Data`, which
+  nothing promises.
+
 #### Rollouts
 
 - **bug** (2026-10-06): `collect_episodic_rollout` takes act_dim from env
@@ -1248,6 +1267,15 @@ sim-core). The envs handle that differently:
   divides by zero. *(probe: forward_batch drops a partial row)*
 - **bug** (2026-10-06): `log_prob_gradient` with sigma 0 returns `[inf, inf,
   inf]` (linear.rs:128-133, mlp.rs:213-217). *(probe: sigma 0 gradient)*
+- **API** (2026-10-06, Step 4): `Policy` is an open trait, and a hand-written
+  one is easy (five methods; the smart wash computes its own features from
+  the observation and maps them to a log temperature). But `descriptor()`
+  must return a `PolicyDescriptor` whose `NetworkKind` is closed (Linear,
+  Mlp, Autograd; artifact.rs:47-54), so a custom policy has to claim to be
+  one of them. `to_policy` then rebuilds a `LinearPolicy` of the claimed
+  size (artifact.rs:399-401), not the policy that was saved, so
+  checkpoints and `best_artifact` of a custom policy don't round-trip. CEM
+  itself only reads the params, so training works.
 
 #### Autograd, optimizer, replay buffer
 
@@ -1311,6 +1339,22 @@ Checked by the same probe, `gaps_ml_chassis`. Paths are under sim-rl's
   fit together without glue. *(probe: CEM learns a wash program)*
 - **works** (2026-10-06): the same seed on a deterministic task replays bit
   for bit. *(probe: CEM: same seed replays)*
+- **API** (2026-10-06, Step 4): each candidate is scored on one episode of
+  one env (162-180), and an env is one model, so one board. There's no way
+  to score a candidate over several episodes or several tasks. The smart
+  wash has to work on every night, so it trains one `train(Epochs(1))`
+  call at a time, rotating over a `VecEnv` per night. That works: the mean
+  (the policy's params) and `noise_std` carry over between calls. But each
+  elite pick is one stochastic spin, and the latch outcome is nearly binary,
+  so the selection is noisy. A test of Normal's own schedule against itself
+  at 12 spins a night varies ±15 points per night.
+- **API** (2026-10-06, Step 4): the elites of an easy task all tie (every
+  candidate lands the best set), so whatever small term is left decides
+  the ranking. Run 1 of the smart wash had a 0.02 heat cost as a
+  tie-breaker, and CEM followed it to a drum 2.7x colder that then missed on
+  hard nights (revisited nights fell from 1.6 to 1.0 reward). That's
+  CEM, not a bug, but with no per-candidate repeats there's no way to tell
+  a real gain from a tie.
 
 #### CEM
 

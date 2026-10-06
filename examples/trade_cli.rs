@@ -13,6 +13,9 @@
 //!                    Goo lost, the i9's idle check, and the calibration load
 //!   cuts             sweep when the breaker trips, and the battery
 //!   smart            the smart Salties' aimed coil per program: cost, spin-check alarms, shield
+//!   learn            train the smart wash program with CEM on --train nights (A..B or a,b,c; default 11..22),
+//!                    --gens G x --pop P spins, then test it on --nights A..B (default 1..10)
+//!   versus           Normal vs the smart wash (--smart = the learned one, or --params a,b,c,d) per night
 //!
 //!   --night N        which night (default 1)
 //!
@@ -26,11 +29,14 @@
 //!   --seed N  --runs N
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
 //!   --hot T  --cold T  --time T  --settle T
+//!   --smart          spin with the learned smart wash instead of the anneal (bench, versus)
+//!   --restarts K     the smart wash as K shorter cool-downs back to back (the latch keeps the best)
 
 use std::time::Instant;
 
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
+use cortenforge_play::trade::smart::{self, SmartWash};
 use cortenforge_play::trade::{self, Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, qubo, salties};
 
 #[derive(Clone)]
@@ -56,6 +62,17 @@ struct Opts {
     penalty: f64,
     physics: Physics,
     anneal: Anneal,
+    /// The smart wash (`--smart`, `--params`) instead of the anneal.
+    smart: bool,
+    params: Option<Vec<f64>>,
+    program: Option<SmartWash>,
+    gens: usize,
+    /// Cool-downs per cycle for the smart wash (`--restarts K`).
+    restarts: usize,
+    pop: usize,
+    /// Nights `versus` tests on, and `learn` trains on.
+    nights: (u64, u64),
+    train: Vec<u64>,
 }
 
 fn parse() -> Opts {
@@ -80,6 +97,14 @@ fn parse() -> Opts {
         penalty: 1.6,
         physics: Physics::default(),
         anneal: Anneal::default(),
+        smart: false,
+        params: None,
+        program: None,
+        gens: 60,
+        restarts: 1,
+        pop: 24,
+        nights: (1, 10),
+        train: (11..=22).collect(),
     };
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
@@ -120,12 +145,36 @@ fn parse() -> Opts {
             "--cold" => o.anneal.cold = num(val()),
             "--time" => o.anneal.duration = num(val()),
             "--settle" => o.anneal.settle = num(val()),
+            "--smart" => o.smart = true,
+            "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
+            "--gens" => o.gens = num(val()) as usize,
+            "--restarts" => o.restarts = num(val()) as usize,
+            "--pop" => o.pop = num(val()) as usize,
+            "--nights" => o.nights = night_range(&val()),
+            "--train" => o.train = night_list(&val()),
             m if !m.starts_with("--") => o.mode = m.to_string(),
             other => panic!("unknown option {other}"),
         }
         i += 1;
     }
     o
+}
+
+/// "1..10" (inclusive) or a single night "4".
+fn night_range(s: &str) -> (u64, u64) {
+    let n = |s: &str| s.trim().parse::<u64>().unwrap_or_else(|_| panic!("bad night {s}"));
+    match s.split_once("..") {
+        Some((a, b)) => (n(a), n(b.trim_start_matches('='))),
+        None => (n(s), n(s)),
+    }
+}
+
+/// "11..22" or "12,20,25" (or a mix: "1..3,9").
+fn night_list(s: &str) -> Vec<u64> {
+    s.split(',').flat_map(|p| {
+        let (a, b) = night_range(p);
+        a..=b
+    }).collect()
 }
 
 fn setup(o: &Opts) -> TradeComputer {
@@ -355,7 +404,12 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64, SpinCheck)> {
                             let mut m = board(tc, o, o.seed + r as u64 * 7919);
                             let t = Instant::now();
                             let mut check = SpinCheck::default();
-                            let l = tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, |m, _| check.observe(m, &tc.ising)).expect("spin");
+                            let tick = |m: &Machine, _: &Latch| check.observe(m, &tc.ising);
+                            let l = match &o.program {
+                                Some(p) => tc.spin_with(&mut m, p.total_time(), p.program(), SAMPLE, SAMPLE, tick),
+                                None => tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, tick),
+                            }
+                            .expect("spin");
                             (l, t.elapsed().as_secs_f64(), check)
                         })
                         .collect::<Vec<_>>()
@@ -443,8 +497,82 @@ fn bench(o: &Opts) -> Result<(), trade::Error> {
     Ok(())
 }
 
+/// Normal against a smart wash on each of `o.nights`: the i9's hit rate on
+/// the best set, `o.runs` spins each, same cycle length.
+fn versus(o: &Opts, smart: &SmartWash) {
+    println!(
+        "Normal vs smart wash ({} time units + settle, {} cool-down(s)), {} spins a night, params {:?}",
+        smart.duration,
+        smart.restarts,
+        o.runs,
+        smart.params().iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>()
+    );
+    let (mut hn, mut hs, mut nights) = (0.0, 0.0, 0.0);
+    for night in o.nights.0..=o.nights.1 {
+        let mut on = o.clone();
+        on.night = night;
+        on.program = None;
+        let tc = setup(&on);
+        let normal = hit_and_loss(&tc, &on);
+        on.program = Some(smart.clone());
+        let learned = hit_and_loss(&tc, &on);
+        println!(
+            "  night {night:>3} ({:>2} strips): Normal {:>3.0}% (lost {:>4.1} Goo), smart {:>3.0}% (lost {:>4.1} Goo)",
+            tc.ising.n,
+            100.0 * normal.0,
+            normal.1,
+            100.0 * learned.0,
+            learned.1
+        );
+        hn += normal.0;
+        hs += learned.0;
+        nights += 1.0;
+    }
+    println!("  mean: Normal {:.0}%, smart {:.0}%", 100.0 * hn / nights, 100.0 * hs / nights);
+}
+
+/// Trains the smart wash with CEM on `o.train` nights, then tests it
+/// against Normal on `o.nights` (held out).
+fn learn(o: &Opts) -> Result<(), trade::Error> {
+    let start = o.program.clone().unwrap_or_else(|| SmartWash::normal(o.anneal.duration));
+    let nights: Vec<(u64, TradeComputer)> = o.train.iter().copied()
+        .map(|n| {
+            let mut on = o.clone();
+            on.night = n;
+            (n, setup(&on))
+        })
+        .collect();
+    println!(
+        "CEM: {} generations x {} candidates, training nights {:?} in turn, start {:?}",
+        o.gens,
+        o.pop,
+        o.train,
+        start.params()
+    );
+    let t0 = Instant::now();
+    let learned = smart::train(&nights, o.physics, &start, o.gens, o.pop, o.seed, |g, night, m, p| {
+        println!(
+            "  gen {g:>3} night {night:>3}: mean {:.3}, elite {:.3}/step, noise {:.3}, {:.1} s; params {:?}",
+            m.mean_reward,
+            m.extra.get("elite_mean_reward_per_step").copied().unwrap_or(f64::NAN),
+            m.extra.get("noise_std").copied().unwrap_or(f64::NAN),
+            m.wall_time_ms as f64 / 1000.0,
+            p.iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>()
+        );
+    })?;
+    println!("trained in {:.0} s", t0.elapsed().as_secs_f64());
+    println!("pub const LEARNED: Option<[f64; N_FEATURES]> = Some({:?});", learned.params());
+    versus(o, &learned);
+    Ok(())
+}
+
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
+    if o.smart || o.params.is_some() || o.restarts > 1 {
+        let d = o.anneal.duration;
+        let p = o.params.as_ref().map_or_else(|| SmartWash::learned(d), |p| SmartWash::new(d, p));
+        o.program = Some(p.with_restarts(o.restarts));
+    }
     if o.salty {
         apply_salties(&mut o);
     }
@@ -454,6 +582,11 @@ fn main() -> Result<(), trade::Error> {
     match o.mode.as_str() {
         "run" => run(&o),
         "bench" => bench(&o),
+        "learn" => learn(&o),
+        "versus" => {
+            versus(&o, &o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration)));
+            Ok(())
+        }
         "wants" => {
             // Every want the picker can offer: what it costs the block, whether
             // its bias pins the strip (the "thumb clamp"), and with --bench, how

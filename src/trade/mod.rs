@@ -11,6 +11,7 @@ pub mod escrow;
 pub mod machine;
 pub mod qubo;
 pub mod salties;
+pub mod smart;
 pub mod tv;
 pub mod world;
 
@@ -306,16 +307,32 @@ impl TradeComputer {
         anneal: &Anneal,
         sample: f64,
         every: f64,
+        tick: impl FnMut(&Machine, &Latch),
+    ) -> Result<Latch, Error> {
+        self.spin_with(m, anneal.total_time(), |t, _| anneal.temperature(t), sample, every, tick)
+    }
+
+    /// [`TradeComputer::spin`] with any drum program: `program(t, m)` sets
+    /// the temperature at `t` time units in (it may read the board, as the
+    /// smart wash does), for `total` time units.
+    pub fn spin_with(
+        &self,
+        m: &mut Machine,
+        total: f64,
+        mut program: impl FnMut(f64, &Machine) -> f64,
+        sample: f64,
+        every: f64,
         mut tick: impl FnMut(&Machine, &Latch),
     ) -> Result<Latch, Error> {
         let dt = m.physics.dt;
-        let steps = (anneal.total_time() / dt).round() as usize;
+        let steps = (total / dt).round() as usize;
         let sample_steps = ((sample / dt).round() as usize).max(1);
         let tick_steps = if every.is_finite() { ((every / dt).round() as usize).max(1) } else { usize::MAX };
         let t0 = m.time();
         let mut latch = Latch::new();
         for k in 1..=steps {
-            m.set_temperature(anneal.temperature(m.time() - t0));
+            let t = program(m.time() - t0, m);
+            m.set_temperature(t);
             m.step()?;
             if k % sample_steps == 0 || k == steps {
                 latch.observe(m, &self.problem.qubo);

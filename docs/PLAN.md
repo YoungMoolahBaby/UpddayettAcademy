@@ -22,8 +22,10 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: **Step 4, the CEM-learned smart wash program** (user said go,
-2026-10-06; plan below). Later:
+Now: **Step 4, the CEM-learned smart wash program** (user said go,
+2026-10-06; plan and "Step 4 so far" below). The Smart program is in the
+game; it ties Normal so far, and run 3 (6 restarts) is testing whether it
+can beat it. Later:
 - 3.2 voice and music;
 - when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
@@ -1000,7 +1002,61 @@ scored 50.8 of 100 against 24.3 for the best constant. The wiring is in
 
 **Risk.** CEM ranks elites by reward per step (FINDINGS, cem.rs:172-180).
 That bites variable-length episodes; ours are fixed-length, so it
-shouldn't, but check.
+shouldn't, but check. (Checked: every episode is 1020 steps.)
+
+### Step 4 so far (2026-10-06)
+
+**Built.**
+- `src/trade/smart.rs`:
+  - `SmartWash` is the program: log kT = params · [1, τ, τ², fraction of
+    strips on the barrier], read every time unit and held in between.
+  - It is a hand-written ml-chassis `Policy`. `wash_env` builds the
+    night's board as a `VecEnv`. `train` runs sim-rl `Cem` one
+    generation at a time, rotating over the training nights.
+- `machine::board_model` / `load_laundry` / `read_bits` are shared by
+  `Machine` and the env. `TradeComputer::spin_with` runs any program.
+- `trade_cli learn` (`--train 12,20,..`, `--gens`, `--pop`, `--restarts`)
+  and `trade_cli versus` (Normal vs smart per night; `--smart`,
+  `--params`, `--restarts`).
+- Game: a fifth program, "Smart (learned)" (`UPD_PROGRAM=4`). The scope's
+  kT trace shows its drum.
+
+**Decision: why not `ThermCircuitEnv`.** It carries the couplings fine,
+but its observation is fixed to raw `[qpos, qvel]`. That has no time and
+a size that changes with the board, so one policy can't run on every
+night. We used our board model plus `VecEnv::builder` with
+`[time, qpos]` instead (FINDINGS, sim-therm-env).
+
+**Reward.** Each step pays only when the i9 latch improves, so an
+episode's rewards add up to the latched set's quality: its value as a
+fraction of the best, +1 for the best set. ml-chassis rewards have no
+episode state, so this needs a side table keyed by each env's `Data`
+(FINDINGS).
+
+**Runs** (each one a CEM generation of 24-32 spins at ~0.5 s per spin;
+`VecEnv` steps envs one at a time):
+1. **Heat cost 0.02, training nights 11-22: abandoned at generation 28.**
+   On easy nights every candidate lands the best set, so the heat cost
+   decided the ranking. CEM cooled the drum to a 1.5x kT peak, and the
+   revisited nights' reward fell.
+2. **No heat cost; the 11 hard nights (Normal ≤ 67% in a 12-spin screen of
+   nights 11-60).** 66 generations x 32 spins, 16 min. Learned: start at
+   5.2x kT, bend colder late. **Held out, nights 1-10, 48 spins each:
+   80% vs Normal's 81%. A tie.** This is `LEARNED`; the game shows 80%.
+   - Calibration: Normal's own schedule run through the smart path scored
+     84% vs 82% over nights 11-60 at 12 spins. The path is faithful; at
+     12 spins a night is ±15 points.
+3. **Restarts (no CEM):** the same 1000 units as K cool-downs; the latch
+   keeps the best.
+
+   | K | 1 (Normal) | 2 | 3 | 4 | 6 |
+   |---|---|---|---|---|---|
+   | Mean, nights 1-10 | 81% | 79% | 81% | 79% | 82% |
+   | Night 4 (hard) | 38% | 46% | 48% | 42% | 52% |
+
+   The tries aren't independent, and short cool-downs lose on easy nights
+   what they win on hard ones.
+4. **CEM shape at 6 restarts, hard nights:** running.
 
 ## Gotchas (from the probes)
 
