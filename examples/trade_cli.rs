@@ -68,7 +68,7 @@ struct Opts {
     program: Option<SmartWash>,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
-    restarts: usize,
+    restarts: Option<usize>,
     pop: usize,
     /// Nights `versus` tests on, and `learn` trains on.
     nights: (u64, u64),
@@ -101,7 +101,7 @@ fn parse() -> Opts {
         params: None,
         program: None,
         gens: 60,
-        restarts: 1,
+        restarts: None,
         pop: 24,
         nights: (1, 10),
         train: (11..=22).collect(),
@@ -148,7 +148,7 @@ fn parse() -> Opts {
             "--smart" => o.smart = true,
             "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--gens" => o.gens = num(val()) as usize,
-            "--restarts" => o.restarts = num(val()) as usize,
+            "--restarts" => o.restarts = Some(num(val()) as usize),
             "--pop" => o.pop = num(val()) as usize,
             "--nights" => o.nights = night_range(&val()),
             "--train" => o.train = night_list(&val()),
@@ -568,10 +568,12 @@ fn learn(o: &Opts) -> Result<(), trade::Error> {
 
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
-    if o.smart || o.params.is_some() || o.restarts > 1 {
+    if o.smart || o.params.is_some() || o.restarts.is_some() {
         let d = o.anneal.duration;
         let p = o.params.as_ref().map_or_else(|| SmartWash::learned(d), |p| SmartWash::new(d, p));
-        o.program = Some(p.with_restarts(o.restarts));
+        // --restarts overrides; otherwise the learned one keeps its own.
+        let k = o.restarts.unwrap_or(if o.params.is_some() { 1 } else { p.restarts });
+        o.program = Some(p.with_restarts(k));
     }
     if o.salty {
         apply_salties(&mut o);

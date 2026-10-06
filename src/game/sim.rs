@@ -107,7 +107,7 @@ pub const PROGRAMS: [WashProgram; 5] = [
     WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%", smart: false },
     WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%", smart: false },
     WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%", smart: false },
-    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "80%", smart: true },
+    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%", smart: true },
 ];
 
 /// Upddayett, in any night's cast.

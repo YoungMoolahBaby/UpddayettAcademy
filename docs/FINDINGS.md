@@ -1339,6 +1339,19 @@ Checked by the same probe, `gaps_ml_chassis`. Paths are under sim-rl's
   fit together without glue. *(probe: CEM learns a wash program)*
 - **works** (2026-10-06): the same seed on a deterministic task replays bit
   for bit. *(probe: CEM: same seed replays)*
+- **works** (2026-10-06, Step 4): CEM learns a wash program for the real
+  machine that generalizes. It ran on 17-20 coupled strips, the whole
+  board of the night, at Normal's length. Training: 66 generations of 32
+  spins over 11 hard nights, 16 min single-threaded. Result, on boards it
+  never saw: 93% vs Normal's 83% best set over nights 61-80, and 88% vs
+  81% over nights 1-10. Each cool-down starts hotter and cools faster
+  while strips are mid-flip, six cool-downs a cycle with the i9 latch
+  keeping the best. That needed four things from the user:
+  - our own env, because therm-env fixes the observation;
+  - a side table for the latch reward;
+  - one `train` call per night;
+  - training only on hard nights.
+  The CEM itself just worked. (src/trade/smart.rs; PLAN "Step 4 so far".)
 - **API** (2026-10-06, Step 4): each candidate is scored on one episode of
   one env (162-180), and an env is one model, so one board. There's no way
   to score a candidate over several episodes or several tasks. The smart

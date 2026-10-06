@@ -274,6 +274,13 @@ business cards.
 6. **Every night is different** (built, Step 3.3a). Weather, who's hungry and
    whose pigeons need feeding are rolled per night; values and tags follow
    from rules, not a fixed table. Ray isn't always full.
+7. **Wash programs** set how the drum cools: Quick Wash, Permanent Press,
+   Normal, Delicates, the slower the surer. **Smart (learned)** (built,
+   Step 4) is a program the machine taught itself. CortenForge's CEM
+   learned it on other nights' boards. It cools six times in Normal's
+   time, reading the strips as it goes, and the i9 keeps the best answer
+   it saw. It finds the best set about 9 times in 10 where Normal manages
+   8 (on nights it never trained on), and it helps most on the hard nights.
 
 
 ### The regulars (Suds & Duds, Turk Street)

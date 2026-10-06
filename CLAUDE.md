@@ -50,6 +50,10 @@ Read first:
   `trade_cli night --night N` shows a night's conditions; every mode takes `--night N`; `nights` summarizes
   200 nights; `--give upd:phone` gives an item away; `--gifts N` / `--chain N` change the gift strips
   (experiments).
+- The smart wash (Step 4, `src/trade/smart.rs`): `trade_cli versus [--nights 61..80] [--seed S]` pits Normal
+  against the learned program per night (~2 min for 10 nights x 48 spins); `bench --smart` benches it;
+  `learn --restarts 6 --params ... --train 12,20,.. --gens 66 --pop 32` retrains it (~16 min, one core;
+  the full command is in PLAN "Step 4 so far"); paste the printed params into `LEARNED`.
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

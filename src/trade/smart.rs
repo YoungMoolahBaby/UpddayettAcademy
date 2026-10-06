@@ -41,11 +41,18 @@ pub const HEAT_COST: f64 = 0.0;
 /// of the cool-down gone and barrier the fraction of strips mid-flip.
 pub const N_FEATURES: usize = 4;
 
-/// The learned program: CEM run 2 (2026-10-06), 66 generations x 32 spins
-/// over the 11 hard nights 12..58, from Normal's schedule. It starts
-/// hotter (5.2x kT) and bends colder late. On held-out nights 1-10 it ties
-/// Normal: 80% vs 81% (48 spins a night). `None` falls back to Normal.
-pub const LEARNED: Option<[f64; N_FEATURES]> = Some([1.6564250264608893, -2.3704681441046147, -0.3377656589837358, -0.2517697061461304]);
+/// The learned program: CEM run 3 (2026-10-06), 66 generations x 32 spins
+/// over the 11 hard nights 12..58, from Normal's schedule, run as
+/// [`LEARNED_RESTARTS`] cool-downs. Each starts hotter than Normal (5.1x
+/// kT) and cools faster while many strips are mid-flip. Held out: 88% vs
+/// Normal's 81% on nights 1-10 (48 spins a night), 93% vs 83% on nights
+/// 61-80 (24 spins, fresh seeds). `None` falls back to Normal.
+pub const LEARNED: Option<[f64; N_FEATURES]> =
+    Some([1.6260607631131936, -2.304621695618709, -0.08961597289308289, -0.41279624618638444]);
+
+/// Cool-downs per cycle for [`LEARNED`]. Six of Normal's own shape alone
+/// don't help on average (82% vs 81%); CEM's shape is what makes them pay.
+pub const LEARNED_RESTARTS: usize = 6;
 
 /// A drum program: log kT = params . features, held for [`SAMPLE`] time
 /// units, cold for the settle once the cool-down is over. As an ml-chassis
@@ -76,7 +83,7 @@ impl SmartWash {
 
     /// The trained program, or Normal's if there is none yet.
     pub fn learned(duration: f64) -> Self {
-        LEARNED.map_or_else(|| Self::normal(duration), |p| Self::new(duration, &p))
+        LEARNED.map_or_else(|| Self::normal(duration), |p| Self::new(duration, &p).with_restarts(LEARNED_RESTARTS))
     }
 
     /// The same program, run as `k` shorter cool-downs back to back.
@@ -286,5 +293,21 @@ mod tests {
         for t in [0.0, 250.0, 500.0, 999.0, 1000.0, 1010.0] {
             assert!((s.temperature(t, &[1.0, -1.0]) - a.temperature(t)).abs() < 1e-9, "t={t}");
         }
+    }
+
+    #[test]
+    fn restarts_repeat_the_cool_down() {
+        let s = SmartWash::learned(1000.0);
+        let period = 1000.0 / s.restarts as f64;
+        let x = [1.0, -1.0, 0.1];
+        for t in [0.0, 30.0, 120.0] {
+            for k in 1..s.restarts {
+                let again = s.temperature(t + k as f64 * period, &x);
+                assert!((again - s.temperature(t, &x)).abs() < 1e-9, "t={t}, cool-down {k}");
+            }
+        }
+        // Each cool-down starts hot and ends cold; the settle is cold.
+        assert!(s.temperature(0.0, &x) > 3.0 * s.temperature(period - 1.0, &x));
+        assert_eq!(s.temperature(1000.0, &x), 0.0);
     }
 }

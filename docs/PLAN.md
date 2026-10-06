@@ -22,10 +22,10 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Now: **Step 4, the CEM-learned smart wash program** (user said go,
-2026-10-06; plan and "Step 4 so far" below). The Smart program is in the
-game; it ties Normal so far, and run 3 (6 restarts) is testing whether it
-can beat it. Later:
+**Step 4 done** (2026-10-06): the CEM-learned smart wash program, the
+game's fifth program, "Smart (learned)". It finds the best set 93% of the
+time on unseen nights, against Normal's 83%, in the same time (see "Step 4
+so far" below). Next: pick from the Step 4 ideas, or later:
 - 3.2 voice and music;
 - when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
@@ -1056,7 +1056,43 @@ episode state, so this needs a side table keyed by each env's `Data`
 
    The tries aren't independent, and short cool-downs lose on easy nights
    what they win on hard ones.
-4. **CEM shape at 6 restarts, hard nights:** running.
+4. **CEM shape at 6 restarts, same hard nights, 66 x 32 (16 min). It beats
+   Normal.** Each cool-down starts at 5.1x kT and cools faster while
+   many strips are mid-flip (barrier weight -0.41).
+
+   | Held out | Normal | Smart |
+   |---|---|---|
+   | Nights 1-10, 48 spins | 81% | **88%** |
+   | Night 4 (the hard one) | 38% | 52% |
+   | Night 6 | 77% | 100% |
+   | Nights 61-80, 24 spins, fresh seeds | 83% | **93%** |
+   | Night 73 | 58% | 96% |
+   | Night 79 | 42% | 79% |
+
+   - It ties or wins on 29 of 30 nights, at Normal's length: about
+     Delicates' 95% in a third of the time.
+   - Six restarts of Normal's own shape scored 82% on nights 1-10, so
+     the CEM shape is what makes the restarts pay.
+   - Nights 61-80 are the clean test. The restart count was picked
+     partly from night 4.
+   - This is `LEARNED` / `LEARNED_RESTARTS`, and the game shows 88%
+     (measured like the other programs: nights 1-10, 48 spins).
+
+**Step 4 is done:**
+- it beats Normal on unseen nights at the same length, the hard nights
+  most;
+- `trade_cli bench --smart` / `versus` bench it;
+- FINDINGS has the friction.
+
+Reproduce:
+`trade_cli learn --restarts 6 --params 1.386,-2.436,0,0 --train 12,20,25,27,29,33,35,37,48,56,58 --gens 66 --pop 32`.
+CEM's shared noise stream means a rerun won't match bit for bit.
+
+**Ideas, not done:**
+- Make the restart count learnable.
+- Give the program memory (time since the latch last improved), so it
+  reheats only when stuck.
+- Train with wants and gifts on.
 
 ## Gotchas (from the probes)
 
