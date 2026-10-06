@@ -75,8 +75,8 @@ const ADS: [Ad; 3] = [
     Ad {
         name: "SUPERINTELLIGENCE FOR DOGS",
         pitch: "Your dog was smart. Now he's a superintelligence.",
-        tag: "HE STILL CAN'T OPEN THE DOOR. NOW HE CAN EXPLAIN WHY.",
-        fine: "Intelligence sold separately from opposable thumbs. Doors are physics. Not available for cats (they declined).",
+        tag: "HE USES THE TOILET NOW. HE STILL CAN'T FLUSH.",
+        fine: "Flushing needs opposable thumbs, sold separately. Intelligence is free now; thumbs are physics. Not available for cats (they declined).",
         face: egui::Color32::from_rgb(120, 200, 255),
         side: egui::Color32::from_rgb(20, 40, 90),
         bg: egui::Color32::from_rgb(10, 12, 30),

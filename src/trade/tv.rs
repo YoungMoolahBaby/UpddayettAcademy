@@ -8,7 +8,7 @@ use super::world::World;
 /// The Shrug Network's segue: true news, then whatever.
 const ANYWAY: [&str; 10] = [
     "a billionaire bought a second moon.",
-    "a celebrity's dog launched a podcast.",
+    "a celebrity's pug launched a pugcast.",
     "experts say the weather will continue.",
     "a yacht bought a smaller yacht.",
     "a startup raised $40 million to reinvent the sandwich.",

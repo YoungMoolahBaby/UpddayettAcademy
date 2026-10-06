@@ -663,8 +663,8 @@ went home.
     policy): in Corten-steel orange, with a line on what the sim does and
     Ferris waving below. It lasts 3 s and can be skipped.
   - **The ads:** every third night, a commercial breaks in before the
-    night: MTN GOO, SUPERINTELLIGENCE FOR DOGS ("he still can't open the
-    door; now he can explain why") and CARTPASS ("$9.99/mo, wheels sold
+    night: MTN GOO, SUPERINTELLIGENCE FOR DOGS ("he uses the toilet now;
+    he still can't flush") and CARTPASS ("$9.99/mo, wheels sold
     separately"), each with fine print. An ad lasts 8 s and can be skipped.
   - The board-cam inset is its own camera and drew over the cards, so it's
     switched off while a card is up. Titles are sized to fit the window.
@@ -680,7 +680,7 @@ went home.
     and how many sleep out, hungry flocks, give-aways, trades on the board,
     the dumb Salties' brag), each followed by "Anyway, ..." and a shrug
     picked by the night's seed. Night 1: "4 HUNGRY ON TURK ST TONIGHT.
-    Anyway, a celebrity's dog launched a podcast." The banner says 4 hungry.
+    Anyway, a celebrity's pug launched a pugcast." The banner says 4 hungry.
   - **PromiseTV:** four fictional candidates (Glorbman, Councilwoman Plinko,
     Chet Sprockett, Mayor Dumpleton) each promise everyone one item Turk St
     has one of: the hub motor, the Wi-Fi password, the soldering iron, the
