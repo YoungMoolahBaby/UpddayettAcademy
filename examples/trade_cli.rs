@@ -30,6 +30,7 @@
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
 //!   --hot T  --cold T  --time T  --settle T
 //!   --smart          spin with the learned smart wash instead of the anneal (bench, versus)
+//!   --mix            versus / learn also run each night with one want and one give-away of Upddayett's
 //!   --restarts K     the smart wash as K shorter cool-downs back to back (the latch keeps the best)
 //!   --patience F     the smart wash reheats once the strips read the same set for F x a cool-down
 
@@ -65,6 +66,8 @@ struct Opts {
     anneal: Anneal,
     /// The smart wash (`--smart`, `--params`) instead of the anneal.
     smart: bool,
+    /// `versus` / `learn` also try one want and one give-away a night (`--mix`).
+    mix: bool,
     params: Option<Vec<f64>>,
     program: Option<SmartWash>,
     gens: usize,
@@ -101,6 +104,7 @@ fn parse() -> Opts {
         physics: Physics::default(),
         anneal: Anneal::default(),
         smart: false,
+        mix: false,
         params: None,
         program: None,
         gens: 60,
@@ -150,6 +154,7 @@ fn parse() -> Opts {
             "--time" => o.anneal.duration = num(val()),
             "--settle" => o.anneal.settle = num(val()),
             "--smart" => o.smart = true,
+            "--mix" => o.mix = true,
             "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--gens" => o.gens = num(val()) as usize,
             "--restarts" => o.restarts = Some(num(val())),
@@ -192,14 +197,7 @@ fn setup(o: &Opts) -> TradeComputer {
         w.set_gift(item, true);
         println!("{} gives away the {}.", w.npcs[npc].name, w.items[item].name);
     }
-    let mut tc = TradeComputer::with_board(w, o.beta, o.penalty, o.gifts, o.chain);
-    tc.delta_v = o.physics.delta_v;
-    if let Some(c) = o.clamp {
-        tc.want_clamp = c;
-    }
-    if let Some(m) = o.margin {
-        tc.want_margin = m;
-    }
+    let mut tc = board_for(o, w);
     if let Some(w) = &o.want {
         let (who, what) = w.split_once(':').expect("--want WHO:WHAT");
         let npc = tc.world.find_npc(who).unwrap_or_else(|| panic!("nobody called {who}"));
@@ -210,6 +208,57 @@ fn setup(o: &Opts) -> TradeComputer {
         println!("Backward mode: {} wants the {}.", tc.world.npcs[npc].name, tc.world.items[item].name);
     }
     tc
+}
+
+/// The trade computer for world `w` with the options' board settings.
+fn board_for(o: &Opts, w: trade::world::World) -> TradeComputer {
+    let mut tc = TradeComputer::with_board(w, o.beta, o.penalty, o.gifts, o.chain);
+    tc.delta_v = o.physics.delta_v;
+    if let Some(c) = o.clamp {
+        tc.want_clamp = c;
+    }
+    if let Some(m) = o.margin {
+        tc.want_margin = m;
+    }
+    tc
+}
+
+/// The boards `versus` and `learn` run for `night`: tonight's board, and
+/// with `--mix` also one want (anyone's, any deliverable item) and one of
+/// Upddayett's give-aways, picked by the night. Each comes with a label.
+fn scenarios(o: &Opts, night: u64) -> Vec<(String, TradeComputer)> {
+    let mut on = o.clone();
+    on.night = night;
+    let plain = setup(&on);
+    let mut out = vec![("plain".to_string(), plain.clone())];
+    if !o.mix {
+        return out;
+    }
+    let mut rng = night.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
+    let mut pick = |n: usize| {
+        rng ^= rng << 13;
+        rng ^= rng >> 7;
+        rng ^= rng << 17;
+        (rng % n as u64) as usize
+    };
+    let w = &plain.world;
+    let wants: Vec<(usize, usize)> =
+        (0..w.npcs.len()).flat_map(|k| plain.deliverable(k).into_iter().map(move |i| (k, i))).collect();
+    if !wants.is_empty() {
+        let (k, i) = wants[pick(wants.len())];
+        let mut tc = plain.clone();
+        tc.want(k, i);
+        out.push((format!("{} wants the {}", w.npcs[k].name, w.items[i].name), tc));
+    }
+    let upd = w.find_npc("upd").expect("Upddayett");
+    let gives = w.giveable(upd);
+    if !gives.is_empty() {
+        let item = gives[pick(gives.len())];
+        let mut world = trade::world::laundromat(night);
+        world.set_gift(item, true);
+        out.push((format!("Upddayett gives the {} away", w.items[item].name), board_for(o, world)));
+    }
+    out
 }
 
 fn bitstring(m: &Machine) -> String {
@@ -513,41 +562,48 @@ fn versus(o: &Opts, smart: &SmartWash) {
         o.runs,
         smart.params().iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>()
     );
-    let (mut hn, mut hs, mut nights) = (0.0, 0.0, 0.0);
+    // Hit rates per kind of board: plain, a want, a give-away.
+    let mut sums: Vec<(String, f64, f64, f64)> = vec![];
     for night in o.nights.0..=o.nights.1 {
-        let mut on = o.clone();
-        on.night = night;
-        on.program = None;
-        let tc = setup(&on);
-        let normal = hit_and_loss(&tc, &on);
-        on.program = Some(smart.clone());
-        let learned = hit_and_loss(&tc, &on);
-        println!(
-            "  night {night:>3} ({:>2} strips): Normal {:>3.0}% (lost {:>4.1} Goo), smart {:>3.0}% (lost {:>4.1} Goo)",
-            tc.ising.n,
-            100.0 * normal.0,
-            normal.1,
-            100.0 * learned.0,
-            learned.1
-        );
-        hn += normal.0;
-        hs += learned.0;
-        nights += 1.0;
+        for (label, tc) in scenarios(o, night) {
+            let mut on = o.clone();
+            on.night = night;
+            on.program = None;
+            let normal = hit_and_loss(&tc, &on);
+            on.program = Some(smart.clone());
+            let learned = hit_and_loss(&tc, &on);
+            println!(
+                "  night {night:>3} ({:>2} strips): Normal {:>3.0}% (lost {:>4.1} Goo), smart {:>3.0}% (lost {:>4.1} Goo){}",
+                tc.ising.n,
+                100.0 * normal.0,
+                normal.1,
+                100.0 * learned.0,
+                learned.1,
+                if o.mix { format!("  {label}") } else { String::new() }
+            );
+            let kind = if label == "plain" { "plain" } else if label.starts_with("Upddayett gives") { "give-away" } else { "want" };
+            match sums.iter_mut().find(|s| s.0 == kind) {
+                Some(s) => (s.1, s.2, s.3) = (s.1 + normal.0, s.2 + learned.0, s.3 + 1.0),
+                None => sums.push((kind.to_string(), normal.0, learned.0, 1.0)),
+            }
+        }
     }
-    println!("  mean: Normal {:.0}%, smart {:.0}%", 100.0 * hn / nights, 100.0 * hs / nights);
+    let (hn, hs, n) = sums.iter().fold((0.0, 0.0, 0.0), |a, s| (a.0 + s.1, a.1 + s.2, a.2 + s.3));
+    if sums.len() > 1 {
+        for (kind, hn, hs, n) in &sums {
+            println!("  {kind:>9}: Normal {:.0}%, smart {:.0}% ({n} boards)", 100.0 * hn / n, 100.0 * hs / n);
+        }
+    }
+    println!("  mean: Normal {:.0}%, smart {:.0}%", 100.0 * hn / n, 100.0 * hs / n);
 }
 
 /// Trains the smart wash with CEM on `o.train` nights, then tests it
 /// against Normal on `o.nights` (held out).
 fn learn(o: &Opts) -> Result<(), trade::Error> {
     let start = o.program.clone().unwrap_or_else(|| SmartWash::normal(o.anneal.duration));
-    let nights: Vec<(u64, TradeComputer)> = o.train.iter().copied()
-        .map(|n| {
-            let mut on = o.clone();
-            on.night = n;
-            (n, setup(&on))
-        })
-        .collect();
+    // With --mix each night gives three boards: plain, a want, a give-away.
+    let nights: Vec<(u64, TradeComputer)> =
+        o.train.iter().flat_map(|&n| scenarios(o, n).into_iter().map(move |(_, tc)| (n, tc))).collect();
     println!(
         "CEM: {} generations x {} candidates, training nights {:?} in turn, start {:?}",
         o.gens,

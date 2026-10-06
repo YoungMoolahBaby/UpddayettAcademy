@@ -1379,6 +1379,16 @@ Checked by the same probe, `gaps_ml_chassis`. Paths are under sim-rl's
   hard nights (revisited nights fell from 1.6 to 1.0 reward). That's
   CEM, not a bug, but with no per-candidate repeats there's no way to tell
   a real gain from a tie.
+- **API** (2026-10-06, Step 4, run 6): CEM keeps no held-out check, so a
+  run can end worse than it started. Started from a program that scored 94%
+  on mixed held-out boards (with wants and give-aways), 99 generations over
+  33 mixed training boards ended at 91%: colder, slower cool-downs, worse
+  on every kind of board. `best_artifact` can't catch it. Its tracker
+  keeps the epoch with the highest `mean_reward` (cem.rs:216-217), and
+  when every epoch runs on a different board that mostly measures the
+  board's difficulty, not the program. A hook to score candidates on a
+  fixed validation set (or keep the best by it) would let a user stop a
+  drift. Here a separate `versus` run after training caught it.
 
 #### CEM
 

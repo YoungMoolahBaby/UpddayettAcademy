@@ -27,7 +27,9 @@ game's fifth program, "Smart (learned)". It finds the best set 93% of the
 time on unseen nights, against Normal's 83%, in the same time (see "Step 4
 so far" below). Its follow-up, latch memory (reheat when the strips
 freeze), ties on average and helps a little on the hardest nights (see
-"Step 4 follow-up"). Next: train with wants and gifts on, or later:
+"Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
+mixed unseen boards); training on them made it worse, so run 5 stays.
+Next:
 - 3.2 voice and music;
 - when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
@@ -1108,7 +1110,7 @@ CEM's shared noise stream means a rerun won't match bit for bit.
 **Ideas:**
 - Make the restart count learnable (done, with the memory below).
 - Give the program memory, so it reheats only when stuck (done below).
-- Train with wants and gifts on (not done).
+- Train with wants and gifts on (tried below: it made it worse).
 
 ### Step 4 follow-up: latch memory (2026-10-06)
 
@@ -1168,6 +1170,45 @@ kept as `RUN_3`.
 Reproduce:
 `trade_cli learn --params 1.626,-2.305,-0.0896,-0.4128,0,-1.0986,-2.5257 --train 12,20,25,27,29,33,35,37,48,56,58 --gens 66 --pop 32`,
 then `trade_cli versus --smart --nights 61..80 --seed 1000`.
+
+### Step 4 follow-up: wants and give-aways (2026-10-06)
+
+Gift chains (Amir's direct gifts) were always on the training boards.
+What training never saw is the player's choices: an I WANT pick (the
+wanted strip pinned) and a give-away of Upddayett's (a gift strip, often
+a near tie). `trade_cli versus --mix` and `learn --mix` run each night
+three ways: plain, one want, one give-away (both picked by the night).
+
+**Baseline: run 5 already handles both** (nights 61-80, `--seed 1000`, 48 spins):
+
+| | Normal | Run 5 (`LEARNED`) |
+|---|---|---|
+| Plain | 83% | 95% |
+| With a want | 88% | 97% |
+| With a give-away | 78% | 89% |
+| All 60 boards | 83% | **94%** |
+
+Nights 1-10: 78% vs 88% (give-aways 74% vs 83%). Wants are easy: the pin
+makes the board simpler. Give-aways are the weak spot, as guessed (the
+near ties).
+
+**Run 6: CEM from run 5 on the 11 hard nights x 3 (33 boards), 99 x 32
+(27 min). Worse, so it doesn't ship.** It went to 1.85 cool-downs, a
+patience of 106 units and a stall weight of -0.37: slower and colder,
+for the near ties. On held-out boards it lost everywhere: 91% on nights
+61-80 (give-aways 87%, wants 95%), 84% on nights 1-10.
+- Why: each generation sees one board, one spin per candidate, and run
+  5 is already near the ceiling, so the noise drove the drift. CEM has no
+  held-out check to stop it (FINDINGS, sim-rl). Kept: run 5.
+- The test after training once died with "the paging file is too
+  small" while the box was also running VR; rerun alone, it was fine.
+
+Reproduce: `trade_cli learn --mix --smart --train 12,20,25,27,29,33,35,37,48,56,58 --gens 99 --pop 32`.
+
+**Step 4's ideas are all tried.** The smart wash stays run 5: memory,
+2.7 cool-downs, 94% on mixed unseen boards against Normal's 83%. To go
+further would take more than CEM tuning: scoring candidates over several
+spins, or a held-out check during training.
 
 ## Gotchas (from the probes)
 
