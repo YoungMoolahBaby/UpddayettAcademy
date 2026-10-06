@@ -277,9 +277,10 @@ business cards.
 7. **Wash programs** set how the drum cools: Quick Wash, Permanent Press,
    Normal, Delicates, the slower the surer. **Smart (learned)** (built,
    Step 4) is a program the machine taught itself. CortenForge's CEM
-   learned it on other nights' boards. It cools six times in Normal's
-   time, reading the strips as it goes, and the i9 keeps the best answer
-   it saw. It finds the best set about 9 times in 10 where Normal manages
+   learned it on other nights' boards. It cools several times in Normal's
+   time, reading the strips as it goes, and reheats as soon as they
+   freeze (nothing more to learn from that cool-down). The i9 keeps the
+   best answer it saw. It finds the best set about 9 times in 10 where Normal manages
    8 (on nights it never trained on), and it helps most on the hard nights.
 
 
@@ -331,6 +332,10 @@ in the room:
   billionaire bought a second moon." The headlines are true (they come from
   the night's roll); the indifference is the joke. The drum, meanwhile,
   sends the food to whoever is hungry.
+  - *Planned (with the voice step, PLAN 3.2):* two pixel-art **pugs**
+    anchor the desk and read it all in AI voices, bantering between items
+    and caring about none of it (pugs are the best podcast hosts). Scripted
+    lines only; no live news feed.
 - **PromiseTV**, nonstop false promises. Ads for fictional candidates:
   "Vote Glorbman: every family gets a hub motor!" The I WANT picker shows
   what that would really take (there's one hub motor, and someone has to

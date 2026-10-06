@@ -1276,6 +1276,17 @@ sim-core). The envs handle that differently:
   size (artifact.rs:399-401), not the policy that was saved, so
   checkpoints and `best_artifact` of a custom policy don't round-trip. CEM
   itself only reads the params, so training works.
+- **API** (2026-10-06, Step 4 memory): a policy can't remember anything.
+  `Policy::forward(&self, obs)` (policy.rs:45) gets no env index and no
+  state, and there are no recurrent policies. CEM's rollout closure has
+  the env index (sim-rl cem.rs:164-165) but drops it. The observation
+  can't carry memory either: `ObservationSpace` only reads fixed `Data`
+  fields (space.rs:293-434; no custom extractor). So the smart wash's
+  memory (when the strips froze, when the latch last improved) lives
+  behind a `Mutex<HashMap>` keyed by a hash of the params, which works
+  only because CEM calls `set_params` right before each `forward`
+  (src/trade/smart.rs `Trainee`). Passing `env_idx` to `forward`, or a
+  per-env policy state, would make memory policies first-class.
 
 #### Autograd, optimizer, replay buffer
 

@@ -25,7 +25,9 @@ probe:
 **Step 4 done** (2026-10-06): the CEM-learned smart wash program, the
 game's fifth program, "Smart (learned)". It finds the best set 93% of the
 time on unseen nights, against Normal's 83%, in the same time (see "Step 4
-so far" below). Next: pick from the Step 4 ideas, or later:
+so far" below). Its follow-up, latch memory (reheat when the strips
+freeze), ties on average and helps a little on the hardest nights (see
+"Step 4 follow-up"). Next: train with wants and gifts on, or later:
 - 3.2 voice and music;
 - when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
@@ -308,6 +310,21 @@ The design below stands; the current two placeholder lines stay meanwhile.
 - The user reviews and edits the line list before it ships (tone).
 - Done when: each category triggers in a deliberately provoked run (Quick
   Wash for the misses), and unit tests cover selection and no-repeat.
+- **The Shrug Network gets anchors** (added 2026-10-06; the format is from
+  pnn.watch, a 24/7 AI comedy news channel with pixel-art anchors). Two
+  pixel-art **pugs** anchor the desk (pugs are the best podcast hosts; see
+  the pugcast running gag). They read the night roll's facts and the
+  PromiseTV lines in AI voices, banter between items, and stay apathetic.
+  Our own scripted lines from `src/trade/tv.rs` only: no live feed from
+  PNN or anywhere else (no crypto, parody names, both sides skewered
+  equally). Pixel art fits the TV's render-to-texture UI.
+  - The script is an ad-lib (Mad Libs) program: templates with blanks
+    filled from the night roll. Learn from **Tracery** (Kate Compton's
+    generative grammar: `#rule#` blanks, nested rules, modifiers like
+    `.capitalize`), which has a Rust crate, `tracery`. Each night builds
+    the grammar from its facts (`#hungry#` = "4 hungry on Turk Street"),
+    and the pugs' banter is more rules. Check the crate before taking it
+    on; a small expander of our own in `src/trade/tv.rs` is the fallback.
 
 ### 3.3 Altruistic chains (Karma)
 
@@ -1088,11 +1105,69 @@ Reproduce:
 `trade_cli learn --restarts 6 --params 1.386,-2.436,0,0 --train 12,20,25,27,29,33,35,37,48,56,58 --gens 66 --pop 32`.
 CEM's shared noise stream means a rerun won't match bit for bit.
 
-**Ideas, not done:**
-- Make the restart count learnable.
-- Give the program memory (time since the latch last improved), so it
-  reheats only when stuck.
-- Train with wants and gifts on.
+**Ideas:**
+- Make the restart count learnable (done, with the memory below).
+- Give the program memory, so it reheats only when stuck (done below).
+- Train with wants and gifts on (not done).
+
+### Step 4 follow-up: latch memory (2026-10-06)
+
+**Built.** The program remembers what it has seen during the cycle
+(`smart::Memory`):
+- **Frozen strips reheat.** Once the strips have read the same set for
+  the *patience*, the cool-down has nothing more to give, so a new one
+  starts (the latch keeps the best). Staying cold only helps while the
+  board still moves, so "the latch hasn't improved" alone is the wrong
+  trigger: it would also cut cool-downs that are still settling.
+- **Stall:** the time since the latch last found a better set, in
+  cool-downs, is a fifth feature of log kT.
+- The params grew from 4 to 7: the 5 feature weights, ln(cool-down /
+  cycle) and ln(patience / cool-down). The cool-down count and the
+  patience are learnable. `SmartWash::new` still takes 4 (no memory, one
+  cool-down), so run 3's params stay valid (`smart::RUN_3`).
+- ml-chassis policies can't remember anything, so CEM's copy keeps its
+  memories in a table keyed by the candidate's params (FINDINGS,
+  sim-ml-chassis).
+- `trade_cli --patience F` (x a cool-down), `--restarts K` (now any K).
+  In the game the log says when the strips froze.
+
+**Sweep, no CEM** (run 3's shape; nights 1-10, 48 spins; Normal 81%, night 4 38%):
+
+| Cool-downs on the clock | 6 | 6 | 6 | 6 | 3 | 3 | 1 |
+|---|---|---|---|---|---|---|---|
+| Patience (x cool-down) | off | 0.3 | 0.15 | 0.08 | 0.15 | 0.08 | 0.08 |
+| Mean | 86% | 90% | 90% | 91% | 88% | 91% | 85% |
+| Night 4 | 60% | 67% | 56% | 67% | 62% | 81% | 54% |
+
+Run 3 scores 86% here, not its 88%: reheats now land on whole time units.
+
+**Run 5:** CEM from the best sweep point (3 cool-downs, patience 0.08),
+same 11 hard nights, 66 x 32 (16 min). It settled on 2.7 cool-downs, a
+patience of 38 units, a stall weight of -0.17 (a bit cooler the longer
+the latch is stuck) and a hotter start (5.9x kT). Nights 1-10: 88%.
+
+**Clean test** (nights 61-80, `--seed 1000`, 48 spins; Normal 83%):
+
+| | Run 3 (no memory) | Sweep (3, 0.08) | Run 5 (`LEARNED`) |
+|---|---|---|---|
+| Mean | 95% | 94% | 95% |
+| Six hardest (Normal 63%) | 85% | 85% | **88%** |
+| Night 75 (Normal 50%) | 69% | 77% | 85% |
+
+**Verdict: a tie on average, a small edge on the hardest nights.** On
+fresh nights the clock-only program already finds the best set 95% of
+the time, so there is little left to win. Run 5 is the best of the
+three on the nights memory was meant for, by 3 points, which is about
+the noise. It ships as `LEARNED` (the game still shows 88%). Run 3 is
+kept as `RUN_3`.
+- CEM didn't beat the hand sweep's own score on nights 1-10 (88% vs
+  91%). One spin per candidate can't see a few points of hit rate (FINDINGS,
+  sim-rl: one episode per candidate), and the sweep's 91% was picked on
+  those same nights.
+
+Reproduce:
+`trade_cli learn --params 1.626,-2.305,-0.0896,-0.4128,0,-1.0986,-2.5257 --train 12,20,25,27,29,33,35,37,48,56,58 --gens 66 --pop 32`,
+then `trade_cli versus --smart --nights 61..80 --seed 1000`.
 
 ## Gotchas (from the probes)
 

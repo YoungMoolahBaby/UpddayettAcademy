@@ -15,7 +15,7 @@
 //!   smart            the smart Salties' aimed coil per program: cost, spin-check alarms, shield
 //!   learn            train the smart wash program with CEM on --train nights (A..B or a,b,c; default 11..22),
 //!                    --gens G x --pop P spins, then test it on --nights A..B (default 1..10)
-//!   versus           Normal vs the smart wash (--smart = the learned one, or --params a,b,c,d) per night
+//!   versus           Normal vs the smart wash (--smart = the learned one, or --params a,b,c,d[,stall,ln cool-down,ln patience]) per night
 //!
 //!   --night N        which night (default 1)
 //!
@@ -31,6 +31,7 @@
 //!   --hot T  --cold T  --time T  --settle T
 //!   --smart          spin with the learned smart wash instead of the anneal (bench, versus)
 //!   --restarts K     the smart wash as K shorter cool-downs back to back (the latch keeps the best)
+//!   --patience F     the smart wash reheats once the strips read the same set for F x a cool-down
 
 use std::time::Instant;
 
@@ -68,7 +69,9 @@ struct Opts {
     program: Option<SmartWash>,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
-    restarts: Option<usize>,
+    restarts: Option<f64>,
+    /// Reheat once the strips read the same set this long, x a cool-down (`--patience F`).
+    patience: Option<f64>,
     pop: usize,
     /// Nights `versus` tests on, and `learn` trains on.
     nights: (u64, u64),
@@ -102,6 +105,7 @@ fn parse() -> Opts {
         program: None,
         gens: 60,
         restarts: None,
+        patience: None,
         pop: 24,
         nights: (1, 10),
         train: (11..=22).collect(),
@@ -148,7 +152,8 @@ fn parse() -> Opts {
             "--smart" => o.smart = true,
             "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--gens" => o.gens = num(val()) as usize,
-            "--restarts" => o.restarts = Some(num(val()) as usize),
+            "--restarts" => o.restarts = Some(num(val())),
+            "--patience" => o.patience = Some(num(val())),
             "--pop" => o.pop = num(val()) as usize,
             "--nights" => o.nights = night_range(&val()),
             "--train" => o.train = night_list(&val()),
@@ -406,7 +411,7 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64, SpinCheck)> {
                             let mut check = SpinCheck::default();
                             let tick = |m: &Machine, _: &Latch| check.observe(m, &tc.ising);
                             let l = match &o.program {
-                                Some(p) => tc.spin_with(&mut m, p.total_time(), p.program(), SAMPLE, SAMPLE, tick),
+                                Some(p) => tc.spin_with(&mut m, p.total_time(), p.program(&tc.problem.qubo), SAMPLE, SAMPLE, tick),
                                 None => tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, tick),
                             }
                             .expect("spin");
@@ -501,9 +506,10 @@ fn bench(o: &Opts) -> Result<(), trade::Error> {
 /// the best set, `o.runs` spins each, same cycle length.
 fn versus(o: &Opts, smart: &SmartWash) {
     println!(
-        "Normal vs smart wash ({} time units + settle, {} cool-down(s)), {} spins a night, params {:?}",
+        "Normal vs smart wash ({} time units + settle, {:.1} cool-down(s) on the clock, patience {}), {} spins a night, params {:?}",
         smart.duration,
-        smart.restarts,
+        smart.restarts(),
+        if smart.patience() < smart.period() { format!("{:.0} units", smart.patience()) } else { "off".into() },
         o.runs,
         smart.params().iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>()
     );
@@ -561,19 +567,24 @@ fn learn(o: &Opts) -> Result<(), trade::Error> {
         );
     })?;
     println!("trained in {:.0} s", t0.elapsed().as_secs_f64());
-    println!("pub const LEARNED: Option<[f64; N_FEATURES]> = Some({:?});", learned.params());
+    println!("pub const LEARNED: Option<[f64; N_PARAMS]> = Some({:?});", learned.params());
     versus(o, &learned);
     Ok(())
 }
 
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
-    if o.smart || o.params.is_some() || o.restarts.is_some() {
+    if o.smart || o.params.is_some() || o.restarts.is_some() || o.patience.is_some() {
         let d = o.anneal.duration;
-        let p = o.params.as_ref().map_or_else(|| SmartWash::learned(d), |p| SmartWash::new(d, p));
-        // --restarts overrides; otherwise the learned one keeps its own.
-        let k = o.restarts.unwrap_or(if o.params.is_some() { 1 } else { p.restarts });
-        o.program = Some(p.with_restarts(k));
+        let mut p = o.params.as_ref().map_or_else(|| SmartWash::learned(d), |p| SmartWash::new(d, p));
+        // --restarts and --patience override the params.
+        if let Some(k) = o.restarts {
+            p = p.with_restarts(k);
+        }
+        if let Some(f) = o.patience {
+            p = p.with_patience(f);
+        }
+        o.program = Some(p);
     }
     if o.salty {
         apply_salties(&mut o);

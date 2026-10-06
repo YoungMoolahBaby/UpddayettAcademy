@@ -75,6 +75,8 @@ pub struct Laundromat {
     pub smart: SmartWash,
     /// The smart drum: when it next reads the board, and the setting it holds.
     pub drum: (f64, f64),
+    /// What the smart drum remembers this cycle (the latch, when it reheated).
+    pub drum_mem: smart::Memory,
     /// The drum setting (kT) when the breaker tripped this cycle.
     pub stopped_kt: Option<f64>,
 }
@@ -181,6 +183,7 @@ impl Laundromat {
             trace: Default::default(),
             smart: SmartWash::learned(PROGRAMS[2].duration),
             drum: (0.0, 0.0),
+            drum_mem: smart::Memory::default(),
             stopped_kt: None,
             tc,
             machine,
@@ -545,6 +548,7 @@ impl Laundromat {
         self.cut_at = cut.map(|at| self.machine.time() + at * p.duration);
         self.mode = Mode::Cycle { start: self.machine.time() };
         self.drum = (0.0, 0.0);
+        self.drum_mem = smart::Memory::default();
         self.stopped_kt = None;
         let how = if p.smart {
             format!("learned program, params {:?}", self.smart.params())
@@ -574,7 +578,12 @@ impl Laundromat {
             return 0.0;
         }
         if t >= self.drum.0 - 1e-9 {
-            self.drum = (self.drum.0 + smart::SAMPLE, self.smart.temperature(t, self.machine.positions()));
+            let before = self.drum_mem.frozen;
+            let kt = self.smart.read(&mut self.drum_mem, t, self.machine.positions(), &self.tc.problem.qubo);
+            if self.drum_mem.frozen > before {
+                info!("t={t:.0}: the strips froze, so the smart drum reheats");
+            }
+            self.drum = (self.drum.0 + smart::SAMPLE, kt);
         }
         self.drum.1
     }
