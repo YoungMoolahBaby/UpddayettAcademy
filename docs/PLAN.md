@@ -6,8 +6,8 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step; 3.3a and 3.3b done). Next: adaptive
-want margin (costly wants), then **3.3c Game** (Karma meter, night banner).
+deferred to a later voice-and-music step; 3.3a, 3.3b and the costly-want
+clamp done). Next: **3.3c Game** (Karma meter, night banner).
 After 3.3c-d: **3.6 The Salties** (sabotage nights; planned below).
 
 ## Step 1 result
@@ -393,15 +393,57 @@ adas polo (hungry)").
   and never to a fed person while a hungry one wanted it.
 - Program odds re-measured with gift strips (480 runs each): Quick Wash
   26%, Permanent Press 46%, Normal 81%, Delicates 95%.
-- **Known limitation, fix next:** costly wants (cost 4-10 Goo: Dave/cells,
-  Ray/derailleur, Tamara/kale, Pigeon Lady/charger, Vape Lady/Goo) deliver
-  58-85% on the bigger boards, down from ~99%; wants overall deliver
-  92-97%. Plan: let a want pull as hard as the strips can take without
-  pinning (largest margin that keeps the idle field under ~0.9x the
-  flattening tilt), instead of a fixed 1.0 margin.
+- Costly wants (cost 4-10 Goo: Dave/cells, Ray/derailleur, Tamara/kale,
+  Pigeon Lady/charger, Vape Lady/Goo) delivered only 58-85% on the bigger
+  boards; fixed by the want clamp below.
 - Found a CortenForge bug: `ising::exact_distribution` overflows to NaN on
   big boards at low temperature (FINDINGS).
 - Tests: 11, 1.6 s (brute-force cross-checks thinned from 84 s).
+
+**Costly-want clamp done (2026-10-05).** A want now pins its strip: the
+bias sets the wanted strip's idle field to `WANT_CLAMP` = 1.5x the
+well-flattening field (closed form: the idle field on strip i is
+beta * scale * (value_i + bias) / 2), and never less than the old minimum
+(cheapest delivering bias + 1x the smallest trade). In fiction it's
+Upddayett's thumb on the strip again, as in Step 1.
+- **The plan was wrong about pinning.** It said to stay under ~0.9x the
+  flattening tilt. Sweeping fixed margins 1/2/3/4/6/8 on the costly wants
+  of nights 1-8 showed delivery rising with the pull right past the tilt
+  and leveling off at margins 4-6 (fields 1.3-1.9x the tilt), with no harm
+  from pinning. Pinning removes the choice; the strips around the pinned
+  one settle the rest. The 3.1 sweep that picked 1.0 ran on the small
+  Tuesday board, where the margin barely mattered.
+- **Result,** nights 1-7, every want, 48 Normal runs each (`trade_cli wants
+  --bench`, old behavior = `--clamp 0`):
+
+  | Wants | Delivered: before -> now | i9 best set: before -> now |
+  | --- | --- | --- |
+  | Costly (70) | mean 91%, min 58% -> mean 100%, min 100% | 68% -> 86% |
+  | Free (105) | mean 99%, min 90% -> mean 100%, min 100% | 75% -> 76% |
+
+- Pulling harder never changes which set is best: the bias only rewards
+  delivering trades, and the conflict penalty (2.4) still beats any one
+  trade (<= 1.5). Test `a_want_clamps_its_strips_without_changing_the_answer`
+  checks it on 7 nights, plus that unwanted strips are untouched.
+- `trade_cli wants --costly` benches only wants that cost Goo; `--clamp C`
+  sets the clamp (0 = the old margin-only bias). The want column now says
+  "pinned" instead of "THUMB".
+- **Known limitation: hard nights.** "Best set" is now limited by how jagged
+  a night is, not by the want. Night 4 finds its best set only 39% of the
+  time even with no want (mean 36.3 of 37 Goo: near misses). Its night mean
+  rose 47% -> 60% with the clamp, but two free wants dipped (Vape Lady/RTX
+  3090 40% -> 15%, Upddayett/cells 50% -> 31%, 48 runs): a pinned strip can
+  block a way out of a near miss. Candidates: a slower Normal on hard nights,
+  or latch-and-reheat.
+- **Found while benching (game, not CortenForge):** Amir's Persian Kitchen
+  can roll "hungry", which means nothing for a restaurant (it changes no
+  values, but it shows in `trade_cli night`). Nights also repeat often:
+  over 200 seeds one pattern comes up 7 times and 23 twice, because the
+  skewed coins (hungry 60% / 15%) carry only ~9 bits, so the commonest
+  night has ~1.2% odds. That's expected, not a broken RNG; nights 1 and 8
+  are the same apart from Amir. Fixing Amir changes every later coin, so
+  re-bench after.
+- Tests: 12, 3.9 s.
 
 Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
 (`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.
@@ -490,7 +532,8 @@ banner and condition tags). Theft waits for Level 2 (nights that carry over).
 
 - Windows Smart App Control blocks Rust builds (os error 4551); it is now off.
 - `ExternalField` stronger than about `1.54 * delta_v / x0` deletes the well;
-  keep clamps and biases below it.
+  keep biases below it unless you mean to pin the strip (a want does, on
+  purpose: see the costly-want clamp).
 - `ExternalField::new` doesn't check length; indexing is unchecked.
 - Couplings and fields can't change after `install`; changing a clamp means
   rebuilding the stack (cheap at this size).

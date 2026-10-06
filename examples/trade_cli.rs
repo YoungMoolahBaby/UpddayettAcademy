@@ -5,13 +5,15 @@
 //!   run              one spin cycle with a live readout (default)
 //!   bench            many seeded spin cycles vs the exact answer
 //!   cycles           list the candidate trades and the best set
-//!   wants [--bench]  every want the picker can offer, its cost and (bench) hit rate
+//!   wants [--bench] [--costly]  every want the picker can offer, its cost and (bench) hit
+//!                    rate; --costly keeps only wants that cost the block Goo
 //!   night            tonight's conditions, and what every want is worth and means
 //!   nights           how much 200 nights vary (board size, best value)
 //!
 //!   --night N        which night (default 1)
 //!
 //!   --want WHO:WHAT  backward mode, e.g. --want upd:hub
+//!   --clamp C        want clamp, x the well-flattening field (0 = off)  --margin M
 //!   --seed N  --runs N
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
 //!   --hot T  --cold T  --time T  --settle T
@@ -25,7 +27,9 @@ use cortenforge_play::trade::{self, Anneal, Latch, Machine, Physics, TradeComput
 struct Opts {
     mode: String,
     bench: bool,
+    costly: bool,
     margin: Option<f64>,
+    clamp: Option<f64>,
     gifts: usize,
     chain: usize,
     want: Option<String>,
@@ -42,7 +46,9 @@ fn parse() -> Opts {
     let mut o = Opts {
         mode: "run".into(),
         bench: false,
+        costly: false,
         margin: None,
+        clamp: None,
         gifts: trade::MAX_BITS,
         chain: trade::cycles::MAX_CHAIN,
         want: None,
@@ -66,7 +72,9 @@ fn parse() -> Opts {
         match a {
             "--want" => o.want = Some(val()),
             "--bench" => o.bench = true,
+            "--costly" => o.costly = true,
             "--margin" => o.margin = Some(num(val())),
+            "--clamp" => o.clamp = Some(num(val())),
             "--gifts" => o.gifts = num(val()) as usize,
             "--chain" => o.chain = num(val()) as usize,
             "--seed" => o.seed = num(val()) as u64,
@@ -91,6 +99,10 @@ fn parse() -> Opts {
 
 fn setup(o: &Opts) -> TradeComputer {
     let mut tc = TradeComputer::with_board(trade::world::laundromat(o.night), o.beta, o.penalty, o.gifts, o.chain);
+    tc.delta_v = o.physics.delta_v;
+    if let Some(c) = o.clamp {
+        tc.want_clamp = c;
+    }
     if let Some(m) = o.margin {
         tc.want_margin = m;
     }
@@ -302,7 +314,7 @@ fn main() -> Result<(), trade::Error> {
         "bench" => bench(&o),
         "wants" => {
             // Every want the picker can offer: what it costs the block, whether
-            // its bias pins a strip ("thumb clamp"), and with --bench, how
+            // its bias pins the strip (the "thumb clamp"), and with --bench, how
             // reliably the machine finds it.
             let mut tc = setup(&o);
             let forward = tc.score_text(tc.forward_best);
@@ -312,6 +324,9 @@ fn main() -> Result<(), trade::Error> {
                 for item in tc.deliverable(npc) {
                     tc.want(npc, item);
                     let best = tc.ground_state();
+                    if o.costly && tc.want_cost(best) < 0.5 {
+                        continue;
+                    }
                     let (field, flat) = tc.field_headroom(&o.physics);
                     fields.push(field);
                     let mut line = format!(
@@ -320,7 +335,7 @@ fn main() -> Result<(), trade::Error> {
                         tc.world.items[item].name,
                         tc.score_text(best),
                         tc.want_cost(best),
-                        if field > flat { " THUMB" } else { "" }
+                        if field > flat { " pinned" } else { "" }
                     );
                     if o.bench {
                         let r = spin_many(&tc, &o);
@@ -342,8 +357,8 @@ fn main() -> Result<(), trade::Error> {
                 let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
                 let min = |v: &[f64]| v.iter().copied().fold(f64::INFINITY, f64::min);
                 println!(
-                    "SUMMARY margin {:.2}: i9 best mean {:.0}% min {:.0}% | delivered mean {:.0}% min {:.0}% | field max {:.1}",
-                    tc.want_margin, mean(&bests), min(&bests), mean(&dels), min(&dels), fields.iter().copied().fold(0.0, f64::max)
+                    "SUMMARY clamp {:.2} margin {:.2}: i9 best mean {:.0}% min {:.0}% | delivered mean {:.0}% min {:.0}% | field max {:.1}",
+                    tc.want_clamp, tc.want_margin, mean(&bests), min(&bests), mean(&dels), min(&dels), fields.iter().copied().fold(0.0, f64::max)
                 );
             }
             Ok(())

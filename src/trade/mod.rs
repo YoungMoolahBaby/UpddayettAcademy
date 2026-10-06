@@ -24,9 +24,17 @@ pub const MAX_LOOP: usize = 4;
 /// The crate's exact solver enumerates all states and stops at 20 bits.
 pub const MAX_EXACT_BITS: usize = 20;
 
-/// Extra want bias beyond the bare minimum, as a fraction of the smallest
-/// cycle value: the energy gap the anneal gets to find the wanted chain.
+/// Least extra want bias beyond the bare minimum, as a fraction of the
+/// smallest cycle value: the energy gap the anneal gets to find the wanted
+/// chain.
 pub const WANT_MARGIN: f64 = 1.0;
+
+/// How hard a want clamps its strip: the idle field on the wanted strip, as
+/// a multiple of the field that flattens a well. Above 1 the strip is pinned
+/// (a thumb clamp). Measured on the costly wants of nights 1-7: delivery
+/// rises with the pull and levels off around 1.3-1.9x (margins 4-8), so the
+/// want pulls at 1.5x unless the minimum needs more.
+pub const WANT_CLAMP: f64 = 1.5;
 
 /// What the i9 saw during one spin cycle.
 #[derive(Clone, Copy, Debug)]
@@ -83,9 +91,15 @@ pub struct TradeComputer {
     pub beta: f64,
     /// Conflict penalty as a multiple of the largest normalized cycle value.
     pub penalty: f64,
-    /// Want bias beyond the bare minimum, as a fraction of the smallest
+    /// Least want bias beyond the bare minimum, as a fraction of the smallest
     /// cycle value (default [`WANT_MARGIN`]). Takes effect on the next `want`.
     pub want_margin: f64,
+    /// Idle field on the wanted strip, as a multiple of the well-flattening
+    /// field (default [`WANT_CLAMP`]); 0 turns the clamp off and leaves just
+    /// the margin. Takes effect on the next `want`.
+    pub want_clamp: f64,
+    /// Barrier height the clamp is sized for (the machine's `delta_v`).
+    pub delta_v: f64,
     /// Backward mode target, if any.
     pub want: Option<(usize, usize)>,
     /// Best trade set with no want (forward mode), for pricing a want.
@@ -167,6 +181,8 @@ impl TradeComputer {
             beta,
             penalty,
             want_margin: WANT_MARGIN,
+            want_clamp: WANT_CLAMP,
+            delta_v: Physics::default().delta_v,
             want: None,
             forward_best,
             dropped,
@@ -176,14 +192,23 @@ impl TradeComputer {
         }
     }
 
-    /// The smallest want bias whose best set delivers the want, plus a margin
-    /// so the anneal sees a clear gap. Exact and cheap: every valid set
-    /// delivering the want contains exactly one delivering trade (they all
-    /// move the same item), so the bias lifts each of those sets by the same
-    /// amount, and the minimum is (best set without the want) - (best set with
-    /// it), or 0. The worst-case bound used before (Step 1) pulled up to
-    /// ~2.6x harder than the well-flattening tilt and distorted the soft spins.
-    fn gentlest_bias(&self, npc: usize, item: usize) -> Vec<f64> {
+    /// The want bias: at least the smallest bias whose best set delivers the
+    /// want plus a margin, and otherwise enough to clamp the wanted strips
+    /// at `want_clamp` times the flattening field.
+    ///
+    /// The minimum is exact and cheap: every valid set delivering the want
+    /// contains exactly one delivering trade (they all move the same item),
+    /// so the bias lifts each of those sets by the same amount, and the
+    /// minimum is (best set without the want) - (best set with it), or 0.
+    ///
+    /// The minimum alone (plus 1x margin) delivered costly wants only
+    /// 58-85% of the time: a 6-Goo want leaves a gap of one small trade
+    /// between the wanted chain and the free best set, many strip flips
+    /// away. Pinning the wanted strip removes the choice (the strips around
+    /// it settle the rest), so costly wants deliver ~100%. The idle field
+    /// on strip i (every other strip off) is beta * (value_i + bias) *
+    /// scale / 2 in QUBO units, so the clamp bias is closed-form.
+    fn want_bias(&self, npc: usize, item: usize) -> Vec<f64> {
         let hits: Vec<bool> = self.cycles.iter().map(|c| c.delivers(npc, item)).collect();
         let (mut with, mut without) = (f64::NEG_INFINITY, 0.0f64);
         qubo::for_each_valid_set(&self.masks, |s| {
@@ -196,8 +221,15 @@ impl TradeComputer {
             }
         });
         let need = (without - with).max(0.0);
-        let vmin = self.cycles.iter().map(Cycle::value).fold(f64::INFINITY, f64::min);
-        let b = need + self.want_margin * vmin;
+        let values = || self.cycles.iter().map(Cycle::value);
+        let vmin = values().fold(f64::INFINITY, f64::min);
+        let floor = need + self.want_margin * vmin;
+        // Clamp sized for the weakest delivering strip, so every one is pinned.
+        let scale = qubo::MAX_VALUE / values().fold(0.0, f64::max);
+        let weakest = values().zip(&hits).filter(|(_, h)| **h).map(|(v, _)| v).fold(f64::INFINITY, f64::min);
+        let target = self.want_clamp * machine::max_safe_field(self.delta_v);
+        let clamp = 2.0 * target / (self.beta * scale) - weakest;
+        let b = floor.max(clamp);
         hits.iter().map(|&h| if h { b } else { 0.0 }).collect()
     }
 
@@ -235,7 +267,7 @@ impl TradeComputer {
         if !self.cycles.iter().any(|c| c.delivers(npc, item)) {
             return false;
         }
-        self.bias = Some(self.gentlest_bias(npc, item));
+        self.bias = Some(self.want_bias(npc, item));
         self.want = Some((npc, item));
         self.rebuild();
         true
@@ -373,13 +405,18 @@ impl TradeComputer {
     /// static `h` alone overstates it: the springs cancel most of it), and
     /// the field that would flatten a well.
     pub fn field_headroom(&self, physics: &Physics) -> (f64, f64) {
+        let fmax = self.idle_fields().iter().fold(0.0f64, |m, x| m.max(x.abs()));
+        (fmax, machine::max_safe_field(physics.delta_v))
+    }
+
+    /// Net field on each strip while every other strip is off.
+    pub fn idle_fields(&self) -> Vec<f64> {
         let mut f = self.ising.h.clone();
         for (&(a, b), &j) in self.ising.edges.iter().zip(&self.ising.j) {
             f[a] -= j;
             f[b] -= j;
         }
-        let fmax = f.iter().fold(0.0f64, |m, x| m.max(x.abs()));
-        (fmax, machine::max_safe_field(physics.delta_v))
+        f
     }
 }
 
@@ -430,6 +467,35 @@ mod tests {
             }
         }
         assert!(checked >= 100, "only {checked} deliverable wants across the test nights");
+    }
+
+    #[test]
+    fn a_want_clamps_its_strips_without_changing_the_answer() {
+        let flat = machine::max_safe_field(Physics::default().delta_v);
+        for night in 1..8 {
+            let mut tc = tc(night);
+            let mut loose = tc.clone();
+            loose.want_clamp = 0.0;
+            for npc in 0..tc.world.npcs.len() {
+                for item in tc.deliverable(npc) {
+                    tc.want(npc, item);
+                    loose.want(npc, item);
+                    let f = tc.idle_fields();
+                    let hits: Vec<usize> = (0..tc.cycles.len()).filter(|&i| tc.cycles[i].delivers(npc, item)).collect();
+                    // Every wanted strip is pinned, the weakest at exactly the target.
+                    let weakest = hits.iter().map(|&i| f[i]).fold(f64::INFINITY, f64::min);
+                    assert!(weakest >= WANT_CLAMP * flat - 1e-9, "night {night}: wanted strip field {weakest:.2}");
+                    // Unwanted strips are untouched.
+                    for i in (0..tc.cycles.len()).filter(|i| !hits.contains(i)) {
+                        assert!((f[i] - loose.idle_fields()[i]).abs() < 1e-9);
+                    }
+                    // Pulling harder picks an equally good set.
+                    let (a, b) = (tc.evaluate(tc.ground_state()).0, loose.evaluate(loose.ground_state()).0);
+                    assert!((a - b).abs() < 1e-9, "night {night}: clamped best {a} vs unclamped {b}");
+                    assert!(tc.delivers_want(tc.ground_state()) && !tc.evaluate(tc.ground_state()).1);
+                }
+            }
+        }
     }
 
     #[test]
