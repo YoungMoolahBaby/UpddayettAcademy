@@ -36,12 +36,18 @@ pub struct Beat {
 
 /// How long every shot holds, against its written length. The impacts (slams,
 /// flashes) stay quick; the holds stretch so every line can be read.
-pub const PACE: f32 = 2.1;
+/// `UPD_PACE=<x>` tries another speed.
+const PACE: f32 = 2.1;
+
+fn pace() -> f32 {
+    static PACE_NOW: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *PACE_NOW.get_or_init(|| std::env::var("UPD_PACE").ok().and_then(|s| s.parse().ok()).filter(|p: &f32| *p > 0.0).unwrap_or(PACE))
+}
 
 impl Beat {
     /// Seconds this beat stays on screen.
     pub fn hold(&self) -> f32 {
-        self.secs * PACE
+        self.secs * pace()
     }
 }
 
@@ -693,7 +699,7 @@ fn meadow(st: &Stage) {
 
 /// The side effects, read over the happy footage, one line at a time.
 fn side_effects(st: &Stage, t: f32, lines: &[&str]) {
-    let k = ((t / (0.8 * PACE)) as usize).min(lines.len() - 1);
+    let k = ((t / (0.8 * pace())) as usize).min(lines.len() - 1);
     caption(st, "NARRATOR:", lines[k]);
 }
 
