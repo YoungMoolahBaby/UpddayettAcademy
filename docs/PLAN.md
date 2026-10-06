@@ -22,8 +22,8 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: the user's pick. Open candidates:
-- the CEM-learned smart wash program;
+Next: **Step 4, the CEM-learned smart wash program** (user said go,
+2026-10-06; plan below). Later:
 - 3.2 voice and music;
 - when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
@@ -961,6 +961,46 @@ nights among the first 40: smart coils 1, 10, 16, 20, 27; a smart quiet cut
 - Tests: 23 (adds aim beats a random spot, and the coil hides from the
   idle check but not the spin check, with the clean noise floor under half
   the alarm).
+
+## Step 4: the smart wash program (plan, 2026-10-06)
+
+**Why.** It's the CortenForge pieces the game doesn't use yet:
+sim-ml-chassis, sim-rl's CEM and sim-therm-env. It also targets the open
+weakness: on hard nights the fixed programs miss (night 4's best set is
+found 39% of the time on Normal), and near-tie strips are flaky. A program
+that reads the board as it spins can heat again or cool slower where a
+fixed schedule can't. The gap hunt showed CEM can learn a wash program on
+a one-sock toy (FINDINGS "CEM's real job: a wash program"): it learned to
+heat while the sock sat in the shallow well and cool once it was out, and
+scored 50.8 of 100 against 24.3 for the best constant. The wiring is in
+`examples/gaps_ml_chassis.rs` (`wash_env`, `wash_cem`, `wash_score`):
+`ThermCircuitEnv::builder` → `build_vec`, `LinearPolicy`, `Cem::train`,
+`collect_episodic_rollout`.
+
+**Plan.**
+1. **Environment:** the real drum (every strip of a night's board), not one
+   sock. Each sample the policy sees cheap board readings: the fraction of
+   strips on the barrier, how far the energy fell since the last sample,
+   and the time through the cycle. It sets the drum's kT.
+   - Decide early: build the env with `ThermCircuitEnv` (it would need the
+     board's couplings and fields), or wrap our `Machine` behind
+     ml-chassis `Environment` / `VecEnv` if therm-env can't carry the
+     couplings.
+2. **Reward:** the Goo of the i9's latched answer against the best
+   possible, minus heat used, at Normal's cycle length.
+3. **Train:** CEM over a set of training nights. Test on held-out nights,
+   so it can't memorize them.
+4. **In the game:** a fifth program, "Smart (learned)", beside Quick Wash
+   through Delicates. Picking a trade puts its policy on the scope.
+5. **Done when:**
+   - it beats Normal's hit rate on unseen nights at the same length, the
+     hard nights especially;
+   - `trade_cli` benches it;
+   - new CortenForge friction is logged in FINDINGS.
+
+**Risk.** CEM ranks elites by reward per step (FINDINGS, cem.rs:172-180).
+That bites variable-length episodes; ours are fixed-length, so it
+shouldn't, but check.
 
 ## Gotchas (from the probes)
 
