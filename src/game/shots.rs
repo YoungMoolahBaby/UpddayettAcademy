@@ -4,6 +4,8 @@
 //! `UPD_NEXT=1` goes to the next night first (checks the night switch).
 //! `UPD_GIVE=what` (e.g. `phone`) has Upddayett give that away (before the want).
 //! `UPD_BATTERY=1`, `UPD_IDLE=1`, `UPD_SHIELD=<strip>|found`: defenses (see below).
+//! `UPD_RESPIN=1`: after the cycle, shield what the spin check caught (battery if the
+//! power went out) and spin again (`shots/respin_*.png`).
 //! For checking the look without sitting in front of the window.
 
 use bevy::prelude::*;
@@ -21,6 +23,7 @@ pub fn drive(
     mut frame: Local<u32>,
     mut stage: Local<u32>,
     mut since: Local<u32>,
+    mut respun: Local<bool>,
     mut exit: MessageWriter<AppExit>,
 ) {
     *frame += 1;
@@ -87,8 +90,22 @@ pub fn drive(
     }
     if let Some(name) = name {
         std::fs::create_dir_all("shots").ok();
-        commands.spawn(Screenshot::primary_window()).observe(save_to_disk(format!("shots/{name}.png")));
+        let prefix = if *respun { "respin_" } else { "" };
+        commands.spawn(Screenshot::primary_window()).observe(save_to_disk(format!("shots/{prefix}{name}.png")));
         *stage += 1;
+        *since = f;
+    } else if *stage == 3 && f >= *since + 30 && !*respun && std::env::var_os("UPD_RESPIN").is_some() {
+        // Fight back: shield whatever the spin check caught, bring the
+        // battery if the power went out, and spin again.
+        *respun = true;
+        if let Some((k, _)) = lm.spin_alarm() {
+            lm.set_shield(Some(k));
+        }
+        if lm.power_out() {
+            lm.set_battery(true);
+        }
+        lm.start_cycle();
+        *stage = 0;
         *since = f;
     } else if *stage == 3 && f >= *since + 30 {
         // The last screenshot has had a few frames to land on disk.

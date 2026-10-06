@@ -721,7 +721,7 @@ mod tests {
             (cold, hungry, animals)
         }
         let npcs = world::laundromat(1).npcs;
-        let (mut magnets, mut cuts, mut emps) = (0, 0, 0);
+        let (mut magnets, mut cuts, mut emps, mut coils, mut quiet) = (0, 0, 0, 0, 0);
         for seed in 0..500 {
             let night = world::Night::roll(&npcs, seed);
             assert_eq!((night.cold, night.hungry.clone(), night.animals_hungry.clone()), old_roll(&npcs, seed), "night {seed}");
@@ -735,12 +735,75 @@ mod tests {
                     assert!((0.15..=0.85).contains(&at));
                 }
                 Some(Sabotage::Emp) => emps += 1,
+                Some(Sabotage::Coil) => coils += 1,
+                Some(Sabotage::QuietCut(at)) => {
+                    quiet += 1;
+                    assert!((0.12..=0.3).contains(&at), "smart ones cut early");
+                }
                 None => {}
             }
         }
-        let salty = (magnets + cuts + emps) as f64 / 500.0;
+        let dumb = magnets + cuts + emps;
+        let smart = coils + quiet;
+        let salty = (dumb + smart) as f64 / 500.0;
         assert!((salty - salties::SALTY_NIGHTS).abs() < 0.06, "Salties on {salty:.2} of nights");
         assert!(magnets > cuts && cuts > emps && emps > 0, "{magnets} magnets, {cuts} cuts, {emps} EMPs");
+        assert!(coils > quiet && quiet > 0, "{coils} coils, {quiet} quiet cuts");
+        let share = smart as f64 / (dumb + smart) as f64;
+        assert!((share - salties::SMART_SHARE).abs() < 0.12, "smart on {share:.2} of Salties nights");
+    }
+
+    #[test]
+    fn smart_salties_aim_where_it_hurts() {
+        let physics = Physics::default();
+        for night in NIGHTS {
+            let tc = tc(night);
+            let (coil, lost) = salties::aim(&tc, physics.delta_v);
+            assert!(lost > 0.5, "night {night}: the best spot only costs {lost}");
+            assert_eq!(coil.strength.abs(), salties::COIL_STRENGTH);
+            // A random spot does less on average.
+            let n = tc.cycles.len();
+            let mean: f64 = (0..n)
+                .map(|p| {
+                    let m = Magnet { pos: p as f64, ..coil };
+                    let masks = qubo::conflict_masks(&tc.cycles);
+                    let per_goo = 2.0 / (tc.beta * tc.problem.scale);
+                    let w: Vec<f64> = tc.cycles.iter().zip(m.field(n, physics.delta_v)).map(|(c, h)| c.value() + h * per_goo).collect();
+                    tc.evaluate(tc.forward_best).0 - tc.evaluate(qubo::best_valid_set(&w, &masks).0).0
+                })
+                .sum::<f64>()
+                / n as f64;
+            assert!(lost > mean, "night {night}: aimed {lost} vs random {mean}");
+        }
+    }
+
+    #[test]
+    fn the_coil_hides_from_the_idle_check_but_not_the_spin_check() {
+        let physics = Physics::default();
+        let flat = machine::max_safe_field(physics.delta_v);
+        let mut floor = 0.0f64;
+        for night in [1, 3, 8] {
+            let tc = tc(night);
+            let (coil, _) = salties::aim(&tc, physics.delta_v);
+            let field = coil.field(tc.ising.n, physics.delta_v);
+            let k = coil.strip(tc.ising.n);
+            let mut m = Machine::with_component(&tc.ising, physics, night, salties::Coil(field.clone())).unwrap();
+            m.rest(30.0).unwrap();
+            let idle = m.stray_field(&tc.ising).iter().fold(0.0f64, |a, x| a.max(x.abs()));
+            assert!(idle < 1e-3 * flat, "night {night}: the coil is off at idle, but the check reads {idle}");
+
+            let anneal = Anneal::default();
+            let mut check = salties::SpinCheck::default();
+            let mut clean_check = salties::SpinCheck::default();
+            let mut clean = tc.machine(physics, night).unwrap();
+            for (mach, chk) in [(&mut m, &mut check), (&mut clean, &mut clean_check)] {
+                tc.spin(mach, &anneal, f64::INFINITY, 1.0, |mm, _| chk.observe(mm, &tc.ising)).unwrap();
+            }
+            let read = check.mean();
+            assert!((read[k] - field[k]).abs() < 0.1 * flat, "night {night}: strip {k} read {} for {}", read[k], field[k]);
+            floor = floor.max(clean_check.strongest().unwrap().1.abs() / flat);
+        }
+        assert!(floor < 0.5 * salties::SPIN_ALARM, "a clean spin reads up to {floor:.2}x: too close to the alarm");
     }
 
     #[test]

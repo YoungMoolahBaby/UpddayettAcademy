@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
+use cortenforge_play::trade::salties::SpinCheck;
 use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, machine, salties, world};
 
 /// What the drum is doing.
@@ -59,6 +60,10 @@ pub struct Laundromat {
     pub idle: Option<Vec<f64>>,
     /// Sim time the breaker trips this cycle, on a power-cut night.
     pub cut_at: Option<f64>,
+    /// Where the smart Salties aimed their coil tonight (a coil night only).
+    pub coil: Option<Magnet>,
+    /// The i9's spin check for the current (or last) cycle.
+    pub spin_check: SpinCheck,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -142,6 +147,8 @@ impl Laundromat {
             battery_cost: 0.0,
             idle: None,
             cut_at: None,
+            coil: None,
+            spin_check: SpinCheck::default(),
             tc,
             machine,
             physics,
@@ -170,6 +177,7 @@ impl Laundromat {
     pub fn magnet(&self) -> Option<Magnet> {
         match self.sabotage() {
             Some(Sabotage::Magnet(m)) => Some(m.through(self.shield.map(|s| s as f64))),
+            Some(Sabotage::Coil) => self.coil.map(|m| m.through(self.shield.map(|s| s as f64))),
             _ => None,
         }
     }
@@ -177,10 +185,18 @@ impl Laundromat {
     /// A fresh board for tonight, with the magnet under it if there is one.
     fn board(&self, seed: u64) -> Machine {
         match self.magnet() {
+            Some(m) if self.coil.is_some() => {
+                Machine::with_component(&self.tc.ising, self.physics, seed, salties::Coil(m.field(self.n_cycles(), self.physics.delta_v)))
+            }
             Some(m) => self.tc.tampered_machine(self.physics, seed, &m),
             None => self.tc.machine(self.physics, seed),
         }
         .expect("build the slap-bit board")
+    }
+
+    /// Strips on tonight's board.
+    fn n_cycles(&self) -> usize {
+        self.tc.cycles.len()
     }
 
     /// The well-flattening field, the unit the Salties' numbers are quoted in.
@@ -191,6 +207,15 @@ impl Laundromat {
     /// Has the breaker tripped this cycle?
     pub fn power_out(&self) -> bool {
         self.cut_at.is_some_and(|t| self.machine.time() >= t)
+    }
+
+    /// What the spin check says about the last cycle: the strip that felt
+    /// an unexplained push over the alarm level, and how big (x the
+    /// flattening field). `None` if nothing did, or no cycle ran yet.
+    pub fn spin_alarm(&self) -> Option<(usize, f64)> {
+        let (k, x) = self.spin_check.strongest()?;
+        let x = x.abs() / self.flat();
+        (x >= salties::SPIN_ALARM).then_some((k, x))
     }
 
     /// The i9's idle check: stop the drum, let the strips come to rest, and
@@ -219,6 +244,7 @@ impl Laundromat {
         board.take_state_from(&self.machine).expect("carry the strips over");
         self.machine = board;
         self.idle = None;
+        self.spin_check = SpinCheck::default();
         self.latch = Latch::new();
         self.mode = Mode::Manual;
         info!("shield: {}", at.map_or("off".into(), |s| format!("over strip {s}")));
@@ -232,6 +258,15 @@ impl Laundromat {
         }
         self.battery = on;
         self.reopen();
+    }
+
+    /// What running on the battery cost, for the roasts.
+    fn held_text(&self) -> String {
+        if self.battery_cost < 0.5 {
+            ", and nobody needed them for a trade tonight".to_string()
+        } else {
+            format!(", but holding them back cost the block {:.0} Goo of trades", self.battery_cost)
+        }
     }
 
     /// After the spin: what the Salties did, with the measured numbers
@@ -257,12 +292,7 @@ impl Laundromat {
             Some(Sabotage::PowerCut(at)) => {
                 let t = self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t;
                 let roast = if self.battery {
-                    let held = if self.battery_cost < 0.5 {
-                        ", and nobody needed them for a trade tonight".to_string()
-                    } else {
-                        format!(", but holding them back cost the block {:.0} Goo of trades", self.battery_cost)
-                    };
-                    format!("A flare doesn't flip breakers. A hand does: {:.0}% in. Six 18650s finished the cycle{held}.", 100.0 * at)
+                    format!("A flare doesn't flip breakers. A hand does: {:.0}% in. Six 18650s finished the cycle{}.", 100.0 * at, self.held_text())
                 } else {
                     format!(
                         "A flare doesn't flip breakers. A hand does: {:.0}% in, at {t:.2} kT. The strips froze where they were: a quench, not an anneal. {cost}",
@@ -272,9 +302,44 @@ impl Laundromat {
                 vec![("\"Solar flare!\"".into(), roast)]
             }
             Some(Sabotage::Emp) => vec![("\"EMP, baby!\"".into(), "It made popcorn.".into())],
+            // The smart ones don't brag; the i9's numbers are all there is.
+            Some(Sabotage::Coil) => {
+                let Some(aimed) = self.coil else { return vec![] };
+                let n = self.n();
+                let k = aimed.strip(n);
+                let trade = self.tc.cycles[k].short(&self.tc.world);
+                let open = aimed.strength.abs();
+                let felt = self.spin_check.mean().get(k).map_or(0.0, |x| x.abs() / self.flat());
+                let roast = if self.magnet().is_some_and(|m| m.strength.abs() < open) {
+                    format!(
+                        "No brag tonight: the smart kind. A coil under strip {k}, aimed at {trade}, live only while the drum spins. \
+                         Your shield took it from {open:.2}x to {felt:.2}x. Steel: 1, Salt: 0."
+                    )
+                } else {
+                    format!(
+                        "No brag tonight: the smart kind. Strip {k} felt {felt:.2}x the flattening field while the drum spun and nothing at idle: \
+                         a coil keyed to the shaking, aimed at {trade}. {cost} Shield strip {k} and spin again."
+                    )
+                };
+                vec![(String::new(), roast)]
+            }
+            Some(Sabotage::QuietCut(at)) => {
+                let t = self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t;
+                let roast = if self.battery {
+                    format!("No brag, no flicker: they knew where the panel was. Tripped {:.0}% in. Six 18650s finished the cycle{}.", 100.0 * at, self.held_text())
+                } else {
+                    format!(
+                        "No brag, no flicker: they knew where the panel was, and when. Tripped {:.0}% in, at {t:.2} kT, while it still mattered. \
+                         {cost} The battery would finish it{}.",
+                        100.0 * at,
+                        if self.battery_cost < 0.5 { ", and nobody needs its cells tonight".to_string() } else { format!(", for {:.0} Goo of trades", self.battery_cost) }
+                    )
+                };
+                vec![(String::new(), roast)]
+            }
             None => vec![],
         };
-        if self.battery && self.battery_cost >= 0.5 && !matches!(self.sabotage(), Some(Sabotage::PowerCut(_))) {
+        if self.battery && self.battery_cost >= 0.5 && self.sabotage().and_then(|s| s.cut()).is_none() {
             lines.push((String::new(), format!("Nobody touched the breaker. The battery sat there and cost the block {:.0} Goo of trades.", self.battery_cost)));
         }
         lines
@@ -308,6 +373,8 @@ impl Laundromat {
         self.battery_cost = (best(&board_for(self.night, self.give, false)) - best(&board_for(self.night, self.give, true))).max(0.0);
         self.ground = tc.ground_state();
         self.activity = vec![0.0; tc.cycles.len()];
+        // The smart Salties scout the board as it stands (they don't see wants).
+        self.coil = matches!(self.sabotage(), Some(Sabotage::Coil)).then(|| salties::aim(&self.tc, self.physics.delta_v).0);
     }
 
     /// Close up and open tomorrow: new conditions, new values, a new board.
@@ -345,10 +412,11 @@ impl Laundromat {
         self.tc = open(self.night, self.give, self.battery);
         self.idle = None;
         self.cut_at = None;
+        self.spin_check = SpinCheck::default();
+        self.price_wants();
         self.machine = self.board(self.seed);
         self.latch = Latch::new();
         self.mode = Mode::Manual;
-        self.price_wants();
         if let Some((npc, item)) = want {
             self.set_want(Some((npc, item)));
             if self.tc.want.is_none() {
@@ -413,10 +481,8 @@ impl Laundromat {
         let p = &PROGRAMS[self.program];
         self.anneal.duration = p.duration;
         // The breaker trips on a power-cut night; the battery keeps the drum going.
-        let cut = match self.sabotage() {
-            Some(Sabotage::PowerCut(at)) => Some(at),
-            _ => None,
-        };
+        let cut = self.sabotage().and_then(|s| s.cut());
+        self.spin_check = SpinCheck::default();
         self.anneal.cut = cut.filter(|_| !self.battery);
         self.cut_at = cut.map(|at| self.machine.time() + at * p.duration);
         self.mode = Mode::Cycle { start: self.machine.time() };
@@ -521,6 +587,7 @@ pub fn step_sim(time: Res<Time>, mut lm: ResMut<Laundromat>) {
         lm.machine.step().expect("sim step");
         if matches!(lm.mode, Mode::Cycle { .. }) && ((lm.machine.time() / dt).round() as u64).is_multiple_of(sample_steps) {
             lm.latch.observe(&lm.machine, &lm.tc.problem.qubo);
+            lm.spin_check.observe(&lm.machine, &lm.tc.ising);
         }
     }
 

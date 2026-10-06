@@ -194,6 +194,7 @@ AI roasts the rest with a real result.
 | --- | --- | --- | --- |
 | "Magnet stuff" | Works. A magnet hidden under the counter throws off the Hall sensors and pushes the strips. | A hostile `ExternalField`: the same knob a want uses, held by someone else. It falls off with distance (dipole, ~1/r^3), so strips near the magnet tilt most. A gentle tilt quietly steers the drum to a worse chain; a strong one goes past the well-flattening tilt (`machine::max_safe_field`), pins strips and is easy to spot. | A steel shield from a dead hard drive; the scope shows a Hall offset while the drum sits idle; a calibration load with a known answer catches tampering. |
 | "Solar flare" | A flare won't fry a phone; geomagnetic storms hit long power lines, not pockets. Really, they flip the laundromat breaker. | Power cut mid-spin: the drum stops, the temperature drops to zero and the strips freeze into whatever chain they had (a quench, not an anneal). | A backup battery of vape cells finishes the cycle. They're the cells Upddayett wants for his balance bot, so he has to choose. |
+| (Smart ones say nothing) | Works, and hides. An electromagnet aimed at the trade that costs the most, keyed to the drum's shaking. | Our own `PassiveComponent` (`salties::Coil`) that pushes only while `ctrl[0] > 0`: 0.8x, just under flattening. The idle check reads nothing. | The spin check (force balance averaged over a spin) names the strip; then the shield. Smart ones also trip the breaker early, with no flicker. |
 | "EMP" | Never works. It made popcorn. | Nothing; that's the joke. No build details, ever: it's a dud on screen. | Laughing at them. |
 | Taking stuff | Theft from the tents at night. | Items are gone the next night (needs nights that carry over). | The laundry counter as escrow: what's on the counter is safe. |
 
@@ -210,6 +211,15 @@ AI roasts the rest with a real result.
   find it first. The battery runs on Vape Lady's 18650s, which leave the
   trades while they power the drum; the game prices that in Goo every
   night.
+- **Dumb Salties brag; smart Salties don't.** About 4 in 10 Salties nights
+  are the smart kind: no banner, no brag, no flicker. They scout the board
+  and aim a coil at the trade that costs the most. The coil only runs
+  while the drum spins, so the idle check sees nothing. Or they trip the
+  breaker early, when it hurts. The player's answer is the i9's spin check
+  (the idle check's force balance, averaged over a whole spin), which
+  names the strip after one lost cycle. Then they shield it and spin
+  again. Smart Salties hurt most on fast programs; the slow ones give the
+  i9 time to latch the right answer anyway.
 - **What the magnet does depends on where it is.** Pushing strips "on"
   hurts almost anywhere (trades that clash get pushed together). Pushing
   "off" hurts only over a strip in the best set; over an unused strip it

@@ -40,11 +40,12 @@ Read first:
   `UPD_PROGRAM=0..3` picks the wash program; `UPD_WANT=upd:hub` sets a want; `UPD_SEED=<n>` replays a logged
   session (it also picks the night); `UPD_NEXT=1` presses Next night first; `UPD_GIVE=phone` has
   Upddayett give that away; `UPD_IDLE=1` runs the idle check, `UPD_SHIELD=<strip>|found` places the
-  shield, `UPD_BATTERY=1` runs on the battery (Salties nights: 1 and 16 magnets, 17 a power cut, 10 the
-  "EMP"); `UPD_WINDOW=960x600` checks the compact layout.
+  shield, `UPD_BATTERY=1` runs on the battery, `UPD_RESPIN=1` fights back and spins again (Salties nights:
+  smart coils 1, 10, 16; smart quiet cut 4; dumb magnets 21, 29; dumb cuts 17, 31); `UPD_WINDOW=960x600` checks the compact layout.
 - `trade_cli wants [--bench]` lists every want the picker offers, with cost, field strength and hit rate;
   `trade_cli night --night N` shows a night's conditions; every mode takes `--night N`; `nights` summarizes
   200 nights; `--give upd:phone` gives an item away; `--gifts N` / `--chain N` change the gift strips
   (experiments).
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
-  + pushes on) with `--shield`, `--cut F`; `magnets` and `cuts` sweep them (`magnets` takes ~4 min a night).
+  + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
+  sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

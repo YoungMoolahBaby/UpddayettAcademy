@@ -162,10 +162,11 @@ pub fn panels(
                 for it in w.items.iter().filter(|it| it.gift) {
                     ui.label(egui::RichText::new(format!("{} gives away: {}", w.npcs[it.owner].name, it.name)).small().color(GIFT_EGUI));
                 }
-                if let Some(s) = lm.sabotage() {
+                // Only the dumb ones announce themselves.
+                if let Some(brag) = lm.sabotage().and_then(|s| s.brag()) {
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new("SALTIES AROUND").strong().color(SALT));
-                        ui.label(egui::RichText::new(s.brag()).small().italics().color(SALT));
+                        ui.label(egui::RichText::new(brag).small().italics().color(SALT));
                     })
                     .response
                     .on_hover_text("Somebody's been hanging around the counter. Which of their brags is real physics? Check before you spin.");
@@ -363,6 +364,22 @@ pub fn panels(
                             ui.label(egui::RichText::new(text).small().color(if x >= 0.01 { SALT } else { egui::Color32::GRAY }));
                         }
                     });
+                    // The spin check runs on every cycle: the i9 averages the
+                    // same force balance while the drum shakes.
+                    if lm.spin_check.samples() > 0 && !spinning {
+                        let (text, color) = match lm.spin_alarm() {
+                            Some((k, x)) => (format!("Spin check: strip {k} felt {x:.2}x while the drum spun"), SALT),
+                            None => {
+                                let quiet = lm.spin_check.strongest().map_or(0.0, |(_, x)| x.abs() / lm.flat());
+                                (format!("Spin check: nothing unexplained while it spun ({quiet:.2}x)"), egui::Color32::GRAY)
+                            }
+                        };
+                        ui.label(egui::RichText::new(text).small().color(color)).on_hover_text(format!(
+                            "The idle check's force balance, averaged over the whole spin. The shaking averages out; a push that's only there \
+                             while the drum spins doesn't. Over {:.1}x counts.",
+                            salties::SPIN_ALARM
+                        ));
+                    }
                     let mut shield = lm.shield;
                     ui.horizontal(|ui| {
                         let mut on = shield.is_some();
@@ -371,9 +388,9 @@ pub fn panels(
                             100.0 * salties::SHIELD,
                             salties::SHIELD_SPAN
                         ));
-                        let mut at = shield.unwrap_or(lm.idle.as_ref().map_or(n / 2, |s| {
-                            s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0
-                        }));
+                        // Defaults to wherever a check last pointed.
+                        let idle_top = lm.idle.as_ref().map(|s| s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0);
+                        let mut at = shield.or(lm.spin_alarm().map(|a| a.0)).or(idle_top).unwrap_or(n / 2);
                         ui.add_enabled(on, egui::DragValue::new(&mut at).range(0..=n.saturating_sub(1)));
                         shield = on.then_some(at);
                     });
@@ -444,8 +461,17 @@ pub fn panels(
                 ui,
                 "The Salties",
                 SALT,
-                "brag about big physics; only the honest kind works. A magnet really pushes the strips (find it with the idle check, \
-                 cover it with the shield). A \"solar flare\" is them flipping the breaker (the battery finishes the cycle). The \"EMP\" does nothing.",
+                "come dumb or smart. Dumb ones brag about big physics; only the honest kind works. A magnet really pushes the strips \
+                 (find it with the idle check, cover it with the shield). A \"solar flare\" is them flipping the breaker (the battery \
+                 finishes the cycle). The \"EMP\" does nothing.",
+            );
+            rule(
+                ui,
+                "Smart Salties",
+                SALT,
+                "never brag, so a quiet night isn't a safe one. They aim a coil that only runs while the drum spins (the idle check \
+                 sees nothing; the spin check after a cycle does), or trip the breaker early with no flicker. Lose a spin, read the \
+                 numbers, defend, spin again.",
             );
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());

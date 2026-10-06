@@ -9,7 +9,7 @@ use cortenforge::sim::core::{DVector, Data, Model};
 use cortenforge::sim::mjcf::load_model;
 use cortenforge::sim::therm_env::generate_mjcf;
 use cortenforge::sim::thermostat::{
-    DoubleWellPotential, ExternalField, LangevinThermostat, PairwiseCoupling, PassiveStack, WellState,
+    DoubleWellPotential, ExternalField, LangevinThermostat, PairwiseCoupling, PassiveComponent, PassiveStack, WellState,
 };
 
 use super::qubo::Ising;
@@ -97,10 +97,17 @@ impl Machine {
     /// the counter): a second `ExternalField` in the stack, so it sums with
     /// the trade biases and the want. `stray` has one entry per strip.
     pub fn with_stray_field(ising: &Ising, physics: Physics, seed: u64, stray: &[f64]) -> Result<Self, Error> {
-        Self::build(ising, physics, seed, Some(stray))
+        assert_eq!(stray.len(), ising.n, "ExternalField needs one entry per bit");
+        Self::with_component(ising, physics, seed, ExternalField::new(stray.to_vec()))
     }
 
-    fn build(ising: &Ising, physics: Physics, seed: u64, stray: Option<&[f64]>) -> Result<Self, Error> {
+    /// A board with one more force on the strips, on top of the trade
+    /// problem (e.g. a coil that runs only while the drum shakes).
+    pub fn with_component(ising: &Ising, physics: Physics, seed: u64, extra: impl PassiveComponent) -> Result<Self, Error> {
+        Self::build(ising, physics, seed, Some(Box::new(extra)))
+    }
+
+    fn build(ising: &Ising, physics: Physics, seed: u64, extra: Option<Box<dyn PassiveComponent>>) -> Result<Self, Error> {
         let n = ising.n;
         // One actuator slot so ctrl[0] exists; it drives temperature, not force.
         let xml = generate_mjcf(n, 1, physics.dt, (0.0, 10.0));
@@ -115,9 +122,8 @@ impl Machine {
         }
         assert_eq!(ising.h.len(), n, "ExternalField needs one entry per bit");
         b = b.with(ExternalField::new(ising.h.clone()));
-        if let Some(stray) = stray {
-            assert_eq!(stray.len(), n, "ExternalField needs one entry per bit");
-            b = b.with(ExternalField::new(stray.to_vec()));
+        if let Some(extra) = extra {
+            b = b.with_arc(extra.into());
         }
         b = b.with(
             LangevinThermostat::new(DVector::from_element(n, physics.gamma), physics.k_b_t, seed, 0)

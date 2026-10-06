@@ -91,6 +91,15 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   force balance meant re-deriving the double well's force from its formula
   (double_well.rs:208), since a component can't report its force at a given
   `qpos` without a `Model` and `Data`.
+- Extending the crate is easy (smart Salties): there's no field you can
+  switch on and off, but `PassiveComponent` is a public two-method trait
+  (component.rs), so a coil that pushes only while `ctrl[0] > 0` took ten
+  lines, and `PassiveStackBuilder::with_arc` took a boxed one. Averaging the
+  force balance over a whole Langevin run recovered a hidden 0.8x field
+  to within 0.1x, with a clean noise floor of ~0.12x after 1000 reads: the
+  thermostat's noise is as zero-mean as advertised. A short "write your own
+  component" example in the crate docs would make this discoverable; we
+  found it by reading component.rs.
 - A power cut is just the anneal schedule dropping to zero early, and the
   crate's Langevin dynamics make it behave like a real quench, with no
   special support needed.

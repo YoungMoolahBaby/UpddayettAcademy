@@ -12,6 +12,7 @@
 //!   magnets          sweep a magnet's strength and position: hit rate vs the clean best set,
 //!                    Goo lost, the i9's idle check, and the calibration load
 //!   cuts             sweep when the breaker trips, and the battery
+//!   smart            the smart Salties' aimed coil per program: cost, spin-check alarms, shield
 //!
 //!   --night N        which night (default 1)
 //!
@@ -19,7 +20,8 @@
 //!   --give WHO:WHAT  WHO gives WHAT away tonight (a gift strip), e.g. --give upd:phone
 //!   --magnet POS:S   a magnet under strip POS pushing S x the flattening field (+ on, - off)
 //!   --shield         the hard-drive steel over the magnet   --cut F  the breaker trips F (0..1) in
-//!   --salty          whatever the Salties roll tonight (magnet or cut)
+//!   --salty          whatever the Salties roll tonight (magnet, coil, cut)
+//!   --coil           the smart Salties' coil, aimed at tonight's board (on only while the drum shakes)
 //!   --clamp C        want clamp, x the well-flattening field (0 = off)  --margin M
 //!   --seed N  --runs N
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
@@ -28,6 +30,7 @@
 use std::time::Instant;
 
 use cortenforge::sim::thermostat::WellState;
+use cortenforge_play::trade::salties::SpinCheck;
 use cortenforge_play::trade::{self, Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, qubo, salties};
 
 #[derive(Clone)]
@@ -42,6 +45,8 @@ struct Opts {
     want: Option<String>,
     give: Option<String>,
     magnet: Option<Magnet>,
+    /// The magnet is the smart Salties' coil: on only while the drum shakes.
+    coil: bool,
     shield: bool,
     salty: bool,
     seed: u64,
@@ -65,6 +70,7 @@ fn parse() -> Opts {
         want: None,
         give: None,
         magnet: None,
+        coil: false,
         shield: false,
         salty: false,
         seed: 1,
@@ -93,6 +99,7 @@ fn parse() -> Opts {
                 o.magnet = Some(Magnet { pos: num(p.into()), strength: num(s.into()) });
             }
             "--shield" => o.shield = true,
+            "--coil" => o.coil = true,
             "--salty" => o.salty = true,
             "--cut" => o.anneal.cut = Some(num(val())),
             "--bench" => o.bench = true,
@@ -288,6 +295,7 @@ fn magnet(o: &Opts) -> Option<Magnet> {
 /// A fresh board, with the magnet under it if there is one.
 fn board(tc: &TradeComputer, o: &Opts, seed: u64) -> Machine {
     match magnet(o) {
+        Some(m) if o.coil => Machine::with_component(&tc.ising, o.physics, seed, salties::Coil(m.field(tc.ising.n, o.physics.delta_v))),
         Some(m) => tc.tampered_machine(o.physics, seed, &m),
         None => tc.machine(o.physics, seed),
     }
@@ -319,14 +327,23 @@ fn apply_salties(o: &mut Opts) {
     match trade::world::laundromat(o.night).night.sabotage {
         Some(Sabotage::Magnet(m)) => o.magnet = Some(m),
         Some(Sabotage::PowerCut(at)) => o.anneal.cut = Some(at),
+        Some(Sabotage::QuietCut(at)) => o.anneal.cut = Some(at),
+        Some(Sabotage::Coil) => o.coil = true,
         Some(Sabotage::Emp) => println!("The Salties try their \"EMP\". It made popcorn."),
         None => {}
     }
 }
 
+/// Where the smart Salties put the coil tonight (scouted on the plain
+/// night's board), and the Goo it should cost.
+fn aim_coil(o: &Opts) -> (Magnet, f64) {
+    let tc = TradeComputer::new(trade::world::laundromat(o.night), o.beta, o.penalty);
+    salties::aim(&tc, o.physics.delta_v)
+}
+
 /// `o.runs` seeded spin cycles from fresh random strips, on all cores.
-/// Returns each run's latch and wall time.
-fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
+/// Returns each run's latch, wall time and spin check.
+fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64, SpinCheck)> {
     let threads = std::thread::available_parallelism().map_or(4, |n| n.get());
     std::thread::scope(|s| {
         let hs: Vec<_> = (0..threads)
@@ -337,8 +354,9 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
                         .map(|r| {
                             let mut m = board(tc, o, o.seed + r as u64 * 7919);
                             let t = Instant::now();
-                            let l = tc.spin(&mut m, &o.anneal, SAMPLE, f64::INFINITY, |_, _| {}).expect("spin");
-                            (l, t.elapsed().as_secs_f64())
+                            let mut check = SpinCheck::default();
+                            let l = tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, |m, _| check.observe(m, &tc.ising)).expect("spin");
+                            (l, t.elapsed().as_secs_f64(), check)
                         })
                         .collect::<Vec<_>>()
                 })
@@ -348,13 +366,31 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
     })
 }
 
+/// How many runs' spin checks raised the alarm, and the strip it pointed at
+/// most often.
+fn spin_alarms(results: &[(Latch, f64, SpinCheck)], o: &Opts) -> (usize, usize) {
+    let flat = trade::machine::max_safe_field(o.physics.delta_v);
+    let mut votes = [0usize; trade::MAX_BITS];
+    let mut alarms = 0;
+    for (_, _, check) in results {
+        if let Some((k, x)) = check.strongest()
+            && x.abs() >= salties::SPIN_ALARM * flat
+        {
+            alarms += 1;
+            votes[k] += 1;
+        }
+    }
+    let strip = (0..votes.len()).max_by_key(|&k| votes[k]).unwrap_or(0);
+    (alarms, strip)
+}
+
 /// What the Salties did to this run, and what the i9's idle check sees.
 fn report_sabotage(tc: &TradeComputer, o: &Opts) {
     if let Some(m) = o.magnet {
         let (stray, strip) = idle_check(tc, o);
         println!(
             "Sabotage: {}{}. The i9's idle check reads a stray field of {stray:.2}x flattening on strip {strip}. Scored against the clean best set.",
-            Sabotage::Magnet(m).describe(),
+            if o.coil { format!("a coil under strip {:.0} ({:.1}x, pushing {}, on only while the drum spins)", m.pos, m.strength.abs(), if m.strength > 0.0 { "on" } else { "off" }) } else { Sabotage::Magnet(m).describe() },
             if o.shield { format!(", behind the shield ({:.2}x gets through)", m.shielded().strength.abs()) } else { String::new() }
         );
     }
@@ -387,6 +423,12 @@ fn bench(o: &Opts) -> Result<(), trade::Error> {
             pct(delivered)
         );
     }
+    let (alarms, strip) = spin_alarms(&results, o);
+    println!(
+        "spin check: alarm on {} of runs (push over {:.1}x the flattening field), most often on strip {strip}",
+        pct(alarms),
+        salties::SPIN_ALARM
+    );
     let mut walls: Vec<f64> = results.iter().map(|r| r.1).collect();
     walls.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let mut found: Vec<f64> = results.iter().filter(|r| tc.is_optimal(r.0.best_bits)).map(|r| r.0.best_time).collect();
@@ -405,6 +447,9 @@ fn main() -> Result<(), trade::Error> {
     let mut o = parse();
     if o.salty {
         apply_salties(&mut o);
+    }
+    if o.coil && o.magnet.is_none() {
+        o.magnet = Some(aim_coil(&o).0);
     }
     match o.mode.as_str() {
         "run" => run(&o),
@@ -559,6 +604,51 @@ fn main() -> Result<(), trade::Error> {
                 }
                 println!("{row}");
             }
+            Ok(())
+        }
+        "smart" => {
+            // The smart Salties' aimed coil against each program: what it
+            // costs, whether the idle check (no) and the spin check (yes) see
+            // it, and the shield over the strip the spin check names.
+            let tc = setup(&o);
+            let (coil, expect) = aim_coil(&o);
+            let k = coil.strip(tc.cycles.len());
+            println!(
+                "Night {}: they aim a coil under strip {k} ({}), pushing {} at {:.1}x: on paper it costs {expect:.0} Goo. {} runs each.",
+                o.night,
+                tc.cycles[k].short(&tc.world),
+                if coil.strength > 0.0 { "on" } else { "off" },
+                coil.strength.abs(),
+                o.runs
+            );
+            println!("  program          | clean: best  alarms | coil: best  lost  alarms (on strip {k}) | shield on {k}: best  lost");
+            for (name, time) in [("Quick Wash", 150.0), ("Permanent Press", 300.0), ("Normal", 1000.0)] {
+                let base = Opts { anneal: Anneal { duration: time, ..o.anneal }, magnet: None, coil: false, ..o.clone() };
+                let clean = spin_many(&tc, &base);
+                let coiled = Opts { magnet: Some(coil), coil: true, ..base.clone() };
+                let hit = spin_many(&tc, &coiled);
+                let shielded = Opts { magnet: Some(coil.through(Some(k as f64))), ..coiled.clone() };
+                let (sh, sl, _) = hit_and_loss(&tc, &shielded);
+                let best = tc.evaluate(tc.ground_state()).0;
+                let rate = |r: &[(Latch, f64, SpinCheck)]| 100.0 * r.iter().filter(|x| tc.is_optimal(x.0.best_bits)).count() as f64 / r.len() as f64;
+                let lost = hit.iter().map(|x| best - tc.evaluate(x.0.best_bits).0).sum::<f64>() / hit.len() as f64;
+                let on_k = hit
+                    .iter()
+                    .filter(|x| x.2.strongest().is_some_and(|(s, v)| s == k && v.abs() >= salties::SPIN_ALARM * trade::machine::max_safe_field(o.physics.delta_v)))
+                    .count();
+                let pc = |a: usize, r: usize| 100.0 * a as f64 / r as f64;
+                println!(
+                    "  {name:<16} |       {:>3.0}%   {:>4.0}% |      {:>3.0}% {lost:>5.1}  {:>4.0}% ({:>3.0}%)        |          {:>3.0}% {sl:>5.1}",
+                    rate(&clean),
+                    pc(spin_alarms(&clean, &base).0, clean.len()),
+                    rate(&hit),
+                    pc(spin_alarms(&hit, &coiled).0, hit.len()),
+                    pc(on_k, hit.len()),
+                    100.0 * sh
+                );
+            }
+            let (idle, _) = idle_check(&tc, &Opts { magnet: Some(coil), coil: true, ..o.clone() });
+            println!("  idle check with the coil in place: {idle:.3}x (the coil is off while the drum is stopped)");
             Ok(())
         }
         "cuts" => {

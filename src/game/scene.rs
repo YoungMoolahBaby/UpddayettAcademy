@@ -318,7 +318,8 @@ fn slot_x(slot: f32) -> f32 {
 }
 
 /// On a breaker night the tubes buzz and flicker before the spin (the
-/// Salties are at the panel), and the room goes dim when it trips.
+/// Salties are at the panel), and the room goes dim when it trips. The
+/// smart ones know where the panel is: no flicker.
 pub fn flicker_lights(time: Res<Time>, lm: Res<Laundromat>, mut lights: Query<(&RoomLight, Option<&mut RectLight>, Option<&mut PointLight>)>, mut ambient: ResMut<GlobalAmbientLight>) {
     let t = time.elapsed_secs();
     let breaker_night = matches!(lm.sabotage(), Some(Sabotage::PowerCut(_)));
@@ -358,6 +359,12 @@ pub fn salty_props(
     let (tf, vis) = &mut *magnet;
     match lm.sabotage() {
         Some(Sabotage::Magnet(m)) if found || lm.mode == Mode::Done => {
+            tf.translation = Vec3::new(slot_x(m.pos as f32).clamp(-0.62, 0.62), WASHER.y - 0.05, WASHER.z / 2.0 + 0.02);
+            **vis = Visibility::Inherited;
+        }
+        // The coil turns up once the spin check has caught it.
+        Some(Sabotage::Coil) if lm.mode == Mode::Done && lm.spin_alarm().is_some() => {
+            let m = lm.coil.expect("aimed");
             tf.translation = Vec3::new(slot_x(m.pos as f32).clamp(-0.62, 0.62), WASHER.y - 0.05, WASHER.z / 2.0 + 0.02);
             **vis = Visibility::Inherited;
         }

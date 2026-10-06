@@ -622,8 +622,9 @@ banner and condition tags). Theft waits for Level 2 (nights that carry over).
 (half), the breaker (about a third) or the "EMP" (the rest). Their draws come
 after every older coin, so each night keeps its weather and hunger, and
 every earlier bench number stands (a test replays the old roll on 500
-nights). Salties nights among the first 40: magnets 1, 16, 20, 21, 27, 29;
-cuts 4, 17, 31; EMP 10.
+nights). The magnet and power-cut numbers below were measured before the
+smart Salties existed, on boards with the same values; nights 1 and 16 have
+since become smart coil nights (see "Smart Salties" below).
 - **Library** (`src/trade/salties.rs`): `Magnet { pos, strength }` (strength
   in units of the flattening field, + pushes strips on). Its field is
   `strength * (DEPTH / r)^3` with `DEPTH` 1.5 strips: a dipole pointing
@@ -682,6 +683,55 @@ cuts 4, 17, 31; EMP 10.
   strong magnet pinning the strips it overpowers, the cut schedule, the
   held cells, old nights unchanged), 1.6 s. Screenshots: night 1 open and
   shielded, night 16 idle check, night 17 cut and battery.
+
+**Smart Salties (2026-10-06, user: "make some salties smart and we have to
+battle smart salties. dumb salties brag. we can have both").** 4 in 10
+Salties nights are smart (one more draw, after the others). Salties
+nights among the first 40: smart coils 1, 10, 16, 20, 27; a smart quiet cut
+4 (20% in); dumb magnets 21, 29; dumb cuts 17, 31.
+- **Smart Salties never brag:** no banner, no flicker. A quiet night isn't
+  a safe night.
+- **The aimed coil** (`Sabotage::Coil`). They scout the board (`salties::aim`):
+  every strip, both ways, at 0.8x (just under flattening, so it never pins
+  a strip). Each spot is scored by how much worse the best set gets once
+  the tilt is counted in Goo (a field `h` is worth `2h / (beta * scale)`).
+  Their favorite: pushing the Upddayett ⇄ Vape Lady swap *on*, into the
+  trades it clashes with. It's an electromagnet keyed to the drum's
+  shaking: `salties::Coil`, our own `PassiveComponent` that only pushes
+  while `ctrl[0] > 0`. So the idle check reads 0.000.
+- **The quiet cut** (`Sabotage::QuietCut`): the breaker, but 12-30% in,
+  where the cuts bench says it hurts, and with no flicker.
+- **The counter: the spin check** (`salties::SpinCheck`). The i9 averages the
+  idle check's force balance over every read while the drum shakes. The
+  shaking, ringing and hops average away; the coil doesn't. It runs on
+  every cycle; DEFENSES shows "Spin check: strip 12 felt 0.78x while the
+  drum spun". The alarm is at 0.3x: a clean Normal spin averages out to at
+  most ~0.12x on some strip. The shield defaults to the strip it names.
+  The battle: lose a spin, read the numbers, defend, spin again.
+- **Bench** (`trade_cli smart`, 48 runs, nights 1-10):
+  - On Normal, the aimed coil drops the best set to 0-31% on 8 of 10 nights
+    (69% and 81% on the other two). It costs 0.5-4.7 Goo a run (Quick
+    Wash: 5.8-8.1), against "on paper" 8-17: the i9 latch claws most of it
+    back.
+  - Smart Salties are deadliest when you wash fast.
+  - Spin-check alarm: 100% of coil runs, on the right strip 98-100%. False
+    alarms on clean runs: 0% on Normal and Permanent Press, 8-17% on Quick
+    Wash (fewer reads).
+  - The shield on the named strip brings Normal back to about the clean
+    rate (98/98, 81/81, 85/85, 92/81, 77/65).
+- **Roasts:** "No brag tonight: the smart kind. Strip 12 felt 0.78x the
+  flattening field while the drum spun and nothing at idle: a coil keyed
+  to the shaking, aimed at Vape Lady -> Bike Kitchen Dave -> Sound Guy Ray
+  -> Vape Lady. ... Shield strip 12 and spin again." After the shield:
+  "Your shield took it from 0.80x to 0.08x. Steel: 1, Salt: 0." Quiet cut:
+  "No brag, no flicker: they knew where the panel was, and when," plus
+  what the battery would cost. On night 4 that's 7 Goo of trades against
+  the cut's 2, so the honest answer is often "take the hit".
+- `UPD_RESPIN=1` plays the battle in screenshot mode: it shields what the
+  spin check caught (or brings the battery after a cut) and spins again.
+- Tests: 23 (adds aim beats a random spot, and the coil hides from the
+  idle check but not the spin check, with the clean noise floor under half
+  the alarm).
 
 ## Gotchas (from the probes)
 
