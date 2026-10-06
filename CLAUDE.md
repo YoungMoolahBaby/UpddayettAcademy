@@ -45,7 +45,7 @@ Read first:
   session (it also picks the night); `UPD_NEXT=1` presses Next night first; `UPD_GIVE=phone` has
   Upddayett give that away; `UPD_IDLE=1` runs the idle check, `UPD_SHIELD=<strip>|found` places the
   shield, `UPD_BATTERY=1` runs on the battery, `UPD_RESPIN=1` fights back and spins again (Salties nights:
-  smart coils 1, 10, 16; smart quiet cut 4; dumb magnets 21, 29; dumb cuts 17, 31); `UPD_WINDOW=960x600` checks the compact layout.
+  smart coils 1, 10, 16; smart quiet cut 4; dumb magnets 21, 29; dumb cuts 17, 31); `UPD_WINDOW=960x600` checks the compact layout. `UPD_CARDS=1` shoots the title, splash and ad cards (`shots/card_*.png`); Tab hides the panels in play.
 - `trade_cli wants [--bench]` lists every want the picker offers, with cost, field strength and hit rate;
   `trade_cli night --night N` shows a night's conditions; every mode takes `--night N`; `nights` summarizes
   200 nights; `--give upd:phone` gives an item away; `--gifts N` / `--chain N` change the gift strips

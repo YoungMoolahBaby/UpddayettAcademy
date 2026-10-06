@@ -1,6 +1,7 @@
 //! Lesson 3 in 3D: the laundromat trade computer, rendered with Bevy.
 
 mod arrows;
+mod cards;
 mod counter;
 mod scene;
 mod shots;
@@ -14,7 +15,9 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(sim::Laundromat::new())
+        let lm = sim::Laundromat::new();
+        app.insert_resource(cards::Cards::new(lm.night))
+            .insert_resource(lm)
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()
@@ -34,12 +37,15 @@ impl Plugin for GamePlugin {
                         arrows::neon,
                         counter::fly,
                         counter::draw_sign,
+                        cards::hide_inset,
                     ),
                 )
                     .chain(),
             )
-            .add_systems(EguiPrimaryContextPass, ui::panels);
-        if shots::enabled() {
+            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear)).chain());
+        if cards::shots_enabled() {
+            app.add_systems(Update, cards::shots);
+        } else if shots::enabled() {
             app.add_systems(Update, shots::drive.after(sim::step_sim));
         }
     }

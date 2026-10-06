@@ -18,7 +18,7 @@ probe:
 - sim-ml-chassis + sim-rl: 33 (CEM learned a wash program)
 - sim-soft + sim-coupling: 42
 
-Next: 3.5 polish (layout done; see 3.5 so far).
+Next: 3.5 polish (layout, title card and ads done; see 3.5 so far).
 
 ## Step 1 result
 
@@ -645,6 +645,23 @@ went home.
   - Tab hides every panel but the name cards.
   - Checked at 1600x900 and 960x600 on night 1 (6 trades): the washer stays
     in sight at both sizes.
+- **Title card and commercials done** (`src/game/cards.rs`). They're egui
+  painter cards with extruded type: Arial Black from `C:/Windows/Fonts`,
+  falling back to a smeared egui face.
+  - **The title:** UPDDAYETT'S / SCHOOL OF BIDDNESS / a pink LESSON 3 pill /
+    blinking PRESS START, over the dimmed laundromat, plus "RATED M: crude
+    humor, mild thermodynamics". Any key or click goes on.
+  - **The "powered by CortenForge" splash** (real name, per the naming
+    policy): in Corten-steel orange, with a line on what the sim does and
+    Ferris waving below. It lasts 3 s and can be skipped.
+  - **The ads:** every third night, a commercial breaks in before the
+    night: MTN GOO, SUPERINTELLIGENCE FOR DOGS ("he still can't open the
+    door; now he can explain why") and CARTPASS ("$9.99/mo, wheels sold
+    separately"), each with fine print. An ad lasts 8 s and can be skipped.
+  - The board-cam inset is its own camera and drew over the cards, so it's
+    switched off while a card is up. Titles are sized to fit the window.
+  - `UPD_CARDS=1` shoots `shots/card_*.png`; `UPD_SHOT` skips the cards.
+  - Unit test (binary): `cargo test --release --bin cortenforge_play`.
 
 ### 3.6 The Salties (sabotage nights)
 
