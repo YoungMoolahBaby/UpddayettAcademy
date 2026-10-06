@@ -416,7 +416,7 @@ const DOG_BEATS: [Beat; 6] = [
             st.fill(Color32::from_rgb(200, 225, 240));
             toilet(st, st.at(0.15, 0.12), st.h() * 0.5, None);
             dog(st, st.at(0.0, -0.08), st.h() * 0.34, true, t);
-            caption(st, "ANNOUNCER:", "So they will stop shitting on the floor.");
+            caption(st, "ANNOUNCER:", "So they will stop defecating on the floor.");
         },
     },
     Beat {
@@ -433,7 +433,7 @@ const DOG_BEATS: [Beat; 6] = [
         paint: |st, t| {
             st.fill(Color32::from_rgb(10, 12, 30));
             slam(st, t, 0.0, st.at(0.0, -0.12), "SUPER INTELLIGENCE FOR DOGS", st.h() * 0.12, DOG_BLUE, DOG_DARK);
-            st.p.text(st.at(0.0, 0.04), Align2::CENTER_CENTER, "So they will stop shitting on the floor.", FontId::proportional(st.h() * 0.045), Color32::WHITE);
+            st.p.text(st.at(0.0, 0.04), Align2::CENTER_CENTER, "So they will stop defecating on the floor.", FontId::proportional(st.h() * 0.045), Color32::WHITE);
             fine_print(st, t, "Intelligence is free now. Not available for cats (they declined).");
         },
     },

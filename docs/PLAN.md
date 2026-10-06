@@ -680,7 +680,7 @@ went home.
     - **SUPER INTELLIGENCE FOR DOGS** (the user's words): a sad gray problem
       shot, the dog by its mess, "TIRED OF THIS?"; INTRODUCING; the title with
       the dog in glasses and a mortarboard, GENIUS!; the dog on the toilet,
-      "So they will stop shitting on the floor."; *FLUSH* with "THEY USE THE
+      "So they will stop defecating on the floor."; *FLUSH* with "THEY USE THE
       TOILET NOW. THEY EVEN FLUSH."; end slate with "Not available for cats
       (they declined)."
     - **CARTPASS:** golden-hour cart, "You love your shopping cart."; OWNING
