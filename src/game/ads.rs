@@ -77,14 +77,14 @@ impl Ad {
 }
 
 /// The reel, in order: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack
-/// ads back to back (each side on the other), CARTPASS, OKAYZA.
+/// ads back to back (each side on the other), CARTPASS, SITSTILLA.
 pub const ADS: [Ad; 6] = [
     Ad { beats: &GOO_BEATS },
     Ad { beats: &DOG_BEATS },
     Ad { beats: &ATTACK_PLINKO },
     Ad { beats: &ATTACK_GLORBMAN },
     Ad { beats: &CART_BEATS },
-    Ad { beats: &OKAYZA_BEATS },
+    Ad { beats: &SITSTILLA_BEATS },
 ];
 
 // ── The style kit ──
@@ -653,10 +653,13 @@ const ATTACK_GLORBMAN: [Beat; 5] = [
     },
 ];
 
-// ── OKAYZA: the pharma spot ──
+// ── SITSTILLA: the pharma spot ──
 
-const OKAYZA_TEAL: Color32 = Color32::from_rgb(60, 200, 190);
-const OKAYZA_DARK: Color32 = Color32::from_rgb(10, 70, 80);
+const SITSTILLA_TEAL: Color32 = Color32::from_rgb(60, 200, 190);
+const SITSTILLA_DARK: Color32 = Color32::from_rgb(10, 70, 80);
+/// The kid's coat before Sitstilla, and after.
+const KID_BRIGHT: Color32 = Color32::from_rgb(250, 150, 40);
+const KID_GRAY: Color32 = Color32::from_gray(140);
 
 /// One of our capsule people (like the NPCs), smiling or not.
 fn person(st: &Stage, at: Pos2, s: f32, coat: Color32, happy: bool) {
@@ -679,7 +682,7 @@ fn person(st: &Stage, at: Pos2, s: f32, coat: Color32, happy: bool) {
 /// A two-tone capsule, `spin` radians around.
 fn capsule(st: &Stage, at: Pos2, s: f32, spin: f32) {
     let rot = egui::emath::Rot2::from_angle(spin);
-    for (side, color) in [(-1.0f32, OKAYZA_TEAL), (1.0, Color32::WHITE)] {
+    for (side, color) in [(-1.0f32, SITSTILLA_TEAL), (1.0, Color32::WHITE)] {
         let pts: Vec<_> = (0..=16)
             .map(|k| {
                 let a = k as f32 / 16.0 * std::f32::consts::PI;
@@ -695,6 +698,34 @@ fn meadow(st: &Stage) {
     st.fill(Color32::from_rgb(130, 200, 250));
     st.p.circle_filled(st.at(0.6, -0.32), st.h() * 0.1, Color32::from_rgb(255, 235, 120));
     st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.15), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(90, 190, 90));
+}
+
+/// A kite: its diamond at `at`, `s` tall.
+fn kite(st: &Stage, at: Pos2, s: f32, tilt: f32) {
+    let rot = egui::emath::Rot2::from_angle(tilt);
+    let diamond = [vec2(0.0, -s), vec2(s * 0.7, 0.0), vec2(0.0, s * 1.3), vec2(-s * 0.7, 0.0)].map(|v| at + rot * v).to_vec();
+    st.p.add(Shape::convex_polygon(diamond, Color32::from_rgb(255, 80, 120), Stroke::NONE));
+}
+
+/// A classroom: a green board, a clock, and a floor.
+fn classroom(st: &Stage) {
+    st.fill(Color32::from_rgb(200, 190, 160));
+    st.p.rect_filled(Rect::from_min_max(st.at(-0.75, -0.42), st.at(0.15, -0.08)), 4.0, Color32::from_rgb(40, 80, 60));
+    st.p.text(st.at(-0.3, -0.25), Align2::CENTER_CENTER, "2 + 2 = 4", FontId::proportional(st.h() * 0.06), Color32::from_gray(230));
+    st.p.circle_filled(st.at(0.75, -0.36), st.h() * 0.06, Color32::WHITE);
+    st.p.circle_stroke(st.at(0.75, -0.36), st.h() * 0.06, Stroke::new(2.0, Color32::BLACK));
+    st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.22), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(150, 120, 90));
+}
+
+/// A school desk with a worksheet on it, drawn over whoever sits at it.
+fn desk(st: &Stage, at: Pos2) {
+    let h = st.h();
+    st.p.rect_filled(Rect::from_center_size(at + vec2(0.0, h * 0.06), vec2(h * 0.26, h * 0.09)), 2.0, Color32::from_rgb(150, 105, 60));
+    st.p.rect_filled(Rect::from_center_size(at, vec2(h * 0.3, h * 0.03)), 2.0, Color32::from_rgb(170, 120, 70));
+    for dx in [-0.13, 0.13] {
+        st.p.rect_filled(Rect::from_center_size(at + vec2(dx * h, h * 0.07), vec2(h * 0.015, h * 0.12)), 0.0, Color32::from_gray(90));
+    }
+    st.p.rect_filled(Rect::from_center_size(at + vec2(h * 0.06, -h * 0.02), vec2(h * 0.08, h * 0.01)), 0.0, Color32::WHITE);
 }
 
 /// The side effects, read over the happy footage, one line at a time.
@@ -718,55 +749,58 @@ fn salad(st: &Stage, at: Pos2, s: f32) {
     st.p.add(Shape::convex_polygon(bowl, Color32::WHITE, Stroke::NONE));
 }
 
-/// Some days aren't fine, and the ad means that part. Then it does what
-/// pharma ads do: sunshine, kites, a salad, and a calm voice reading a list
-/// that should not be read calmly. The joke is the format, not the patients
-/// and not medicine (PLAN "Also open", 2026-10-06).
-const OKAYZA_BEATS: [Beat; 6] = [
+/// A kid who is being a kid gets a pill for it (user, 2026-10-06: stimulants
+/// handed to energetic, curious kids). The ad sells stillness with the usual
+/// pharma kit: sunshine, a salad, a calm voice reading a list that should not
+/// be read calmly. The joke is the over-prescribing and the ad, not kids who
+/// really have ADHD; the fine print says so.
+const SITSTILLA_BEATS: [Beat; 6] = [
     Beat {
         secs: 2.6,
         paint: |st, t| {
-            st.fill(Color32::from_rgb(85, 90, 100));
-            for k in 0..30 {
-                let x = (k as f32 * 0.137).fract() * 2.0 - 1.0;
-                let y = (k as f32 * 0.311 + t * 1.5).fract() * 1.2 - 0.6;
-                st.p.line_segment([st.at(x, y), st.at(x - 0.01, y + 0.05)], Stroke::new(2.0, Color32::from_rgb(160, 170, 190)));
+            meadow(st);
+            // A kid bouncing, with questions coming off them like steam.
+            let hop = (t * 6.0).sin().abs() * st.h() * 0.08;
+            person(st, st.at(-0.1, 0.22) - vec2(0.0, hop), st.h() * 0.3, KID_BRIGHT, true);
+            for k in 0..5 {
+                let rise = (k as f32 * 0.23 + t * 0.4).fract();
+                let x = -0.1 + (k as f32 * 1.9).sin() * 0.25;
+                let c = Color32::from_rgba_unmultiplied(40, 50, 140, ((1.0 - rise) * 255.0) as u8);
+                st.p.text(st.at(x, 0.0 - rise * 0.4), Align2::CENTER_CENTER, "?", FontId::proportional(st.h() * 0.07), c);
             }
-            person(st, st.at(0.0, 0.05), st.h() * 0.5, Color32::from_gray(120), false);
-            caption(st, "NARRATOR:", "Some days, you're not fine. That's real.");
+            caption(st, "NARRATOR:", "Is your child curious? Energetic? Asking \"why\" about everything?");
         },
     },
     Beat {
         secs: 2.4,
         paint: |st, t| {
-            st.fill(OKAYZA_DARK);
+            st.fill(SITSTILLA_DARK);
             rays(st, st.at(0.0, 0.1), Color32::from_rgba_unmultiplied(60, 200, 190, 30), t);
-            slam(st, t, 0.0, st.at(0.0, -0.26), "OKAYZA", st.h() * 0.18, OKAYZA_TEAL, Color32::BLACK);
-            st.p.text(st.at(0.0, -0.12), Align2::CENTER_CENTER, "(mehprozine)", FontId::proportional(st.h() * 0.035), Color32::from_gray(200));
+            slam(st, t, 0.0, st.at(0.0, -0.26), "SITSTILLA", st.h() * 0.16, SITSTILLA_TEAL, Color32::BLACK);
+            st.p.text(st.at(0.0, -0.12), Align2::CENTER_CENTER, "(dextrositdownamine)", FontId::proportional(st.h() * 0.035), Color32::from_gray(200));
             capsule(st, st.at(0.0, 0.1), st.h() * 0.4, t * 2.0);
-            caption(st, "NARRATOR:", "Okayza may help.* Ask your doctor.");
+            caption(st, "NARRATOR:", "There's a pill for that.* Ask your doctor about Sitstilla.");
         },
     },
     Beat {
         secs: 4.0,
         paint: |st, t| {
-            meadow(st);
-            let hand = st.at(-0.05, -0.02);
-            person(st, st.at(-0.05, 0.2), st.h() * 0.45, OKAYZA_TEAL, true);
-            let kite = st.at(0.35 + (t * 1.3).sin() * 0.03, -0.32);
-            let k = st.h() * 0.06;
-            let diamond = vec![kite + vec2(0.0, -k), kite + vec2(k * 0.7, 0.0), kite + vec2(0.0, k * 1.3), kite + vec2(-k * 0.7, 0.0)];
-            st.p.add(Shape::convex_polygon(diamond, Color32::from_rgb(255, 80, 120), Stroke::NONE));
-            st.p.line_segment([hand, kite + vec2(0.0, k * 1.3)], Stroke::new(1.0, Color32::WHITE));
+            let at = st.at(-0.05, 0.12);
+            classroom(st);
+            // Perfectly still at the desk; the teacher is thrilled.
+            person(st, at + vec2(0.0, -st.h() * 0.03), st.h() * 0.3, KID_GRAY, false);
+            desk(st, at);
+            let bob = (t * 2.0).sin() * st.h() * 0.005;
+            person(st, st.at(0.45, 0.1) + vec2(0.0, bob), st.h() * 0.5, SITSTILLA_TEAL, true);
             side_effects(
                 st,
                 t,
                 &[
-                    "Side effects may include nausea, dizziness, dry mouth, wet mouth,",
-                    "hair loss, hair gain, hair in new and exciting places,",
-                    "a rash shaped like a smaller rash,",
+                    "Side effects may include sitting still, staring at the worksheet,",
+                    "loss of appetite, loss of sleep, loss of the word \"why,\"",
+                    "an intense new passion for worksheets,",
                     "spontaneous pugcasting,",
-                    "and the very thing Okayza treats.",
+                    "and a refill every month until college.",
                 ],
             );
         },
@@ -775,18 +809,21 @@ const OKAYZA_BEATS: [Beat; 6] = [
         secs: 3.6,
         paint: |st, t| {
             meadow(st);
-            // Laughing at a salad, alone, in a field, as one does.
+            // The kite stays on the grass, and so does the kid. The grown-up
+            // laughs at a salad, alone, as one does.
+            kite(st, st.at(-0.42, 0.24), st.h() * 0.05, 1.3);
+            person(st, st.at(-0.25, 0.22), st.h() * 0.3, KID_GRAY, false);
             let shake = (t * 18.0).sin() * st.h() * 0.004;
-            person(st, st.at(-0.15, 0.2) + vec2(0.0, shake), st.h() * 0.45, OKAYZA_TEAL, true);
-            salad(st, st.at(0.15, 0.16), st.h() * 0.14);
+            person(st, st.at(0.1, 0.2) + vec2(0.0, shake), st.h() * 0.45, SITSTILLA_TEAL, true);
+            salad(st, st.at(0.38, 0.16), st.h() * 0.14);
             side_effects(
                 st,
                 t,
                 &[
-                    "Tell your doctor if you've recently been near a fungus, a cave, or a boat.",
-                    "Do not take Okayza if you are allergic to Okayza.",
+                    "Tell your doctor if your child has recently climbed a tree, built a fort, or taken apart a toaster.",
+                    "Do not give Sitstilla to a child who just needs recess.",
                     "Rare but serious reactions can happen.",
-                    "Anyway, look at this salad!",
+                    "Anyway, look how still they are!",
                 ],
             );
         },
@@ -795,23 +832,23 @@ const OKAYZA_BEATS: [Beat; 6] = [
         secs: 2.4,
         paint: |st, t| {
             st.fill(Color32::from_rgb(40, 44, 52));
-            slam(st, t, 0.0, st.at(0.0, -0.08), "COVERED BY MOST PLANS*", st.h() * 0.09, Color32::WHITE, Color32::BLACK);
-            slam(st, t, 0.9, st.at(0.0, 0.06), "*NOT YOURS", st.h() * 0.11, OKAYZA_TEAL, Color32::BLACK);
-            caption(st, "NARRATOR:", "Ask your insurance. Your insurance will ask you.");
+            slam(st, t, 0.0, st.at(0.0, -0.08), "TEACHERS LOVE IT*", st.h() * 0.09, Color32::WHITE, Color32::BLACK);
+            slam(st, t, 0.9, st.at(0.0, 0.06), "*KIDS WEREN'T ASKED", st.h() * 0.09, SITSTILLA_TEAL, Color32::BLACK);
+            caption(st, "NARRATOR:", "Ask your doctor. Your doctor will ask the teacher.");
         },
     },
     Beat {
         secs: 2.8,
         paint: |st, t| {
             st.fill(Color32::WHITE);
-            capsule(st, st.at(-0.45, -0.02), st.h() * 0.3, -0.4);
-            slam(st, t, 0.0, st.at(0.15, -0.08), "OKAYZA", st.h() * 0.16, OKAYZA_TEAL, OKAYZA_DARK);
-            st.p.text(st.at(0.15, 0.06), Align2::CENTER_CENTER, "Medicine is getting there.", FontId::proportional(st.h() * 0.045), Color32::from_gray(40));
+            capsule(st, st.at(-0.5, -0.02), st.h() * 0.3, -0.4);
+            slam(st, t, 0.0, st.at(0.15, -0.08), "SITSTILLA", st.h() * 0.14, SITSTILLA_TEAL, SITSTILLA_DARK);
+            st.p.text(st.at(0.15, 0.06), Align2::CENTER_CENTER, "Childhood, managed.", FontId::proportional(st.h() * 0.045), Color32::from_gray(40));
             fine_print(
                 st,
                 t,
-                "*May. Okayza is fictional; real conditions are real, so talk to a real doctor. \
-                 In studies, Okayza beat a sugar pill by a little, and the sugar pill is very proud of itself.",
+                "*There always is. Sitstilla is fictional. Real ADHD is real, and for some kids the real medicine really helps, \
+                 so talk to a real doctor. Some kids just need recess, a tree, and a grown-up who waits for the end of the question.",
             );
         },
     },

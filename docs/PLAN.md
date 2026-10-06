@@ -154,7 +154,9 @@ Also open:
   aren't fine, and medicine is still getting where it needs to be, so the
   joke now targets the ad format, not the patients and not medicine (see
   3.5 "OKAYZA"). In the same change, Turk Street became **Market Street**
-  everywhere (user).
+  everywhere (user). **Then retargeted (user, same day):** the drug to mock
+  is stimulants handed to kids who are just energetic and curious, so OKAYZA
+  became **SITSTILLA** (see 3.5).
 - The dates in PLAN 3.3d / 3.6 notes written as 2026-10-06 were UTC and
   mean the evening of 2026-10-05 (fix offered, no answer).
 
@@ -848,24 +850,36 @@ went home.
       length, so neither side gets the nicer ad. They play back to back.
       There are no parties or real politicians, and both are mocked for
       attack-ad behavior, not policy.
-    - **OKAYZA (mehprozine)**, the pharma spot (reworked 2026-10-06; the
-      first cut, "Do you suffer from moderate-to-severe Being Fine?", made
-      fun of the wrong thing). It opens sincere: in the rain, "Some days,
-      you're not fine. That's real." Then it does what pharma ads do:
-      - "Okayza may help.*"
-      - a sunny kite montage while the narrator calmly reads nausea, dry
-        mouth, wet mouth, hair in new and exciting places, a rash shaped
-        like a smaller rash, spontaneous pugcasting, "and the very thing
-        Okayza treats";
-      - laughing alone at a salad through "Tell your doctor if you've
-        recently been near a fungus, a cave, or a boat", "allergic to
-        Okayza", "rare but serious reactions" and "Anyway, look at this
-        salad!";
-      - COVERED BY MOST PLANS* / *NOT YOURS ("Ask your insurance. Your
-        insurance will ask you.");
-      - the end slate: "Medicine is getting there." Fine print: Okayza is
-        fictional, real conditions are real, so talk to a real doctor, and
-        the sugar pill is very proud.
+    - **SITSTILLA (dextrositdownamine)**, the pharma spot. History: it began
+      as OKAYZA, "Do you suffer from moderate-to-severe Being Fine?", which
+      made fun of the wrong thing. A rework that mocked the ad format came
+      next. Then the user picked the target (2026-10-06): stimulants handed
+      to kids who are just energetic and curious. The joke is the
+      over-prescribing and the ad, not kids with real ADHD. Beats:
+      - a kid in an orange coat bounces in a meadow with question marks
+        rising: "Is your child curious? Energetic? Asking "why" about
+        everything?"
+      - the logo: "There's a pill for that.* Ask your doctor about
+        Sitstilla."
+      - a classroom: the kid sits perfectly still at a desk, in a gray coat
+        and frowning, while the teacher beams. The narrator calmly reads:
+        "sitting still, staring at the worksheet", "loss of appetite, loss
+        of sleep, loss of the word "why"", "an intense new passion for
+        worksheets", "spontaneous pugcasting", "and a refill every month
+        until college";
+      - a meadow: the kite lies on the grass and the gray kid stands still
+        while the grown-up laughs at a salad. The narrator: "Tell your doctor
+        if your child has recently climbed a tree, built a fort, or taken
+        apart a toaster", "Do not give Sitstilla to a child who just needs
+        recess", "Rare but serious reactions can happen", "Anyway, look how
+        still they are!";
+      - TEACHERS LOVE IT* / *KIDS WEREN'T ASKED ("Ask your doctor. Your
+        doctor will ask the teacher.");
+      - the end slate: "Childhood, managed." Fine print: "*There always is.
+        Sitstilla is fictional. Real ADHD is real, and for some kids the
+        real medicine really helps, so talk to a real doctor. Some kids just
+        need recess, a tree, and a grown-up who waits for the end of the
+        question."
     - **Pacing:** the user found the first cut far too fast. Every shot now
       holds 2.1x its written length (`ads::PACE`; the user found 1.8x too fast and 2.5x a little slow), so each shot holds ~4-6 s and each ad runs ~25-30 s.
       The slams and flashes stay quick, and the fine print crawls slower.
