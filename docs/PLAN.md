@@ -331,6 +331,35 @@ bad print before it wastes the night.
 - `trade_cli print [--part P] [--v1]`: the checks, the STL out, and what
   the print does to tonight's best set.
 
+### 7.1-7.2 result (2026-10-06): the catalog and the library
+
+- The user went ahead with the defaults: these four parts, free prints,
+  one a night.
+- `src/trade/print.rs` has:
+  - `CATALOG`, each part with its board item, its wants, v1's flaw and
+    v2's fix;
+  - `check(&Mechanism, TOL)`, which returns a `PrintReport` per kit part:
+    prints or not, the flaws in the checker's words, size, volume, and the
+    mesh on the bed;
+  - `verdict`, the 7.0 policy;
+  - `write_stls`;
+  - `World::add_print`.
+- Tests: the bracket and hook v1 fail, their v2s print, and a print joins
+  the board as a tradable item. All 40 library tests pass.
+- `trade_cli print [--part P] [--night N]`.
+
+| Part | v1 (flaw) | v2 | Night 1's best set with it |
+|---|---|---|---|
+| Battery sled (Dave 7, Vape Lady 5) | 0.03 mm knife edges, 0.5 mm lid (4.6 s) | tray 130x71x22 + lid 130x73x2 (3.6 s) | 43 -> **48 Goo** (Upddayett -> Dave) |
+| Pigeon feeder (Pigeon Lady 6, Tamara 4) | flat roof: 90 deg overhang, 139 mm bridge (14 s) | base + cone roof (29 s) | 43 -> 45 (Upd -> Pigeon Lady -> Tamara) |
+| Caster bracket (Cart Guy 6, Dave 3) | 300 mm long, the bed is 200 (2 s) | 60x40x5 (0.3 s) | 43 -> 45 (Upd -> Cart Guy -> Dave) |
+| Headphone hook (Ray 4, Tamara 2) | 0.08 mm arm (0.6 s) | 40x60x10 (0.3 s) | 43 (2 trades, not in the best set) |
+
+The bracket's v1 flaw is now "too long for the bed": nothing checks hole
+size. Thin parts that mesh to nothing at the 0.5 mm tolerance also fail
+(the sled v1's 0.5 mm lid came out empty, and empty has no flaws). The
+feeder takes ~30 s to check, so the game checks on a worker thread.
+
 ### 7.3 In the game
 
 - A PRINT section in the left panel: pick a part, see the check (pass, or

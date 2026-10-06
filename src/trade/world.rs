@@ -159,6 +159,16 @@ impl World {
         self.wants.push(Want { npc, item, base, use_ });
     }
 
+    /// A new item tonight (Upddayett's prints, [`super::print`]). Call
+    /// `set_night` after adding wants so the values exist.
+    pub(crate) fn add_item(&mut self, owner: usize, name: &'static str, base: f64, owner_use: Use) -> usize {
+        self.has(owner, name, base, owner_use)
+    }
+
+    pub(crate) fn add_want(&mut self, npc: usize, item: usize, base: f64, use_: Use) {
+        self.wants(npc, item, base, use_);
+    }
+
     /// Switch to another night: recompute every value from the bases.
     pub fn set_night(&mut self, night: Night) {
         assert_eq!(night.hungry.len(), self.npcs.len(), "night rolled for a different cast");

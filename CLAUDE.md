@@ -67,7 +67,8 @@ Read first:
   `--washers K` (a row instead of one washer) or `--best-of K`. In the game it is program 5 (`UPD_PROGRAM=5`).
 - Print probe (Step 7.0): `cargo run --release --example probe_print -- [check|verdict|stl|hinge|walls|grid|selfx|template|mesh]`
   (env `PART=sled|feeder|bracket|hook`, `TOL=0.5` mm; never 0.1, it runs for minutes). `verdict` is the policy the game will use;
-  STLs land in `prints/` (git-ignored).
+  STLs land in `prints/` (git-ignored). The library is `src/trade/print.rs` (catalog, `check`, `World::add_print`);
+  `trade_cli print [--part sled|feeder|bracket|hook] [--night N]` runs each v1 and v2 and shows what the print does to the board.
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

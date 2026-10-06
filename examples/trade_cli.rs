@@ -19,6 +19,8 @@
 //!   rematch          is the learned wash (or --params) really better than run 3 (or --vs a,b,..)? Normal, A and B
 //!                    on the same boards and seeds, then sim-opt bootstrap CIs on the difference (paired and not)
 //!   row              a row of washers (parallel tempering) vs Normal per night, with swap rates (tuning)
+//!   print [--part P] Upddayett's prints: each design's v1 and v2 through the print check, STLs into prints/, and
+//!                    what the print does to --night N's best set
 //!   rowmatch         the row vs run 5 at equal compute, and K whole-cycle washers vs the best of K run-5 washers
 //!
 //!   --washers K      spin a row of K washers sharing one cycle's compute (--full: each runs the whole cycle)
@@ -90,6 +92,8 @@ struct Opts {
     rhot: Option<f64>,
     /// The best of this many separate washers (`--best-of K`).
     best_of: usize,
+    /// `print --part P`: one catalog part.
+    part: Option<String>,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
     restarts: Option<f64>,
@@ -135,6 +139,7 @@ fn parse() -> Opts {
         rcold: None,
         rhot: None,
         best_of: 1,
+        part: None,
         gens: 60,
         restarts: None,
         patience: None,
@@ -192,6 +197,7 @@ fn parse() -> Opts {
             "--rcold" => o.rcold = Some(num(val())),
             "--rhot" => o.rhot = Some(num(val())),
             "--best-of" => o.best_of = num(val()) as usize,
+            "--part" => o.part = Some(val()),
             "--restarts" => o.restarts = Some(num(val())),
             "--patience" => o.patience = Some(num(val())),
             "--pop" => o.pop = num(val()) as usize,
@@ -908,6 +914,69 @@ fn rowmatch(o: &Opts) {
     report("hardest quarter by Normal", &hard);
 }
 
+/// `print`: Upddayett's catalog (or `--part P`): each design's v1 and v2
+/// through the print check, the v2 STLs into `prints/`, and what the print
+/// does to tonight's board (`--night N`).
+fn print_mode(o: &Opts) {
+    use cortenforge_play::trade::print::{self, CATALOG};
+    for p in CATALOG.iter().filter(|p| o.part.as_deref().is_none_or(|k| k == p.key)) {
+        println!("\n== {} ({})", p.item, p.key);
+        for fixed in [false, true] {
+            let r = print::check(&p.design(fixed), print::TOL);
+            println!(
+                "  v{}: {} ({:.1} s){}",
+                if fixed { 2 } else { 1 },
+                if r.prints() { "PRINTS" } else { "WON'T PRINT" },
+                r.secs,
+                if fixed { format!(" -- {}", p.fix) } else { format!(" -- {}", p.flaw) }
+            );
+            for part in &r.parts {
+                println!(
+                    "    {}: {:.0} x {:.0} x {:.0} mm{}, {:.0} cm^3{}",
+                    part.part,
+                    part.size.x,
+                    part.size.y,
+                    part.size.z,
+                    if part.rotated { " (turned)" } else { "" },
+                    part.volume / 1000.0,
+                    if part.prints { String::new() } else { format!(", {} flaw(s)", part.flaws.len()) }
+                );
+                for f in part.flaws.iter().take(3) {
+                    println!("      {}", if f.len() > 160 { &f[..160] } else { f });
+                }
+            }
+            if !r.design_warnings.is_empty() {
+                println!("    (cf-design validate says: {}; not in the verdict, see FINDINGS)", r.design_warnings.join("; "));
+            }
+            if fixed && r.prints() {
+                match print::write_stls(&r, p.key, std::path::Path::new("prints")) {
+                    Ok(paths) => println!("    wrote {}", paths.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ")),
+                    Err(e) => println!("    STL: {e}"),
+                }
+            }
+        }
+        // What the print does to tonight's board.
+        let before = board_for(o, trade::world::laundromat(o.night));
+        let mut w = trade::world::laundromat(o.night);
+        let item = w.add_print(p);
+        let after = board_for(o, w);
+        let carry: Vec<String> = after.cycles.iter().filter(|c| c.legs.iter().any(|l| l.item == item)).map(|c| c.short(&after.world)).collect();
+        let used: Vec<String> = qubo::chosen(after.forward_best, after.cycles.len())
+            .into_iter()
+            .filter(|&i| after.cycles[i].legs.iter().any(|l| l.item == item))
+            .map(|i| after.cycles[i].short(&after.world))
+            .collect();
+        println!(
+            "  night {}: best set {} -> {}; {} candidate trade(s) move it{}",
+            o.night,
+            before.score_text(before.forward_best),
+            after.score_text(after.forward_best),
+            carry.len(),
+            if used.is_empty() { ", none in the best set".to_string() } else { format!("; the best set uses {}", used.join(", ")) }
+        );
+    }
+}
+
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
     if o.smart || o.params.is_some() || o.restarts.is_some() || o.patience.is_some() {
@@ -942,6 +1011,10 @@ fn main() -> Result<(), trade::Error> {
         }
         "row" => {
             row_bench(&o);
+            Ok(())
+        }
+        "print" => {
+            print_mode(&o);
             Ok(())
         }
         "rowmatch" => {

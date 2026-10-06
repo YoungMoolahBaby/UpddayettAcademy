@@ -10,6 +10,7 @@ pub mod cycles;
 pub mod drum;
 pub mod escrow;
 pub mod machine;
+pub mod print;
 pub mod qubo;
 pub mod row;
 pub mod salties;
