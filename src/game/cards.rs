@@ -1,10 +1,12 @@
 //! Full-screen cards: the "Press Start" title, the "powered by CortenForge"
-//! splash, and a fake commercial between nights now and then.
+//! splash, the opening reel of fake commercials (`ads`), and an ad between
+//! nights now and then.
 //! `UPD_CARDS=1` shoots each card to `shots/card_*.png` and exits.
 
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 
+use super::ads::{ADS, Stage};
 use super::scene::BoardCam;
 use super::sim::Laundromat;
 
@@ -24,13 +26,15 @@ pub struct Cards {
     night: u64,
     /// Ads break in between nights (off while screenshots are taken).
     ads: bool,
+    /// Playing the opening reel: every ad back to back, before the game.
+    reel: bool,
 }
 
 impl Cards {
     pub fn new(night: u64) -> Self {
         // Screenshot runs and the render bench skip the title.
         let shooting = super::shots::enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
-        Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0, night, ads: !shooting }
+        Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0, night, ads: !shooting, reel: false }
     }
 }
 
@@ -39,9 +43,8 @@ pub fn clear(cards: Res<Cards>) -> bool {
     cards.showing.is_none()
 }
 
-/// Seconds the splash and an ad stay up (any key or click skips).
+/// Seconds the splash stays up (any key or click skips it, or the ad on).
 const SPLASH: f32 = 3.0;
-const AD: f32 = 8.0;
 /// A key or click this soon after a card goes up is the one that raised it.
 const GRACE: f32 = 0.5;
 
@@ -51,60 +54,19 @@ const GOO_DARK: egui::Color32 = egui::Color32::from_rgb(20, 70, 25);
 const CORTEN: egui::Color32 = egui::Color32::from_rgb(190, 90, 40);
 const CORTEN_DARK: egui::Color32 = egui::Color32::from_rgb(70, 28, 12);
 
-/// A parody product: name, pitch, tagline, fine print, colors (face, side, background).
-struct Ad {
-    name: &'static str,
-    pitch: &'static str,
-    tag: &'static str,
-    fine: &'static str,
-    face: egui::Color32,
-    side: egui::Color32,
-    bg: egui::Color32,
-}
-
-const ADS: [Ad; 3] = [
-    Ad {
-        name: "MTN GOO",
-        pitch: "The green you can taste.",
-        tag: "NOW IN EXTRA GREEN",
-        fine: "Not a source of nutrition. Hyperfocus not guaranteed. On Turk St the empty can is worth more than the full one.",
-        face: GOO,
-        side: GOO_DARK,
-        bg: egui::Color32::from_rgb(8, 22, 10),
-    },
-    Ad {
-        name: "SUPER INTELLIGENCE FOR DOGS",
-        pitch: "So they will stop shitting on the floor.",
-        tag: "THEY USE THE TOILET NOW. THEY EVEN FLUSH.",
-        fine: "Intelligence is free now. Not available for cats (they declined).",
-        face: egui::Color32::from_rgb(120, 200, 255),
-        side: egui::Color32::from_rgb(20, 40, 90),
-        bg: egui::Color32::from_rgb(10, 12, 30),
-    },
-    Ad {
-        name: "CARTPASS",
-        pitch: "The shopping cart. Now a subscription.",
-        tag: "$9.99/MO. WHEELS SOLD SEPARATELY.",
-        fine: "Cancel anytime by mail, in person, at a location to be announced. The cart remains the property of CartPass Holdings. So do you.",
-        face: egui::Color32::from_rgb(255, 210, 60),
-        side: egui::Color32::from_rgb(110, 50, 10),
-        bg: egui::Color32::from_rgb(30, 14, 6),
-    },
-];
-
 /// Which ad breaks in when a night begins: every third night, in turn.
 fn ad_for(night: u64) -> Option<usize> {
     night.is_multiple_of(3).then_some((night / 3) as usize % ADS.len())
 }
 
 /// The largest size up to `max` at which `text` fits in `width`.
-fn fit(p: &egui::Painter, family: &egui::FontFamily, text: &str, width: f32, max: f32) -> f32 {
+pub fn fit(p: &egui::Painter, family: &egui::FontFamily, text: &str, width: f32, max: f32) -> f32 {
     let w = p.layout_no_wrap(text.to_string(), egui::FontId::new(100.0, family.clone()), egui::Color32::WHITE).size().x;
     (100.0 * width / w.max(1.0)).min(max)
 }
 
 /// Shout `text` centered at `at`, extruded down-right like a 2003 menu.
-fn chunky(p: &egui::Painter, family: &egui::FontFamily, at: egui::Pos2, text: &str, size: f32, face: egui::Color32, side: egui::Color32) {
+pub fn chunky(p: &egui::Painter, family: &egui::FontFamily, at: egui::Pos2, text: &str, size: f32, face: egui::Color32, side: egui::Color32) {
     let font = egui::FontId::new(size, family.clone());
     let depth = (size / 10.0).max(2.0) as i32;
     for d in (1..=depth).rev() {
@@ -169,7 +131,10 @@ pub fn draw(
             if let Ok(bytes) = std::fs::read("C:/Windows/Fonts/ariblk.ttf") {
                 let mut fonts = egui::FontDefinitions::default();
                 fonts.font_data.insert("chunky".into(), std::sync::Arc::new(egui::FontData::from_owned(bytes)));
-                fonts.families.insert(egui::FontFamily::Name("chunky".into()), vec!["chunky".into()]);
+                // Arial Black first, then egui's own faces for what it lacks (♪).
+                let mut chain = vec!["chunky".to_string()];
+                chain.extend(fonts.families.get(&egui::FontFamily::Proportional).cloned().unwrap_or_default());
+                fonts.families.insert(egui::FontFamily::Name("chunky".into()), chain);
                 ctx.set_fonts(fonts);
                 *font = 2;
             }
@@ -200,13 +165,22 @@ pub fn draw(
     };
     let t = now - cards.since;
     let pressed = keys.get_just_pressed().next().is_some() || mouse.just_pressed(MouseButton::Left);
+    // Like the fake ads that open Tropic Thunder: after the splash, the reel
+    // plays every ad before the game. Any key skips one ad; Esc skips the reel.
     let next = match card {
         Card::Title if pressed && t > GRACE => Some(Some(Card::Splash)),
-        Card::Splash if t > SPLASH || (pressed && t > GRACE) => Some(None),
-        Card::Ad(_) if t > AD || (pressed && t > GRACE) => Some(None),
+        Card::Splash if t > SPLASH || (pressed && t > GRACE) => {
+            cards.reel = cards.ads;
+            Some(cards.reel.then_some(Card::Ad(0)))
+        }
+        Card::Ad(_) if keys.just_pressed(KeyCode::Escape) => Some(None),
+        Card::Ad(k) if t > ADS[k].secs() || (pressed && t > GRACE) => Some((cards.reel && k + 1 < ADS.len()).then_some(Card::Ad(k + 1))),
         _ => None,
     };
     if let Some(next) = next {
+        if next.is_none() {
+            cards.reel = false;
+        }
         cards.showing = next;
         cards.since = now;
         return Ok(());
@@ -269,23 +243,9 @@ pub fn draw(
             p.text(c + egui::vec2(0.0, h * 0.34), egui::Align2::CENTER_CENTER, "written in Rust", ui_font(h * 0.02), fade(egui::Color32::from_gray(150)));
         }
         Card::Ad(k) => {
-            let ad = &ADS[k];
-            p.rect_filled(screen, 0.0, ad.bg);
-            // Big-box stripes behind the name.
-            for i in 0..12 {
-                let x = screen.left() + screen.width() * (i as f32 / 12.0) + ((t * 40.0) % (screen.width() / 12.0));
-                let stripe = egui::Rect::from_min_size(egui::pos2(x, screen.top()), egui::vec2(screen.width() / 24.0, screen.height()));
-                p.rect_filled(stripe, 0.0, ad.side.gamma_multiply(0.35));
-            }
-            p.text(screen.left_top() + egui::vec2(16.0, 14.0), egui::Align2::LEFT_TOP, "WE'LL BE RIGHT BACK", ui_font(h * 0.022), egui::Color32::from_gray(200));
-            let size = fit(&p, &family, ad.name, screen.width() * 0.9, h * 0.14);
-            chunky(&p, &family, c + egui::vec2(0.0, -h * 0.12), ad.name, size, ad.face, ad.side);
-            p.text(c + egui::vec2(0.0, h * 0.02), egui::Align2::CENTER_CENTER, ad.pitch, ui_font(h * 0.042), egui::Color32::WHITE);
-            let tag = (t * 3.0).sin() * 0.04 + 1.0;
-            let tag_size = fit(&p, &family, ad.tag, screen.width() * 0.85, h * 0.04);
-            chunky(&p, &family, c + egui::vec2(0.0, h * 0.14), ad.tag, tag_size * tag, egui::Color32::WHITE, ad.side);
-            let fine = p.layout(ad.fine.to_string(), ui_font(h * 0.016), egui::Color32::from_gray(150), screen.width() * 0.8);
-            p.galley(egui::pos2(c.x - fine.size().x / 2.0, screen.bottom() - fine.size().y - 18.0), fine, egui::Color32::from_gray(150));
+            ADS[k].paint(&Stage { p: &p, family: family.clone(), screen }, t);
+            let hint = if cards.reel { format!("{} of {}   any key: next   Esc: skip ads", k + 1, ADS.len()) } else { "any key: skip".to_string() };
+            p.text(screen.right_top() + egui::vec2(-14.0, 12.0), egui::Align2::RIGHT_TOP, hint, ui_font(h * 0.018), egui::Color32::from_white_alpha(120));
         }
     }
     Ok(())
@@ -303,27 +263,36 @@ pub fn shots_enabled() -> bool {
     std::env::var_os("UPD_CARDS").is_some()
 }
 
-/// `UPD_CARDS=1`: shoot the title, the splash and every ad, then exit.
+/// `UPD_CARDS=1`: shoot the title, the splash and every beat of every ad
+/// (`shots/card_ad<k>_<beat>.png`), then exit.
 pub fn shots(mut commands: Commands, mut cards: ResMut<Cards>, time: Res<Time>, mut frame: Local<u32>, mut exit: MessageWriter<AppExit>) {
     use bevy::render::view::screenshot::{Screenshot, save_to_disk};
     *frame += 1;
     let f = *frame;
-    // Each card: (frame to raise it, how far into it to shoot, name).
+    // Each shot: (frame to raise it, how far into the card to hold, card, name).
     let mut plan = vec![(1, 0.0, Card::Title, "title".to_string()), (40, 1.2, Card::Splash, "splash".into())];
-    for k in 0..ADS.len() {
-        plan.push((80 + 40 * k as u32, 1.0, Card::Ad(k), format!("ad_{k}")));
+    let mut at = 70;
+    for (k, ad) in ADS.iter().enumerate() {
+        let mut start = 0.0;
+        for (b, beat) in ad.beats.iter().enumerate() {
+            // Late in the beat, once everything has slammed in.
+            plan.push((at, start + beat.secs * 0.75, Card::Ad(k), format!("ad{k}_{b}")));
+            start += beat.secs;
+            at += 30;
+        }
     }
     // Hold the current card still, `into` seconds in.
     if let Some((at, into, card, name)) = plan.iter().rev().find(|(at, ..)| f >= *at) {
         cards.showing = Some(*card);
+        cards.reel = matches!(card, Card::Ad(_));
         cards.since = time.elapsed_secs() - into;
         // Long enough for the chunky font to load on the first card.
-        if f == at + 25 {
+        if f == at + 20 {
             std::fs::create_dir_all("shots").ok();
             commands.spawn(Screenshot::primary_window()).observe(save_to_disk(format!("shots/card_{name}.png")));
         }
     }
-    if f > 80 + 40 * ADS.len() as u32 + 20 {
+    if f > at + 30 {
         exit.write(AppExit::Success);
     }
 }

@@ -662,13 +662,35 @@ went home.
   - **The "powered by CortenForge" splash** (real name, per the naming
     policy): in Corten-steel orange, with a line on what the sim does and
     Ferris waving below. It lasts 3 s and can be skipped.
-  - **The ads:** every third night, a commercial breaks in before the
-    night: MTN GOO, SUPER INTELLIGENCE FOR DOGS ("so they will stop shitting on the floor"; "they use the toilet now;
-    they even flush") and CARTPASS ("$9.99/mo, wheels sold
-    separately"), each with fine print. An ad lasts 8 s and can be skipped.
+  - **The ads, cut like the fake commercials that open Tropic Thunder**
+    (user, 2026-10-06; `src/game/ads.rs`). After the splash, a reel plays
+    all three before the game: any key moves to the next ad, Esc skips the
+    rest. Every third night one ad also breaks in.
+    - **The style kit:** each ad is 11-14 s of beats. Every cut lands with a
+      white flash; type slams in from huge and shakes on impact; light rays
+      wheel behind; there are starburst stickers, crooked rubber stamps,
+      lower-third V.O. captions, a bouncing jingle, and fine print crawled
+      too fast. The format is TT's; the jokes are ours (DESIGN: never lift
+      jokes).
+    - **MTN GOO:** DJ Hyperfocus in silhouette (shades, chain, pumping a
+      can): "Yo. Can't focus? Can't sleep? Can't stop?" Then the can spins in
+      under MTN GOO with a NEW! sticker; the choir sings "GET THE GOO IN YOU";
+      NOW 40% GREENER "(than what?)"; end slate "Hyperfocus in a can." with
+      the side-effects crawl.
+    - **SUPER INTELLIGENCE FOR DOGS** (the user's words): a sad gray problem
+      shot, the dog by its mess, "TIRED OF THIS?"; INTRODUCING; the title with
+      the dog in glasses and a mortarboard, GENIUS!; the dog on the toilet,
+      "So they will stop shitting on the floor."; *FLUSH* with "THEY USE THE
+      TOILET NOW. THEY EVEN FLUSH."; end slate with "Not available for cats
+      (they declined)."
+    - **CARTPASS:** golden-hour cart, "You love your shopping cart."; OWNING
+      THINGS? stamped SO 2003; CARTPASS with a $9.99/MO sticker; the wheels
+      drop off under a WHEELS SOLD SEPARATELY stamp; end slate with the
+      cancel-by-mail crawl.
   - The board-cam inset is its own camera and drew over the cards, so it's
     switched off while a card is up. Titles are sized to fit the window.
-  - `UPD_CARDS=1` shoots `shots/card_*.png`; `UPD_SHOT` skips the cards.
+  - `UPD_CARDS=1` shoots the title, the splash and every ad beat
+    (`shots/card_ad<k>_<beat>.png`); `UPD_SHOT` skips the cards.
   - Unit test (binary): `cargo test --release --bin cortenforge_play`.
 - **The TV done.** One wall set hangs on arms between the neon sign and the
   back row of washers, tipped toward the room. Its screen is Bevy UI

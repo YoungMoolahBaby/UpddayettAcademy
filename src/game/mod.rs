@@ -1,5 +1,6 @@
 //! Lesson 3 in 3D: the laundromat trade computer, rendered with Bevy.
 
+mod ads;
 mod arrows;
 mod cards;
 mod counter;
