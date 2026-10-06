@@ -29,10 +29,41 @@ so far" below). Its follow-up, latch memory (reheat when the strips
 freeze), ties on average and helps a little on the hardest nights (see
 "Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
 mixed unseen boards); training on them made it worse, so run 5 stays.
-Next:
-- 3.2 voice and music;
-- when 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
+Next: pick from the backlog below.
+
+## Backlog (2026-10-06; not planned yet, best first)
+
+CortenForge pieces the game doesn't use yet:
+1. **The drum as a real tumbler** (cf-design SDF + sim-core contacts).
+   Design the drum's inside in code with `cf_design` (a cylinder with
+   three lifter paddles) and use it as the collider. Tonight's trade
+   items tumble in the porthole as rigid bodies: the 12-pack, the phone,
+   the hub motor, the kale bag. The spin speed follows the drum program:
+   hot is a fast tumble, cold slows and settles as the answer freezes.
+   The drum's inside is concave, which sim-core supports
+   (`sdf/shapes/concave.rs`). Start with a feasibility probe
+   (`examples/probe_drum.rs`): contact stability and speed.
+2. **Settle run 3 vs run 5 with statistics** (sim-opt `analysis`:
+   bootstrap CI on the difference of means). Is the smart wash's
+   3-point edge on hard nights real? Small.
+3. **A row of washers: parallel tempering** (sim-opt `Pt`, or replica
+   exchange on our own boards). Several washers run copies of tonight's
+   board at different temperatures and swap loads, the textbook fix for
+   rugged boards like night 4. Compare at equal compute.
+4. **Upddayett prints things** (cf-design `Mechanism` -> MJCF + STL,
+   print-profile checks). He designs a part in code, CortenForge checks
+   it prints, and it becomes a new item on the board. Fits the
+   "Build your own safety net" lore. The biggest of the four.
+
+Also open:
+- 3.2 voice and music, with the Shrug Network's two pug anchors and the
+  ad-lib script (see 3.2).
+- When 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the
   workarounds.
+- Ads: play 2-3 per launch instead of all six (~2.5 min)? No verdict yet
+  on pace 1.0 vs the default 2.1.
+- The dates in PLAN 3.3d / 3.6 notes written as 2026-10-06 were UTC and
+  mean the evening of 2026-10-05 (fix offered, no answer).
 
 ## Step 1 result
 
