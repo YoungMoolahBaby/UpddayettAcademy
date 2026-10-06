@@ -739,7 +739,7 @@ crate. On 0.9.0: 10 open, 3 fine. All paths are in builder.rs unless noted.
 ### `sim-soft`
 
 `cargo run --release --example gaps_sim_soft` checks this crate and
-sim-coupling in one run (10 s). On 0.9.0: 41 open, 1 fine (both crates).
+sim-coupling in one run (10 s). On 0.9.0: 42 open, 1 fine (both crates).
 Paths are under sim-soft's `src/` unless noted.
 
 #### Solver: failures and validation
@@ -894,11 +894,21 @@ Paths are under sim-soft's `src/` unless noted.
   cell ratio. *(probe: mesher not scale-invariant)*
 - **bug** (2026-10-06): the lattice has no size cap. `BccLattice::new`
   reserves `2 nx ny nz` positions and `12 cubes` tets before it samples
-  anything (lattice.rs:281-310). At r 5 cm, cell 0.5 mm that is about
-  2.5 GB. A tiny cell saturates the `as i32` extents, and the `+ 1` wraps
-  in release (lattice.rs:257-278). Either way you get an abort, not a
-  `MeshingError`. sdf_meshed_tet_mesh.rs:145 says the lattice caps itself.
-  From the source; not run (it would allocate gigabytes).
+  anything (lattice.rs:281-310), and sdf_meshed_tet_mesh.rs:145 wrongly
+  says the lattice caps itself. Measured with `dropping_sphere`:
+
+  | Sphere | Cell | Result | Time | Peak memory |
+  |---|---|---|---|---|
+  | r 2 cm | 1 mm | 410k tets | 0.4 s | 0.13 GB |
+  | r 5 cm | 1 mm | 6.3M tets | 8.5 s | 1.8 GB |
+  | r 5 cm | 0.5 mm | 50M tets, 57% of vertices unused | 82 s | 13.5 GB commit |
+
+  At r 10 cm, cell 0.1 mm the process aborts ("memory allocation of
+  391536777456 bytes failed", exit 0xc0000409). A cell of 1e-12 saturates
+  the `as i32` extents, the `+ 1` wraps in release (lattice.rs:257-278),
+  and the process aborts asking for 2.47 TB. Neither returns a
+  `MeshingError`. *(probe: lattice size uncapped; the timings come from
+  `gaps_sim_soft --mesh R CELL`)*
 - **docs** (2026-10-06): a box with min > max panics ("bbox.min must be
   componentwise <= bbox.max", lattice.rs:251-255), while `Aabb3::new`'s
   doc promises `MeshingError::EmptyMesh` (sdf_bridge/mod.rs:69-72).

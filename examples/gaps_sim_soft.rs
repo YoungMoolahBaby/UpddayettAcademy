@@ -71,7 +71,11 @@ fn child(args: &[&str], secs: u64) -> Result<(String, String), String> {
         if let Some(status) = c.try_wait().expect("wait") {
             let out = std::io::read_to_string(c.stdout.take().expect("stdout")).unwrap_or_default();
             let err = std::io::read_to_string(c.stderr.take().expect("stderr")).unwrap_or_default();
-            return if status.success() { Ok((out.trim().to_string(), err)) } else { Err(format!("process died ({status})")) };
+            return if status.success() {
+                Ok((out.trim().to_string(), err))
+            } else {
+                Err(format!("process died ({status}): {}", err.lines().next().unwrap_or("")))
+            };
         }
         if start.elapsed().as_secs() >= secs {
             let _ = c.kill();
@@ -357,6 +361,23 @@ fn mesher_not_scale_invariant() -> Seen {
         (Ok(Ok(a)), Ok(Ok(b))) if a == b => Seen::Fixed(text),
         _ => Seen::Open(text),
     }
+}
+
+fn lattice_uncapped() -> Seen {
+    // Both ask for terabytes up front, so they fail before touching memory.
+    let mut out = Vec::new();
+    let mut aborts = 0;
+    for (r, cell) in [("0.1", "1e-4"), ("0.1", "1e-12")] {
+        match child(&["--mesh", r, cell], 60) {
+            Ok((o, _)) => out.push(format!("r {r} cell {cell}: {o}")),
+            Err(e) => {
+                aborts += 1;
+                out.push(format!("r {r} cell {cell}: {e}"));
+            }
+        }
+    }
+    let text = out.join("; ");
+    if aborts > 0 { Seen::Open(format!("{text} (an abort, not a MeshingError)")) } else { Seen::Fixed(text) }
 }
 
 fn inverted_bbox_panics() -> Seen {
@@ -807,6 +828,21 @@ fn locked_version(krate: &str) -> &'static str {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("--mesh") {
+        let (r, cell): (f64, f64) = (args[2].parse().expect("radius"), args[3].parse().expect("cell"));
+        let t = std::time::Instant::now();
+        match SoftScene::dropping_sphere(r, cell, r + 0.01, MaterialField::uniform(2.0e5, 8.0e5)) {
+            Ok((mesh, ..)) => println!(
+                "{} tets, {} vertices ({} used) in {:.1} s",
+                mesh.n_tets(),
+                mesh.n_vertices(),
+                referenced_vertices(&mesh).len(),
+                t.elapsed().as_secs_f64()
+            ),
+            Err(e) => println!("{e:?}"),
+        }
+        return;
+    }
     if args.get(1).map(String::as_str) == Some("--lu") {
         std::panic::set_hook(Box::new(|_| {}));
         lu_child();
@@ -832,6 +868,7 @@ fn main() {
         // sim-soft: meshes, SDFs, readouts
         ("SDF mesher keeps every grid vertex", mesher_keeps_grid),
         ("mesher not scale-invariant", mesher_not_scale_invariant),
+        ("lattice size uncapped", lattice_uncapped),
         ("inverted bbox panics", inverted_bbox_panics),
         ("with_projected_nodes: NaN target", projected_nodes_nan),
         ("with_projected_nodes: vertex out of range", projected_nodes_out_of_range),
