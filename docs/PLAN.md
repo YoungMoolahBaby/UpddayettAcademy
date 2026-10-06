@@ -8,6 +8,7 @@ CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
 deferred to a later voice-and-music step; 3.3a and 3.3b done). Next: adaptive
 want margin (costly wants), then **3.3c Game** (Karma meter, night banner).
+After 3.3c-d: **3.6 The Salties** (sabotage nights; planned below).
 
 ## Step 1 result
 
@@ -332,7 +333,8 @@ tonight's conditions, not a hand-made table.
 - Level 2 (later, its own step: the creative-to-survival shift): tonight's
   outcome carries into tomorrow (fed tonight = not hungry tomorrow, items
   that changed hands stay changed), plus Upddayett's hunger meter. That's
-  also where "feed them first" pays off across nights.
+  also where "feed them first" pays off across nights, and where Saltie
+  theft starts (see 3.6).
 
 Sub-steps (commit and push each):
 - **3.3a Nights (library):** uses, night roll, derived values and tags,
@@ -451,6 +453,38 @@ Amir's Persian Kitchen every night, plus a "Give away" picker for Upddayett's th
   keep PBR.
 - Done when: screenshots of each; the frame rate is logged with and without
   Solari.
+
+### 3.6 The Salties (sabotage nights)
+
+Design: DESIGN.md, "The Salties". Order: after 3.3c-d (it needs the night
+banner and condition tags). Theft waits for Level 2 (nights that carry over).
+
+- **3.6a Magnet (library).** A sabotage condition in the night roll: a
+  magnet at a board position adds a dipole field (~1/r^3 from the magnet)
+  on top of the trade biases, through the same `ExternalField`. Bench hit
+  rate and Goo lost against magnet strength and position, with and
+  without a shield (a fixed attenuation factor). The idle Hall offset
+  (strip rest positions with the drum stopped) is the tell. A calibration
+  load (a fixed night with a known best set) flags tampering when the drum
+  misses it. `trade_cli night` shows the magnet; `trade_cli bench` takes
+  `--magnet`.
+- **3.6b Power cut (library).** The breaker trips at a rolled time: the
+  temperature drops to zero and the settle phase starts early (a quench).
+  Bench hit rate against cut time. A vape-cell battery finishes the cycle,
+  but it uses cells Upddayett could trade for.
+- **3.6c Game.** The sabotage tag on the night banner; tells in the scene
+  (idle strips leaning toward the magnet, the lights flickering); a defense
+  choice before the spin (shield, battery, calibration load); AI roasts
+  quoting the measured numbers; the "EMP" as a dud gag (popcorn, no build
+  details).
+- Done when: unit tests show the dipole field falls off with distance and
+  sums with the want bias; a strong magnet pins strips past
+  `machine::max_safe_field`; a quench lowers the hit rate and the battery
+  restores it; bench numbers logged here; screenshots of a magnet night
+  and a power-cut night.
+- Watch for: a magnet field that moves the drum's best set changes what
+  "optimal" means. Score sabotaged runs against the clean night's best set,
+  so Goo lost to the magnet shows up as a loss.
 
 ## Gotchas (from the probes)
 

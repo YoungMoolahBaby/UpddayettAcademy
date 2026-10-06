@@ -4,7 +4,7 @@
 
 Living copy with diagrams: https://claude.ai/code/artifact/bcf97f8d-fc64-4549-bf76-72fb6b728e6c
 This file is the repo snapshot as of 2026-10-05 (the Claude Doc above was last
-synced 2026-10-04 and is behind: no nights, gifts or Amir yet). If the two
+synced 2026-10-04 and is behind: no nights, gifts, Amir or Salties yet). If the two
 disagree, this file is newer.
 
 ## Why this project exists
@@ -55,6 +55,8 @@ late-night meets Idiocracy humor.
   trademark). Hyperfocus buff, barter currency, cans are aluminum scrap.
 - **Glass half full:** scraps are plentiful because the rich throw away
   abundance. Upddayett is resourceful and funny, never pitiful.
+- **Not only jolly:** the Salties (below) take things away. Losses are real,
+  so recovering from them means something.
 - **Guardrails:** crude, raunchy humor and innuendo; nothing explicit. Jokes
   punch at Upddayett, not at real people. Every roast is backed by a real
   simulation result.
@@ -73,6 +75,7 @@ late-night meets Idiocracy humor.
 | The i9 | A Colorlight i9 pulled from a dead LED billboard, Sharpie face. | Brain of every build, simulated as a LUT4 fabric. |
 | The Neighbor | Thinks the AI is Upddayett's girlfriend. Runs a dubious companion-bot project. | Rated-M B-plot; the Gradient button keeps "optimizing the jiggle". |
 | The Bots | Superintelligent companion bots built from scraps. | Late game: run the business, negotiate with Shenzhen fabs. |
+| The Salties | Locals who always got ahead by keeping others down; it's all they know. Clever enough, incurious, salty. | Antagonists: sabotage the machine and take people's stuff. See "The Salties". |
 
 Colorlight i9 v7.2, real specs: LFE5U-45F-6BG381C (about 44k LUT4s), 8 MB SDRAM
 (EM638325), 8 MB SPI flash (W25Q64JV), two gigabit RGMII Ethernet PHYs, 25 MHz
@@ -157,6 +160,54 @@ possible.
 
 Never preachy: Upddayett goes vegan obsessively; aeroponic kale is the other
 half of his personality next to the soda.
+
+## The Salties
+
+Decided 2026-10-05; not built yet. The game can't be only jolly. Some people
+always got ahead by keeping others down, it's all they know, and they hate
+watching the Loin climb out. They're fictional locals, not a stand-in for any
+real group, and the jokes land on their bad physics, not on who they are.
+They're the flip side of the theme: clever enough, completely incurious, busy
+tearing things down instead of building.
+
+- **Name.** "Salty" is the attitude, and salt is the one thing Corten can't
+  take: chlorides stop weathering steel's protective patina from forming, so
+  it keeps corroding instead of sealing itself. AI: "They're not tough, babe.
+  They're corrosive. There's a difference." Rust that protects (patina,
+  building things) versus rust that eats (salt).
+- **Not crabs.** "Crabs in a bucket" fits the attitude, but Ferris the crab
+  is Rust's mascot and a good guy. Ferris can cameo by the "powered by"
+  splash or in the credits instead (Ferris is public domain).
+- **Upddayett red-teams his own machine.** Real red teamers are the good
+  guys: they break your system so you can fix it. The Salties attack;
+  Upddayett answers by attacking his own machine first and hardening it.
+  That's "build your own safety net" as gameplay.
+
+### What they try, and what physics says
+
+The Salties brag about big physics. The design rule (physical correctness
+breaks the tie) makes it a running gag: only the honest attacks work, and the
+AI roasts the rest with a real result.
+
+| They brag | What really happens | In the sim | Defense |
+| --- | --- | --- | --- |
+| "Magnet stuff" | Works. A magnet hidden under the counter throws off the Hall sensors and pushes the strips. | A hostile `ExternalField`: the same knob a want uses, held by someone else. It falls off with distance (dipole, ~1/r^3), so strips near the magnet tilt most. A gentle tilt quietly steers the drum to a worse chain; a strong one goes past the well-flattening tilt (`machine::max_safe_field`), pins strips and is easy to spot. | A steel shield from a dead hard drive; the scope shows a Hall offset while the drum sits idle; a calibration load with a known answer catches tampering. |
+| "Solar flare" | A flare won't fry a phone; geomagnetic storms hit long power lines, not pockets. Really, they flip the laundromat breaker. | Power cut mid-spin: the drum stops, the temperature drops to zero and the strips freeze into whatever chain they had (a quench, not an anneal). | A backup battery of vape cells finishes the cycle. They're the cells Upddayett wants for his balance bot, so he has to choose. |
+| "EMP" | Never works. It made popcorn. | Nothing; that's the joke. No build details, ever: it's a dud on screen. | Laughing at them. |
+| Taking stuff | Theft from the tents at night. | Items are gone the next night (needs nights that carry over). | The laundry counter as escrow: what's on the counter is safe. |
+
+### How it plays
+
+- **Sabotage nights** are a night condition, rolled like the weather. The
+  player learns the signs (an idle Hall offset, flickering lights) and picks
+  a defense before spinning.
+- **The costs are real:** a sabotaged night costs Goo, can feed the wrong
+  person and can lose items. Getting someone's stuff back counts as relief
+  Karma; a sabotaged night the player still saves is the payoff.
+- **Every roast is a sim result:** "Their magnet tilted strip 7 by 0.3. Your
+  shield took it to 0.02. Steel: 1, Salt: 0."
+- **Endgame (optional):** one Saltie gets a bench kit too. No speech; they
+  quietly start building something.
 
 ## The slice lesson: Money Laundering (Legally)
 
