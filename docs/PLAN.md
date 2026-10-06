@@ -663,7 +663,7 @@ went home.
     policy): in Corten-steel orange, with a line on what the sim does and
     Ferris waving below. It lasts 3 s and can be skipped.
   - **The ads:** every third night, a commercial breaks in before the
-    night: MTN GOO, SUPERINTELLIGENCE FOR DOGS ("he uses the toilet now;
+    night: MTN GOO, SUPERINTELLIGENCE FOR DOGS ("finally, a dog smart enough to stop shitting on the floor"; "he uses the toilet now;
     he still can't flush") and CARTPASS ("$9.99/mo, wheels sold
     separately"), each with fine print. An ad lasts 8 s and can be skipped.
   - The board-cam inset is its own camera and drew over the cards, so it's
