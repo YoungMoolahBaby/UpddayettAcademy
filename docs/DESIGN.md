@@ -289,6 +289,26 @@ simulated slap bits. Honest caveat: at 14 bits a laptop brute-forces the
 answer in microseconds; physical annealers only matter at large scale and
 for energy, and whether they win there is still debated.
 
+### The TVs (planned, Step 3.5)
+
+Every laundromat has a TV bolted in the corner. The Suds & Duds has two
+parody channels, and between them they make the drum the only honest thing
+in the room:
+- **The Shrug Network**, comedically apathetic news. It reads tonight's real
+  numbers and shrugs: "4 hungry on Turk Street tonight. Anyway, a
+  billionaire bought a second moon." The headlines are true (they come from
+  the night's roll); the indifference is the joke. The drum, meanwhile,
+  sends the food to whoever is hungry.
+- **PromiseTV**, nonstop false promises. Ads for fictional candidates:
+  "Vote Glorbman: every family gets a hub motor!" The I WANT picker shows
+  what that would really take (there's one hub motor, and someone has to
+  give it up), so a promise can be checked live. Upddayett heckles: "Who's
+  giving it up, Glorb?"
+
+Parody names only: no real networks, politicians or parties. Both channels
+get skewered equally, for behavior (apathy, empty promises), not policy.
+No crypto ads.
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow.** A 4-way swap only works if everyone

@@ -554,6 +554,27 @@ Amir's Persian Kitchen every night, plus a "Give away" picker for Upddayett's th
   per the naming policy).
 - **Fake commercial card** between cycles now and then (Mtn Goo, or
   Superintelligence for Dogs).
+- **The laundromat TVs** (user, 2026-10-06; see DESIGN "The TVs"): one or
+  two wall TVs (a low-poly mesh, the screen a quad with an egui/text
+  texture) with a scrolling chyron, flipping between two parody channels.
+  Text only; spoken lines wait for the 3.2 voice step.
+  - **The Shrug Network** (comedically apathetic news): headlines built
+    from tonight's real roll ("4 hungry on Turk Street tonight. Anyway, a
+    billionaire bought a second moon."). Every number comes from
+    `World::night` / `conditions`, like the AI-line rule.
+  - **PromiseTV** (false promises): political ads for fictional candidates
+    ("Vote Glorbman: every family gets a hub motor!"). The hook: the
+    promised item shows in the I WANT picker as undeliverable ("nobody's
+    trading that tonight") or with its real price, because there's one hub
+    motor. Upddayett heckles: "Who's giving it up, Glorb?"
+  - Guardrails: parody names only (no real networks, politicians or
+    parties); skewer both channels equally, and behavior (apathy, empty
+    promises), not policy; no crypto ads. Flavor, kept cheap: CortenForge
+    stays the focus.
+  - Done when: screenshots show both channels with headlines that match
+    the night, and a PromiseTV promise checked against the picker; unit
+    tests cover headline generation (numbers match the night, no immediate
+    repeats).
 - **Scope trace:** click a trade to watch its strip's `qpos` over time on a
   little green scope ("the scope", Tentzhen's in-game nickname): you see
   the Kramers hops.
