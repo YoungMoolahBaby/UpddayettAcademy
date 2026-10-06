@@ -3,12 +3,17 @@
 Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
-Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
+Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Step 3 so far (see the Step 3 plan below): 3.0, 3.1, all of 3.3 (3.3a-d plus
-the costly-want clamp) and 3.6 (the Salties) done; 3.2 deferred to a later
-voice-and-music step.
-Next action: **3.4 the escrow counter**, then 3.5 polish.
+the costly-want clamp) and 3.6 (the Salties, dumb and smart) done; 3.2
+deferred to a later voice-and-music step.
+Now: **the 0.9.2 gap hunt** (CortenForge 0.9.2 will fix what FINDINGS lists,
+and every crate moves to 0.9.2). One probe per crate we use, in
+`examples/gaps_<crate>.rs`, one check per FINDINGS entry. Done:
+sim-thermostat (26 open). Next: sim-therm-env, then sim-core + sim-mjcf,
+sim-ml-chassis + sim-rl, sim-soft + sim-coupling. After that: 3.4 the
+escrow counter, then 3.5 polish.
 
 ## Step 1 result
 
