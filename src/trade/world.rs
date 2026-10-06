@@ -47,6 +47,8 @@ pub struct Npc {
     pub sleeps_out: bool,
     pub has_animals: bool,
     pub has_phone: bool,
+    /// A business (Amir's), not a person: it never goes hungry.
+    pub business: bool,
 }
 
 /// `npc` wants `item` for `use_`, worth `base` Goo on a neutral night.
@@ -74,7 +76,8 @@ impl Night {
     }
 
     /// Roll a night. People sleeping out go hungry more often; only people
-    /// with animals can have hungry animals.
+    /// with animals can have hungry animals. A business draws its
+    /// hunger coin too (and ignores it), so every later coin stays put.
     pub fn roll(npcs: &[Npc], seed: u64) -> Self {
         let mut s = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
         let mut coin = |p: f64| {
@@ -84,7 +87,7 @@ impl Night {
             ((s >> 11) as f64 / (1u64 << 53) as f64) < p
         };
         let cold = coin(0.5);
-        let hungry = npcs.iter().map(|n| coin(if n.sleeps_out { 0.6 } else { 0.15 })).collect();
+        let hungry = npcs.iter().map(|n| coin(if n.sleeps_out { 0.6 } else { 0.15 }) && !n.business).collect();
         let animals_hungry = npcs.iter().map(|n| n.has_animals && coin(0.6)).collect();
         Self { seed, cold, hungry, animals_hungry }
     }
@@ -130,7 +133,7 @@ impl World {
     }
 
     fn npc(&mut self, name: &'static str, sleeps_out: bool, has_animals: bool, has_phone: bool) -> usize {
-        self.npcs.push(Npc { name, sleeps_out, has_animals, has_phone });
+        self.npcs.push(Npc { name, sleeps_out, has_animals, has_phone, business: false });
         self.npcs.len() - 1
     }
 
@@ -242,6 +245,7 @@ pub fn laundromat(seed: u64) -> World {
     let ray = w.npc("Sound Guy Ray", false, false, true);
     let tamara = w.npc("Librarian Tamara", false, true, true);
     let amir = w.npc("Amir's Persian Kitchen", false, false, true);
+    w.npcs[amir].business = true;
 
     let goo = w.has(upd, "12-pack of Mtn Goo", 6.0, Use::Enjoy);
     let phone = w.has(upd, "cracked Android phone", 4.0, Use::Lifeline);

@@ -1,6 +1,7 @@
 //! `UPD_SHOT=1`: run a fast spin cycle, save screenshots to `shots/`, exit.
 //! `UPD_PROGRAM=0..3` picks the wash program (default Normal);
 //! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
+//! `UPD_NEXT=1` goes to the next night first (checks the night switch).
 //! For checking the look without sitting in front of the window.
 
 use bevy::prelude::*;
@@ -24,6 +25,9 @@ pub fn drive(
     let f = *frame;
     if f == 30 {
         lm.watch = 4.0;
+        if std::env::var_os("UPD_NEXT").is_some() {
+            lm.next_night();
+        }
         if let Some(p) = std::env::var("UPD_PROGRAM").ok().and_then(|s| s.parse::<usize>().ok()) {
             lm.program = p.min(super::sim::PROGRAMS.len() - 1);
         }

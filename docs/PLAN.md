@@ -3,12 +3,12 @@
 Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
-Status (2026-10-05): **Steps 1 and 2 done** (trade computer in `src/trade/`,
+Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
 Next action: **Step 3.3** (see the Step 3 plan below; 3.0 and 3.1 done, 3.2
-deferred to a later voice-and-music step; 3.3a, 3.3b and the costly-want
-clamp done). Next: **3.3c Game** (Karma meter, night banner).
-After 3.3c-d: **3.6 The Salties** (sabotage nights; planned below).
+deferred to a later voice-and-music step; 3.3a, 3.3b, the costly-want
+clamp and 3.3c done). Next: **3.3d Give-away picker**.
+After 3.3d: **3.6 The Salties** (sabotage nights; planned below).
 
 ## Step 1 result
 
@@ -435,15 +435,44 @@ Upddayett's thumb on the strip again, as in Step 1.
   3090 40% -> 15%, Upddayett/cells 50% -> 31%, 48 runs): a pinned strip can
   block a way out of a near miss. Candidates: a slower Normal on hard nights,
   or latch-and-reheat.
-- **Found while benching (game, not CortenForge):** Amir's Persian Kitchen
-  can roll "hungry", which means nothing for a restaurant (it changes no
-  values, but it shows in `trade_cli night`). Nights also repeat often:
+- **Found while benching (game, not CortenForge; fixed in 3.3c):** Amir's
+  Persian Kitchen could roll "hungry", which means nothing for a restaurant
+  (it changed no values, but it showed in `trade_cli night`). Nights also repeat often:
   over 200 seeds one pattern comes up 7 times and 23 twice, because the
   skewed coins (hungry 60% / 15%) carry only ~9 bits, so the commonest
   night has ~1.2% odds. That's expected, not a broken RNG; nights 1 and 8
-  are the same apart from Amir. Fixing Amir changes every later coin, so
-  re-bench after.
+  are the same apart from Amir. (The fix keeps every later coin: see 3.3c.)
 - Tests: 12, 3.9 s.
+
+**3.3c done (2026-10-06).** The game shows the night and the gifts:
+- **Night banner** (top center): night number, cold or mild, how many are
+  hungry, what Amir's gives away, and **Next night >** (rolls tomorrow and
+  rebuilds the board; a want carries over if something can still deliver
+  it). `UPD_SEED=<night>` replays a night; `UPD_NEXT=1` presses Next night
+  in screenshot mode.
+- **Condition tags** under each portrait (hungry, cold, pigeons hungry, no
+  phone), from `World::conditions`.
+- **Goo and Karma meters** in SPIN CYCLE: the i9's latched set (or the
+  strips, before a cycle) against the night's best set; hover for relief
+  vs flourishing.
+- **Gifts in warm gold:** gift arrows and rows are orange-gold, with a heart
+  riding the arrow (a camera-facing gizmo curve). Trade colors skip the
+  golds and oranges, so gifts and want legs never look like trades.
+- **HOW IT WORKS** gains "Tonight" and "Karma" lines.
+- **20-slot board:** the washer always has 20 strips; slots past tonight's
+  trades sit parked flat with dark LEDs, so Next night never respawns meshes.
+- **Small windows** (under 1280x760; check with `UPD_WINDOW=960x600`):
+  narrower panels, trades as portrait initials (U -> VL -> U; hover for the
+  full text), HOW IT WORKS folded, and both lists scroll instead of running
+  under the board cam or the rules. The i9's call now sits above the trade
+  list so it never scrolls away. (egui gotcha: a fixed-size window offers
+  its content only last frame's height, so the scroll areas set
+  `min_scrolled_height` to the room they have.)
+- **Amir's never goes hungry** (`Npc::business`): the restaurant still
+  draws its hunger coin and ignores it, so every other coin, and every
+  benched night, stays the same (a test checks 200 nights).
+- Gift lines read "Upddayett (hungry) gets the tray of ...".
+- Tests: 13, 1.5 s.
 
 Order: (1) the Goo legend, per-person gains and HOW IT WORKS card: done
 (`cfd6015`). (2)-(3), tags and gifts, became sub-steps 3.3a-d above.

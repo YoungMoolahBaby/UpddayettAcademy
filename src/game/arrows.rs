@@ -1,9 +1,11 @@
 //! Trade arrows between customers: they flicker with the strips while the
 //! drum spins and lock into a glowing chain when the i9 calls it.
 
+use std::f32::consts::TAU;
+
 use bevy::prelude::*;
 
-use super::scene::{ARROW_Y, NpcSpots};
+use super::scene::{ARROW_Y, MainCam, NpcSpots};
 use super::sim::{Laundromat, Mode};
 
 /// Thin arrows for trades the strips are considering.
@@ -48,23 +50,31 @@ fn leg_curve(a: Vec3, b: Vec3, c: usize) -> impl Fn(f32) -> Vec3 {
 }
 
 const GOLD: Color = Color::srgb(1.0, 0.8, 0.2);
+/// Gifts: a warmer gold, so a wanted leg still stands out.
+const GIFT: Color = Color::srgb(1.0, 0.55, 0.15);
 
+/// Trade colors skip the golds and oranges (wants and gifts use those).
 pub fn trade_color(c: usize, n: usize) -> Color {
-    Color::hsl(360.0 * c as f32 / n as f32, 0.9, 0.6)
+    Color::hsl(75.0 + 270.0 * c as f32 / n.max(1) as f32, 0.9, 0.6)
 }
 
 pub fn draw(
     time: Res<Time>,
     lm: Res<Laundromat>,
     spots: Res<NpcSpots>,
+    cam: Single<&GlobalTransform, With<MainCam>>,
     mut thin: Gizmos<TradeArrows>,
     mut fat: Gizmos<LockedArrows>,
 ) {
     let n = lm.n();
     let t_now = time.elapsed_secs();
+    // Hearts face the main camera.
+    let face = (cam.right().as_vec3(), cam.up().as_vec3());
     for (c, cycle) in lm.tc.cycles.iter().enumerate() {
         let a = lm.activity[c];
-        let base = trade_color(c, n);
+        let gift = cycle.is_gift();
+        let base = if gift { GIFT } else { trade_color(c, n) };
+        let heart = gift.then_some(face);
         let token_at = (t_now * 0.45 + c as f32 * 0.17).fract();
         for leg in &cycle.legs {
             let f = leg_curve(spots.0[leg.from], spots.0[leg.to], c);
@@ -73,19 +83,20 @@ pub fn draw(
             if lm.locked(c) {
                 let pulse = 3.0 + 1.5 * (t_now * 3.0 + c as f32).sin();
                 let color = Color::LinearRgba((LinearRgba::from(leg_base) * pulse).with_alpha(1.0));
-                draw_leg(&mut fat, &f, color, Some(token_at));
+                draw_leg(&mut fat, &f, color, Some(token_at), heart);
             } else if lm.mode == Mode::Done {
-                draw_leg(&mut thin, &f, leg_base.with_alpha(0.03), None);
+                draw_leg(&mut thin, &f, leg_base.with_alpha(0.03), None, None);
             } else {
                 let token = (a > 0.6).then_some(token_at);
-                draw_leg(&mut thin, &f, leg_base.with_alpha(0.04 + 0.9 * a * a), token);
+                draw_leg(&mut thin, &f, leg_base.with_alpha(0.04 + 0.9 * a * a), token, heart);
             }
         }
     }
 }
 
-/// One leg: the arc, an arrowhead, and optionally the item riding along it.
-fn draw_leg<G: GizmoConfigGroup>(g: &mut Gizmos<G>, f: &impl Fn(f32) -> Vec3, color: Color, token: Option<f32>) {
+/// One leg: the arc, an arrowhead, and optionally the item riding along it
+/// (a ball, or for a gift a heart facing the camera: `heart` = its right, up).
+fn draw_leg<G: GizmoConfigGroup>(g: &mut Gizmos<G>, f: &impl Fn(f32) -> Vec3, color: Color, token: Option<f32>, heart: Option<(Vec3, Vec3)>) {
     let (t0, t1) = (0.07, 0.93);
     g.linestrip((0..=SAMPLES).map(|k| f(t0 + (t1 - t0) * k as f32 / SAMPLES as f32)), color);
     let tip = f(t1);
@@ -94,8 +105,26 @@ fn draw_leg<G: GizmoConfigGroup>(g: &mut Gizmos<G>, f: &impl Fn(f32) -> Vec3, co
     for s in [-1.0, 1.0] {
         g.line(tip, tip - dir * 0.2 + side * s * 0.09, color);
     }
-    if let Some(u) = token {
-        g.sphere(Isometry3d::from_translation(f(t0 + (t1 - t0) * u)), 0.06, color);
+    let Some(u) = token else { return };
+    let at = f(t0 + (t1 - t0) * u);
+    match heart {
+        None => {
+            g.sphere(Isometry3d::from_translation(at), 0.06, color);
+        }
+        Some((right, up)) => {
+            // The classic heart curve, ~0.27 across, riding just above the arc.
+            let s = 0.0085;
+            let at = at + up * 0.08;
+            g.linestrip(
+                (0..=32).map(|k| {
+                    let t = TAU * k as f32 / 32.0;
+                    let x = 16.0 * t.sin().powi(3);
+                    let y = 13.0 * t.cos() - 5.0 * (2.0 * t).cos() - 2.0 * (3.0 * t).cos() - (4.0 * t).cos();
+                    at + (right * x + up * y) * s
+                }),
+                color,
+            );
+        }
     }
 }
 

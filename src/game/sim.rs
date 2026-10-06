@@ -29,6 +29,9 @@ pub struct Laundromat {
     pub program: usize,
     /// Watch-speed multiplier (1x plays a program in its `watch_secs`).
     pub watch: f64,
+    /// Tonight (the world's seed; `UPD_SEED=<night>` replays it).
+    pub night: u64,
+    /// Seed for the strips' starting positions and the shaking.
     pub seed: u64,
     /// The QUBO's best answer, for the scoreboard.
     pub ground: u32,
@@ -61,6 +64,19 @@ pub const PROGRAMS: [WashProgram; 4] = [
     WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%" },
 ];
 
+/// Tonight's trade computer for night `night`.
+fn open(night: u64) -> TradeComputer {
+    let tc = TradeComputer::new(world::laundromat(night), 5.0, 1.6);
+    let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
+    info!(
+        "night {night} (UPD_SEED={night} replays it): {}, {} trades + {gifts} gifts{}",
+        tc.world.weather(),
+        tc.cycles.len() - gifts,
+        if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
+    );
+    tc
+}
+
 /// Watch speed for the manual dial at 1x (sim time units per real second).
 const MANUAL_SPEED: f64 = 40.0;
 
@@ -73,34 +89,13 @@ impl Laundromat {
     pub fn new() -> Self {
         let physics = Physics::default();
         // A different night every launch; `UPD_SEED=<n>` replays one exactly.
-        let seed = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
+        let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let tc = TradeComputer::new(world::laundromat(seed), 5.0, 1.6);
-        info!(
-            "laundromat open: seed {seed} (UPD_SEED={seed} replays this session), {}, {} trades{}",
-            tc.world.weather(),
-            tc.cycles.len(),
-            if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
-        );
-        let machine = tc.machine(physics, seed).expect("build the slap-bit board");
-        let ground = tc.ground_state();
-        let n = tc.cycles.len();
-        // Price every want once, up front, so the picker can show costs.
-        let mut scratch = tc.clone();
-        let want_menu = (0..tc.world.npcs.len())
-            .map(|npc| {
-                tc.deliverable(npc)
-                    .into_iter()
-                    .map(|item| {
-                        scratch.want(npc, item);
-                        (item, scratch.want_cost(scratch.ground_state()))
-                    })
-                    .collect()
-            })
-            .collect();
-        Self {
-            want_menu,
+        let tc = open(night);
+        let machine = tc.machine(physics, night).expect("build the slap-bit board");
+        let mut lm = Self {
+            want_menu: vec![],
             picker_npc: 0,
             tc,
             machine,
@@ -111,9 +106,55 @@ impl Laundromat {
             dial: 1.5,
             program: 2,
             watch: 1.0,
-            seed,
-            ground,
-            activity: vec![0.0; n],
+            night,
+            seed: night,
+            ground: 0,
+            activity: vec![],
+        };
+        lm.price_wants();
+        lm
+    }
+
+    /// Board-dependent state for a fresh night: the best set, every want's
+    /// price (once, up front, so the picker can show costs), the display.
+    fn price_wants(&mut self) {
+        let tc = &self.tc;
+        let mut scratch = tc.clone();
+        self.want_menu = (0..tc.world.npcs.len())
+            .map(|npc| {
+                tc.deliverable(npc)
+                    .into_iter()
+                    .map(|item| {
+                        scratch.want(npc, item);
+                        (item, scratch.want_cost(scratch.ground_state()))
+                    })
+                    .collect()
+            })
+            .collect();
+        self.ground = tc.ground_state();
+        self.activity = vec![0.0; tc.cycles.len()];
+    }
+
+    /// Close up and open tomorrow: new conditions, new values, a new board.
+    /// A want carries over if something can still deliver it.
+    pub fn next_night(&mut self) {
+        if matches!(self.mode, Mode::Cycle { .. }) {
+            return;
+        }
+        let want = self.tc.want;
+        self.night += 1;
+        self.seed = self.night;
+        self.tc = open(self.night);
+        self.machine = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
+        self.latch = Latch::new();
+        self.mode = Mode::Manual;
+        self.price_wants();
+        if let Some((npc, item)) = want {
+            self.set_want(Some((npc, item)));
+            if self.tc.want.is_none() {
+                let (who, what) = (self.tc.world.npcs[npc].name, self.tc.world.items[item].name);
+                info!("want dropped: nothing gets {who} the {what} tonight");
+            }
         }
     }
 

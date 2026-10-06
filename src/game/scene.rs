@@ -7,6 +7,7 @@ use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
+use cortenforge_play::trade::MAX_BITS;
 
 use super::sim::{Laundromat, Mode};
 
@@ -58,6 +59,7 @@ pub struct LedMaterials {
     barrier: Handle<StandardMaterial>,
     i9_on: Handle<StandardMaterial>,
     i9_off: Handle<StandardMaterial>,
+    parked: Handle<StandardMaterial>,
 }
 
 /// Look per customer: hoodie/coat color, head-wear color.
@@ -202,28 +204,29 @@ pub fn setup(
         let screw = meshes.add(Cylinder::new(0.014, 0.03));
         for z in [-STRIP_LEN / 2.0, STRIP_LEN / 2.0] {
             p.spawn((Mesh3d(rail.clone()), MeshMaterial3d(dark.clone()), Transform::from_xyz(0.0, BOARD_Y + RAIL_H / 2.0, z)));
-            for bit in 0..lm.n() {
-                p.spawn((Mesh3d(screw.clone()), MeshMaterial3d(steel.clone()), Transform::from_xyz(strip_x(bit, lm.n()), BOARD_Y + RAIL_H + 0.015, z)));
+            for bit in 0..MAX_BITS {
+                p.spawn((Mesh3d(screw.clone()), MeshMaterial3d(steel.clone()), Transform::from_xyz(strip_x(bit), BOARD_Y + RAIL_H + 0.015, z)));
             }
         }
         let seg = meshes.add(Cuboid::new(0.04, 0.006, STRIP_LEN / SEGMENTS as f32 * 1.08));
         let puck = meshes.add(Cylinder::new(0.02, 0.02));
         let led = meshes.add(Sphere::new(0.016));
-        for bit in 0..lm.n() {
+        // Every slot gets a strip; slots past tonight's trades stay parked flat.
+        for bit in 0..MAX_BITS {
             for k in 0..SEGMENTS {
                 p.spawn((Mesh3d(seg.clone()), MeshMaterial3d(steel.clone()), StripSegment { bit, k }, Transform::default()));
             }
             // The magnet rides the middle of the strip, painted with glow paint so the
             // state reads from across the room; the Hall LED sits at the front edge.
             p.spawn((Mesh3d(puck.clone()), MeshMaterial3d(dark.clone()), StripSegment { bit, k: usize::MAX }, HallLed(bit), Transform::default()));
-            p.spawn((Mesh3d(led.clone()), MeshMaterial3d(dark.clone()), HallLed(bit), Transform::from_xyz(strip_x(bit, lm.n()), BOARD_Y + 0.02, 0.46)));
+            p.spawn((Mesh3d(led.clone()), MeshMaterial3d(dark.clone()), HallLed(bit), Transform::from_xyz(strip_x(bit), BOARD_Y + 0.02, 0.46)));
         }
 
         // The i9, zip-tied to the front panel above the door, with one LED per trade.
         p.spawn((Mesh3d(meshes.add(Cuboid::new(0.68, 0.36, 0.02))), MeshMaterial3d(pcb.clone()), Transform::from_xyz(0.0, 1.32, WASHER.z / 2.0 + 0.012)));
         p.spawn((Mesh3d(meshes.add(Cuboid::new(0.12, 0.12, 0.012))), MeshMaterial3d(dark.clone()), Transform::from_xyz(-0.22, 1.36, WASHER.z / 2.0 + 0.026)));
         let i9_led = meshes.add(Cuboid::new(0.026, 0.026, 0.012));
-        for bit in 0..lm.n() {
+        for bit in 0..MAX_BITS {
             let x = -0.12 + (bit % 7) as f32 * 0.05;
             let y = 1.4 - (bit / 7) as f32 * 0.07;
             p.spawn((Mesh3d(i9_led.clone()), MeshMaterial3d(dark.clone()), I9Led(bit), Transform::from_xyz(x + 0.12, y, WASHER.z / 2.0 + 0.026)));
@@ -236,6 +239,7 @@ pub fn setup(
         barrier: glow(&mut mats, LinearRgba::rgb(5.0, 2.5, 0.0)),
         i9_on: glow(&mut mats, LinearRgba::rgb(1.5, 3.0, 9.0)),
         i9_off: glow(&mut mats, LinearRgba::rgb(0.02, 0.03, 0.06)),
+        parked: glow(&mut mats, LinearRgba::rgb(0.01, 0.01, 0.01)),
     });
 
     // ── Customers ──
@@ -281,10 +285,11 @@ pub fn setup(
     commands.insert_resource(NpcSpots(spots));
 }
 
-fn strip_x(bit: usize, n: usize) -> f32 {
-    // Up to 20 strips: tighten the pitch so a full board still fits.
-    let pitch = STRIP_PITCH.min(BOARD_SPAN / n.max(1) as f32);
-    (bit as f32 - (n as f32 - 1.0) / 2.0) * pitch
+fn strip_x(bit: usize) -> f32 {
+    // A full board of 20 strips, pitched to fit.
+    let n = MAX_BITS as f32;
+    let pitch = STRIP_PITCH.min(BOARD_SPAN / n);
+    (bit as f32 - (n - 1.0) / 2.0) * pitch
 }
 
 /// The washer rattles harder (and the drum spins faster) the hotter it runs.
@@ -314,9 +319,9 @@ pub fn bend_strips(lm: Res<Laundromat>, mut segs: Query<(&StripSegment, &mut Tra
     let n = lm.n();
     let pos = lm.machine.positions();
     for (s, mut tf) in &mut segs {
-        let x = (pos[s.bit] as f32).clamp(-1.7, 1.7);
+        let x = if s.bit < n { (pos[s.bit] as f32).clamp(-1.7, 1.7) } else { 0.0 };
         let amp = ARCH * x;
-        let px = strip_x(s.bit, n);
+        let px = strip_x(s.bit);
         let base = BOARD_Y + RAIL_H;
         if s.k == usize::MAX {
             tf.translation = Vec3::new(px, base + amp + 0.012 * x.signum(), 0.0);
@@ -338,10 +343,11 @@ pub fn update_leds(
     mut i9: Query<(&I9Led, &mut MeshMaterial3d<StandardMaterial>), Without<HallLed>>,
 ) {
     for (HallLed(bit), mut m) in &mut hall {
-        let want = match lm.well(*bit) {
-            WellState::Right => &leds.right,
-            WellState::Left => &leds.left,
-            WellState::Barrier => &leds.barrier,
+        let want = match (*bit < lm.n()).then(|| lm.well(*bit)) {
+            None => &leds.parked,
+            Some(WellState::Right) => &leds.right,
+            Some(WellState::Left) => &leds.left,
+            Some(WellState::Barrier) => &leds.barrier,
         };
         if m.0 != *want {
             m.0 = want.clone();

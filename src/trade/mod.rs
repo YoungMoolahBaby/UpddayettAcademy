@@ -352,7 +352,7 @@ impl TradeComputer {
     }
 
     /// Who the chosen gifts reached and what it did for them:
-    /// ["Shopping-Cart Guy ate (hungry)", ...].
+    /// ["Shopping-Cart Guy (hungry) gets the tray of adas polo", ...].
     pub fn gift_lines(&self, bits: u32) -> Vec<String> {
         let w = &self.world;
         qubo::chosen(bits, self.cycles.len())
@@ -366,7 +366,7 @@ impl TradeComputer {
                     Some(world::Tag::Purpose) => "purpose",
                     _ => "a treat",
                 };
-                format!("{} gets the {} ({why})", w.npcs[l.to].name, w.items[l.item].name)
+                format!("{} ({why}) gets the {}", w.npcs[l.to].name, w.items[l.item].name)
             })
             .collect()
     }
@@ -632,5 +632,24 @@ mod tests {
                 assert!(w.night.hungry[g.legs[0].to], "night {night}: food went to {} while someone hungry wanted it", w.npcs[g.legs[0].to].name);
             }
         }
+    }
+
+    #[test]
+    fn a_restaurant_never_goes_hungry_and_the_other_coins_stay_put() {
+        let npcs = world::laundromat(1).npcs;
+        let amir = npcs.iter().position(|n| n.business).expect("Amir's is a business");
+        let mut as_person = npcs.clone();
+        as_person[amir].business = false;
+        let mut was_hungry = 0;
+        for seed in 0..200 {
+            let night = world::Night::roll(&npcs, seed);
+            let mut old = world::Night::roll(&as_person, seed);
+            assert!(!night.hungry[amir], "night {seed}: the restaurant is hungry");
+            was_hungry += old.hungry[amir] as usize;
+            // Only the restaurant's own flag differs from the old roll.
+            old.hungry[amir] = false;
+            assert_eq!(night, old, "night {seed}");
+        }
+        assert!(was_hungry > 0, "the old roll did make it hungry");
     }
 }
