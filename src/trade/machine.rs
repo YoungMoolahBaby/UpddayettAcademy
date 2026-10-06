@@ -212,6 +212,42 @@ impl Machine {
         Ok(())
     }
 
+    /// The board's potential energy (kT units at multiplier 1): the wells,
+    /// the springs and the fields of `ising` (as built in [`board_model`];
+    /// any `extra` component is left out). `PassiveComponent` has no energy
+    /// method, so the stack can't total it: this asks each component type
+    /// for its own (`potential`, `coupling_energy`, `field_energy`).
+    pub fn potential(&self, ising: &Ising) -> f64 {
+        let well = DoubleWellPotential::new(self.physics.delta_v, 1.0, 0);
+        let wells: f64 = self.positions().iter().map(|&x| well.potential(x)).sum();
+        let springs = if ising.edges.is_empty() {
+            0.0
+        } else {
+            PairwiseCoupling::new(ising.j.clone(), ising.edges.clone()).coupling_energy(&self.data.qpos)
+        };
+        wells + springs + ExternalField::new(ising.h.clone()).field_energy(&self.data.qpos)
+    }
+
+    /// Two washers trade loads (parallel tempering): the strips swap
+    /// boards, and their velocities rescale to the drum they land in, by
+    /// sqrt(T_new / T_old), so they arrive at that drum's temperature.
+    pub fn swap_loads(a: &mut Machine, b: &mut Machine) -> Result<(), Error> {
+        assert_eq!(a.n, b.n, "boards differ in size");
+        let (ta, tb) = (a.temperature(), b.temperature());
+        let to_a = if tb > 0.0 { (ta / tb).sqrt() } else { 0.0 };
+        let to_b = if ta > 0.0 { (tb / ta).sqrt() } else { 0.0 };
+        for i in 0..a.n {
+            let (qa, va) = (a.data.qpos[i], a.data.qvel[i]);
+            a.data.qpos[i] = b.data.qpos[i];
+            a.data.qvel[i] = b.data.qvel[i] * to_a;
+            b.data.qpos[i] = qa;
+            b.data.qvel[i] = va * to_b;
+        }
+        a.data.forward(&a.model)?;
+        b.data.forward(&b.model)?;
+        Ok(())
+    }
+
     pub fn well(&self, i: usize) -> WellState {
         WellState::from_position(self.data.qpos[i], 0.5)
     }

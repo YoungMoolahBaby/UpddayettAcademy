@@ -568,6 +568,18 @@ from reading the source (file:line) and can't be checked at run time
 - **API** (2026-10-05): a component can't report its force at a given
   `qpos` without a `Model` and `Data`, so a force-balance check means
   re-deriving each force from its formula (double_well.rs:208). See Step 3.
+- **API** (2026-10-06): `PassiveComponent` has `apply` but no energy
+  (component.rs:61-64), so a stack can't report its total potential.
+  Replica exchange needs U(x) at every swap (Step 6, the row of washers),
+  and so would Metropolis moves or an energy-drift check. The pieces exist
+  under three names and two signatures: `DoubleWellPotential::potential(x)`
+  per scalar (double_well.rs:196), `PairwiseCoupling::coupling_energy(&qpos)`
+  (pairwise_coupling.rs:158), `ExternalField::field_energy(&qpos)`
+  (external_field.rs:52). The stack consumes the components, so we rebuild
+  each one from the board to ask. An `energy(&self, model, data) ->
+  Option<f64>` on the trait, summed by `PassiveStack::energy`, would cover
+  it. The crate is also the natural home for a replica-exchange helper
+  (swap states, rescale velocities); we wrote one in `src/trade/row.rs`.
 - **docs** (2026-10-05): nothing says two components of the same type can
   share a `PassiveStack` (it works). See Step 3.
 - **docs** (2026-10-05): writing your own `PassiveComponent` is easy but
@@ -1566,6 +1578,25 @@ Paths are under sim-opt's `src/`. Found by `trade_cli rematch` (run 5 vs run
   without re-exporting rand (the lock holds rand 0.8, 0.9 and 0.10), so a
   caller must find and pin the matching major. `B = 10_000` and the 95%
   level are fixed (:155).
+- **docs** (2026-10-06): the crate summary says "parallel tempering", and
+  someone with a rugged energy landscape (our boards) will reach for it.
+  But `Pt` is parallel tempering over a *policy's params*: K
+  Metropolis chains of param vectors, each scored by an episode rollout
+  (parallel_tempering.rs:1-14). It's a trainer next to CEM, and it can't
+  exchange states between physical replicas. For that we built our own
+  (Step 6). One line in the lib doc ("over policy params; for replica
+  exchange of simulation states see ...") would save the detour.
+- **API** (2026-10-06): `Pt::name()` returns `"SA"` on purpose, so
+  `run_rematch` picks it up (parallel_tempering.rs:48-56, 256-257). Its
+  checkpoints also say `algorithm_name: "SA"` (:471). Metrics, logs and
+  saved artifacts can't tell PT from SA. The rematch driver should take
+  the labels instead.
+- **docs** (2026-10-06): each chain scores a proposal once on a stochastic
+  env and keeps that score while the params stay (:320). A lucky rollout
+  then sticks: later proposals must beat its noise peak, not its mean. The
+  basic SA has the same shape. That's fine for deterministic envs, but
+  worth a line of the docs (or an option to re-score the incumbent) for
+  noisy ones, like our thermostat boards.
 
 ### `cf-design`
 

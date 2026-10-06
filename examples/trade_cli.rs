@@ -18,6 +18,12 @@
 //!   versus           Normal vs the smart wash (--smart = the learned one, or --params a,b,c,d[,stall,ln cool-down,ln patience]) per night
 //!   rematch          is the learned wash (or --params) really better than run 3 (or --vs a,b,..)? Normal, A and B
 //!                    on the same boards and seeds, then sim-opt bootstrap CIs on the difference (paired and not)
+//!   row              a row of washers (parallel tempering) vs Normal per night, with swap rates (tuning)
+//!   rowmatch         the row vs run 5 at equal compute, and K whole-cycle washers vs the best of K run-5 washers
+//!
+//!   --washers K      spin a row of K washers sharing one cycle's compute (--full: each runs the whole cycle)
+//!   --swap S  --rcold T  --rhot T   swap interval and the row's ladder ends (default 1, 1.4, 4)
+//!   --best-of K      keep the best of K separate washers
 //!
 //!   --night N        which night (default 1)
 //!
@@ -39,6 +45,7 @@
 use std::time::Instant;
 
 use cortenforge::sim::thermostat::WellState;
+use cortenforge_play::trade::row::{Row, RowStats};
 use cortenforge_play::trade::salties::SpinCheck;
 use cortenforge_play::trade::smart::{self, SmartWash};
 use cortenforge_play::trade::{self, Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, qubo, salties};
@@ -74,6 +81,15 @@ struct Opts {
     /// `rematch`'s program B (default run 3).
     vs: Option<Vec<f64>>,
     program: Option<SmartWash>,
+    /// A row of washers instead of one (`--washers K`, `--full`, `--swap S`, `--rcold T`, `--rhot T`).
+    row: Option<Row>,
+    washers: Option<usize>,
+    full: bool,
+    swap: Option<f64>,
+    rcold: Option<f64>,
+    rhot: Option<f64>,
+    /// The best of this many separate washers (`--best-of K`).
+    best_of: usize,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
     restarts: Option<f64>,
@@ -112,6 +128,13 @@ fn parse() -> Opts {
         params: None,
         vs: None,
         program: None,
+        row: None,
+        washers: None,
+        full: false,
+        swap: None,
+        rcold: None,
+        rhot: None,
+        best_of: 1,
         gens: 60,
         restarts: None,
         patience: None,
@@ -163,6 +186,12 @@ fn parse() -> Opts {
             "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--vs" => o.vs = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--gens" => o.gens = num(val()) as usize,
+            "--washers" => o.washers = Some(num(val()) as usize),
+            "--full" => o.full = true,
+            "--swap" => o.swap = Some(num(val())),
+            "--rcold" => o.rcold = Some(num(val())),
+            "--rhot" => o.rhot = Some(num(val())),
+            "--best-of" => o.best_of = num(val()) as usize,
             "--restarts" => o.restarts = Some(num(val())),
             "--patience" => o.patience = Some(num(val())),
             "--pop" => o.pop = num(val()) as usize,
@@ -453,31 +482,48 @@ fn aim_coil(o: &Opts) -> (Magnet, f64) {
 /// `o.runs` seeded spin cycles from fresh random strips, on all cores.
 /// Returns each run's latch, wall time and spin check.
 fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64, SpinCheck)> {
+    on_all_cores(o.runs, |r| {
+        let t = Instant::now();
+        let (l, check, _) = spin_one(tc, o, o.seed + r as u64 * 7919);
+        (l, t.elapsed().as_secs_f64(), check)
+    })
+}
+
+/// `f(0..runs)` spread over every core, results in run order per thread.
+fn on_all_cores<T: Send>(runs: usize, f: impl Fn(usize) -> T + Sync) -> Vec<T> {
     let threads = std::thread::available_parallelism().map_or(4, |n| n.get());
+    let f = &f;
     std::thread::scope(|s| {
-        let hs: Vec<_> = (0..threads)
-            .map(|t| {
-                s.spawn(move || {
-                    (t..o.runs)
-                        .step_by(threads)
-                        .map(|r| {
-                            let mut m = board(tc, o, o.seed + r as u64 * 7919);
-                            let t = Instant::now();
-                            let mut check = SpinCheck::default();
-                            let tick = |m: &Machine, _: &Latch| check.observe(m, &tc.ising);
-                            let l = match &o.program {
-                                Some(p) => tc.spin_with(&mut m, p.total_time(), p.program(&tc.problem.qubo), SAMPLE, SAMPLE, tick),
-                                None => tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, tick),
-                            }
-                            .expect("spin");
-                            (l, t.elapsed().as_secs_f64(), check)
-                        })
-                        .collect::<Vec<_>>()
-                })
-            })
-            .collect();
+        let hs: Vec<_> = (0..threads).map(|t| s.spawn(move || (t..runs).step_by(threads).map(f).collect::<Vec<_>>())).collect();
         hs.into_iter().flat_map(|h| h.join().unwrap()).collect()
     })
+}
+
+/// One seeded spin: the anneal, the smart wash, a row of washers (`--washers`),
+/// or the best of `--best-of` separate washers. The spin check watches the
+/// (coldest) washer.
+fn spin_one(tc: &TradeComputer, o: &Opts, seed: u64) -> (Latch, SpinCheck, Option<RowStats>) {
+    let mut check = SpinCheck::default();
+    if let Some(row) = &o.row {
+        let mut ms: Vec<Machine> = (0..row.washers).map(|k| board(tc, o, seed.wrapping_add(k as u64 * 104_729))).collect();
+        let tick = |ms: &[Machine], _: &Latch| check.observe(&ms[0], &tc.ising);
+        let (l, stats) = tc.spin_row(&mut ms, row, seed, SAMPLE, SAMPLE, tick).expect("row");
+        return (l, check, Some(stats));
+    }
+    let mut best: Option<Latch> = None;
+    for k in 0..o.best_of.max(1) {
+        let mut m = board(tc, o, seed.wrapping_add(k as u64 * 104_729));
+        let tick = |m: &Machine, _: &Latch| check.observe(m, &tc.ising);
+        let l = match &o.program {
+            Some(p) => tc.spin_with(&mut m, p.total_time(), p.program(&tc.problem.qubo), SAMPLE, SAMPLE, tick),
+            None => tc.spin(&mut m, &o.anneal, SAMPLE, SAMPLE, tick),
+        }
+        .expect("spin");
+        if best.is_none_or(|b| l.best_energy < b.best_energy) {
+            best = Some(l);
+        }
+    }
+    (best.expect("one spin"), check, None)
 }
 
 /// How many runs' spin checks raised the alarm, and the strip it pointed at
@@ -719,6 +765,149 @@ fn rematch(o: &Opts, a: &SmartWash, b: &SmartWash) {
     report("hardest quarter by Normal", &hard);
 }
 
+/// A row of `k` washers with the command line's ladder and swap interval:
+/// sharing one cycle's compute, or (`full`) each running the whole cycle.
+fn row_of(o: &Opts, k: usize, full: bool) -> Row {
+    let mut r = if full { Row::full(k) } else { Row::equal_compute(k) };
+    r.swap = o.swap.unwrap_or(r.swap);
+    r.cold = o.rcold.unwrap_or(r.cold);
+    r.hot = o.rhot.unwrap_or(r.hot);
+    r
+}
+
+/// `row`: tune a row of washers (`--washers K`, default 4) on --nights: its hit
+/// rate next to Normal's, and how the swaps went.
+fn row_bench(o: &Opts) {
+    let row = o.row.unwrap_or_else(|| row_of(o, trade::row::WASHERS, o.full));
+    let ladder: Vec<String> = row.ladder().iter().map(|t| format!("{t:.2}")).collect();
+    println!(
+        "row: {} washers, ladder [{}], swap every {}, {} units each (+{} settle), {} spins a night",
+        row.washers,
+        ladder.join(", "),
+        row.swap,
+        row.duration,
+        row.settle,
+        o.runs
+    );
+    let t0 = Instant::now();
+    let (mut sum_n, mut sum_r, mut nights) = (0.0, 0.0, 0.0);
+    for night in o.nights.0..=o.nights.1 {
+        for (label, tc) in scenarios(o, night) {
+            let mut on = o.clone();
+            on.night = night;
+            on.row = None;
+            on.program = None;
+            let n = hit_and_loss(&tc, &on).0;
+            on.row = Some(row);
+            let runs: Vec<(Latch, RowStats)> = on_all_cores(o.runs, |r| {
+                let (l, _, s) = spin_one(&tc, &on, on.seed + r as u64 * 7919);
+                (l, s.expect("row stats"))
+            });
+            let hits = runs.iter().filter(|(l, _)| tc.is_optimal(l.best_bits)).count() as f64 / runs.len() as f64;
+            let pairs = row.washers.saturating_sub(1);
+            let rates: Vec<String> = (0..pairs)
+                .map(|i| {
+                    let (a, f) = runs.iter().fold((0, 0), |(a, f), (_, s)| (a + s.accepts[i], f + s.offers[i]));
+                    format!("{:.0}", 100.0 * a as f64 / f.max(1) as f64)
+                })
+                .collect();
+            let trips = runs.iter().map(|(_, s)| s.trips).sum::<usize>() as f64 / runs.len() as f64;
+            println!(
+                "  night {night:>3}: Normal {:>3.0}%, row {:>3.0}%   swaps accepted % [{}], {trips:.1} hot-to-cold trips a spin  ({:.0} s){}",
+                100.0 * n,
+                100.0 * hits,
+                rates.join(" "),
+                t0.elapsed().as_secs_f64(),
+                if o.mix { format!("  {label}") } else { String::new() }
+            );
+            sum_n += n;
+            sum_r += hits;
+            nights += 1.0;
+        }
+    }
+    println!("mean: Normal {:.1}%, row {:.1}%", 100.0 * sum_n / nights, 100.0 * sum_r / nights);
+}
+
+/// `rowmatch`: the row of washers against the smart wash, on the same
+/// boards and seeds, at equal compute (K washers x 1/K of a cycle vs run 5
+/// alone) and as a real row (K whole cycles vs the best of K run-5 washers),
+/// with the row minus its swaps as the control.
+/// Paired sim-opt bootstrap CIs on the per-board differences.
+fn rowmatch(o: &Opts) {
+    use cortenforge::sim::opt::analysis::bootstrap_diff_means;
+    use rand::SeedableRng;
+    let k = o.washers.unwrap_or(trade::row::WASHERS);
+    let smart = o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration));
+    let names = ["Normal", "run 5", "row (equal compute)", "run 5, best of K", "row (K cycles)", "row, no swaps"];
+    let contender = |c: usize| {
+        let mut on = o.clone();
+        on.row = None;
+        on.best_of = 1;
+        on.program = None;
+        match c {
+            1 => on.program = Some(smart.clone()),
+            2 => on.row = Some(row_of(o, k, false)),
+            3 => {
+                on.program = Some(smart.clone());
+                on.best_of = k;
+            }
+            4 => on.row = Some(row_of(o, k, true)),
+            // The control: the same washers and ladder, never trading loads.
+            5 => on.row = Some(Row { swap: f64::INFINITY, ..row_of(o, k, false) }),
+            _ => {}
+        }
+        on
+    };
+    println!("rowmatch: K = {k} washers, ladder {:?}, {} spins a board, nights {}..{}", row_of(o, k, false).ladder(), o.runs, o.nights.0, o.nights.1);
+    let mut rows: Vec<[f64; 6]> = vec![];
+    let t0 = Instant::now();
+    for night in o.nights.0..=o.nights.1 {
+        for (label, tc) in scenarios(o, night) {
+            let mut r = [0.0; 6];
+            for (c, x) in r.iter_mut().enumerate() {
+                let mut on = contender(c);
+                on.night = night;
+                *x = hit_and_loss(&tc, &on).0;
+            }
+            println!(
+                "  night {night:>3}: {}  ({:.0} s){}",
+                r.iter().zip(names).map(|(x, n)| format!("{n} {:>3.0}%", 100.0 * x)).collect::<Vec<_>>().join(", "),
+                t0.elapsed().as_secs_f64(),
+                if o.mix { format!("  {label}") } else { String::new() }
+            );
+            rows.push(r);
+        }
+    }
+    let mut rng = rand::rngs::StdRng::seed_from_u64(o.seed);
+    let mut report = |what: &str, rows: &[[f64; 6]]| {
+        let mean = |c: usize| 100.0 * rows.iter().map(|r| r[c]).sum::<f64>() / rows.len() as f64;
+        println!(
+            "\n{what} ({} boards): {}",
+            rows.len(),
+            names.iter().enumerate().map(|(c, n)| format!("{n} {:.1}%", mean(c))).collect::<Vec<_>>().join(", ")
+        );
+        for (a, b) in [(2, 1), (4, 3), (4, 1), (2, 5), (2, 0)] {
+            let d: Vec<f64> = rows.iter().map(|r| r[a] - r[b]).collect();
+            let ci = bootstrap_diff_means(&d, &[0.0], &mut rng);
+            println!(
+                "  {:<42} {:+5.1} points, 95% CI [{:+5.1}, {:+5.1}] -> {:?}; boards won {}, lost {}",
+                format!("{} - {}", names[a], names[b]),
+                100.0 * ci.point_estimate,
+                100.0 * ci.lower,
+                100.0 * ci.upper,
+                ci.classify(),
+                d.iter().filter(|&&x| x > 0.0).count(),
+                d.iter().filter(|&&x| x < 0.0).count()
+            );
+        }
+    };
+    report("all boards", &rows);
+    let mut hard = rows.clone();
+    hard.sort_by(|x, y| x[0].total_cmp(&y[0]));
+    hard.truncate(rows.len().div_ceil(4));
+    report("hardest quarter by Normal", &hard);
+}
+
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
     if o.smart || o.params.is_some() || o.restarts.is_some() || o.patience.is_some() {
@@ -733,6 +922,9 @@ fn main() -> Result<(), trade::Error> {
         }
         o.program = Some(p);
     }
+    if let Some(k) = o.washers.filter(|_| o.mode != "rowmatch") {
+        o.row = Some(row_of(&o, k, o.full));
+    }
     if o.salty {
         apply_salties(&mut o);
     }
@@ -746,6 +938,14 @@ fn main() -> Result<(), trade::Error> {
         "rematch" => {
             let b = o.vs.as_ref().map_or_else(|| SmartWash::new(o.anneal.duration, &smart::RUN_3), |p| SmartWash::new(o.anneal.duration, p));
             rematch(&o, &o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration)), &b);
+            Ok(())
+        }
+        "row" => {
+            row_bench(&o);
+            Ok(())
+        }
+        "rowmatch" => {
+            rowmatch(&o);
             Ok(())
         }
         "versus" => {

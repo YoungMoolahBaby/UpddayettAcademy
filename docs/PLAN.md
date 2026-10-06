@@ -118,6 +118,35 @@ Ideas for later:
 - items changing hands when the counter settles;
 - sound.
 
+## Step 6: a row of washers (parallel tempering; plan, 2026-10-06)
+
+Backlog item 3. Several washers hold copies of tonight's board, each with
+its drum fixed at one setting on a geometric ladder from cold to hot. Every
+few time units, neighbors offer to trade loads. That is replica exchange,
+the textbook fix for rugged boards like night 4: a load stuck in a bad set
+on a cold washer gets carried up the row, shaken loose, and passed back
+down. The i9 latches the best set any washer reads.
+
+- **Why not sim-opt `Pt`?** `Pt` runs parallel tempering over a policy's
+  *params* (it is a trainer, like CEM). It cannot swap the strips' states
+  between boards. So the row is our own replica exchange on `Machine`s,
+  with sim-opt's bootstrap judging it (see FINDINGS sim-opt).
+- **Swap rule:** accept with min(1, exp[(1/kT_i - 1/kT_j)(U_i - U_j)]),
+  where U is the board's potential energy (double wells + springs +
+  fields). Velocities rescale by sqrt(T_new / T_old).
+- **Library:** `src/trade/row.rs`: `Row` (washers, ladder, swap interval,
+  duration) and `TradeComputer::spin_row`; `Machine::potential` and
+  `Machine::swap_loads`.
+- **Judging** (`trade_cli rowmatch`, paired bootstrap CIs on the same
+  boards, on fresh nights):
+  - *equal compute*: a row of K washers each running 1/K of the cycle,
+    against run 5 alone;
+  - *a real row*: K washers each running the whole cycle, against K
+    run-5 washers working alone (best of K);
+  - tune K, the ladder and the swap interval on training nights first.
+- **In the game** (if it wins): the back row of washers shakes along, and
+  loads hop between them.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
