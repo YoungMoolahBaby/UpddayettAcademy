@@ -7,7 +7,7 @@ use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
-use cortenforge_play::trade::MAX_BITS;
+use cortenforge_play::trade::{MAX_BITS, Sabotage, salties};
 
 use super::sim::{Laundromat, Mode};
 
@@ -44,6 +44,18 @@ pub struct StripSegment {
 
 #[derive(Component)]
 pub struct HallLed(usize);
+
+/// A ceiling light, with its full intensity (the breaker can take it out).
+#[derive(Component)]
+pub struct RoomLight(f32);
+
+/// The Salties' magnet, taped under the counter lip (shown once found).
+#[derive(Component)]
+pub struct MagnetBlock;
+
+/// Upddayett's steel shield plate on the board's front edge.
+#[derive(Component)]
+pub struct ShieldPlate;
 
 #[derive(Component)]
 pub struct I9Led(usize);
@@ -159,11 +171,13 @@ pub fn setup(
         commands.spawn((Mesh3d(tube.clone()), MeshMaterial3d(tube_glow.clone()), Transform::from_xyz(x, 4.6, 0.5)));
         commands.spawn((
             RectLight { color: Color::srgb(0.85, 1.0, 0.9), intensity: 90_000.0, width: 0.3, height: 2.4, range: 20.0 },
+            RoomLight(90_000.0),
             Transform::from_xyz(x, 4.55, 0.5).looking_at(Vec3::new(x, 0.0, 0.5), Vec3::Z),
         ));
     }
     commands.spawn((
         PointLight { intensity: 900_000.0, range: 20.0, shadow_maps_enabled: true, ..default() },
+        RoomLight(900_000.0),
         Transform::from_xyz(1.5, 4.2, 2.5),
     ));
     commands.insert_resource(GlobalAmbientLight { color: Color::srgb(0.7, 0.8, 0.75), brightness: 120.0, ..default() });
@@ -221,6 +235,12 @@ pub fn setup(
             p.spawn((Mesh3d(puck.clone()), MeshMaterial3d(dark.clone()), StripSegment { bit, k: usize::MAX }, HallLed(bit), Transform::default()));
             p.spawn((Mesh3d(led.clone()), MeshMaterial3d(dark.clone()), HallLed(bit), Transform::from_xyz(strip_x(bit), BOARD_Y + 0.02, 0.46)));
         }
+
+        // The Salties' magnet and Upddayett's shield, placed by `salty_props`.
+        let magnet_paint = mats.add(StandardMaterial { base_color: Color::srgb(0.8, 0.08, 0.06), emissive: LinearRgba::rgb(0.6, 0.02, 0.0), ..default() });
+        p.spawn((MagnetBlock, Mesh3d(meshes.add(Cuboid::new(0.07, 0.05, 0.04))), MeshMaterial3d(magnet_paint), Transform::default(), Visibility::Hidden));
+        let width = (2.0 * salties::SHIELD_SPAN as f32 + 1.0) * (strip_x(1) - strip_x(0));
+        p.spawn((ShieldPlate, Mesh3d(meshes.add(Cuboid::new(width, 0.012, 0.1))), MeshMaterial3d(steel.clone()), Transform::default(), Visibility::Hidden));
 
         // The i9, zip-tied to the front panel above the door, with one LED per trade.
         p.spawn((Mesh3d(meshes.add(Cuboid::new(0.68, 0.36, 0.02))), MeshMaterial3d(pcb.clone()), Transform::from_xyz(0.0, 1.32, WASHER.z / 2.0 + 0.012)));
@@ -286,10 +306,71 @@ pub fn setup(
 }
 
 fn strip_x(bit: usize) -> f32 {
+    slot_x(bit as f32)
+}
+
+/// Board x of a (fractional) strip slot.
+fn slot_x(slot: f32) -> f32 {
     // A full board of 20 strips, pitched to fit.
     let n = MAX_BITS as f32;
     let pitch = STRIP_PITCH.min(BOARD_SPAN / n);
-    (bit as f32 - (n - 1.0) / 2.0) * pitch
+    (slot - (n - 1.0) / 2.0) * pitch
+}
+
+/// On a breaker night the tubes buzz and flicker before the spin (the
+/// Salties are at the panel), and the room goes dim when it trips.
+pub fn flicker_lights(time: Res<Time>, lm: Res<Laundromat>, mut lights: Query<(&RoomLight, Option<&mut RectLight>, Option<&mut PointLight>)>, mut ambient: ResMut<GlobalAmbientLight>) {
+    let t = time.elapsed_secs();
+    let breaker_night = matches!(lm.sabotage(), Some(Sabotage::PowerCut(_)));
+    let f = if lm.power_out() {
+        0.12
+    } else if breaker_night && lm.mode != Mode::Done {
+        // A few bad flickers a second, from a hash of the time slot.
+        let slot = (t * 9.0).floor();
+        let h = ((slot * 12.9898).sin() * 43_758.547).fract().abs();
+        if h > 0.82 { 0.2 + 0.25 * (t * 70.0).sin().abs() } else { 1.0 }
+    } else {
+        1.0
+    };
+    for (RoomLight(base), rect, point) in &mut lights {
+        if let Some(mut r) = rect {
+            r.intensity = base * f;
+        }
+        if let Some(mut p) = point {
+            p.intensity = base * f;
+        }
+    }
+    ambient.brightness = 120.0 * f.max(0.35);
+}
+
+/// Where a prop sits and whether it shows.
+type Prop = (&'static mut Transform, &'static mut Visibility);
+
+/// The magnet shows once the drum's done (Upddayett finds it taped under
+/// the counter) or the idle check has caught it; the shield shows where
+/// it's placed.
+pub fn salty_props(
+    lm: Res<Laundromat>,
+    mut magnet: Single<Prop, (With<MagnetBlock>, Without<ShieldPlate>)>,
+    mut shield: Single<Prop, (With<ShieldPlate>, Without<MagnetBlock>)>,
+) {
+    let found = lm.idle.as_ref().is_some_and(|s| s.iter().any(|x| x.abs() >= 0.01 * lm.flat()));
+    let (tf, vis) = &mut *magnet;
+    match lm.sabotage() {
+        Some(Sabotage::Magnet(m)) if found || lm.mode == Mode::Done => {
+            tf.translation = Vec3::new(slot_x(m.pos as f32).clamp(-0.62, 0.62), WASHER.y - 0.05, WASHER.z / 2.0 + 0.02);
+            **vis = Visibility::Inherited;
+        }
+        _ => **vis = Visibility::Hidden,
+    }
+    let (tf, vis) = &mut *shield;
+    match lm.shield {
+        Some(at) => {
+            tf.translation = Vec3::new(strip_x(at), BOARD_Y + 0.01, 0.48);
+            **vis = Visibility::Inherited;
+        }
+        None => **vis = Visibility::Hidden,
+    }
 }
 
 /// The washer rattles harder (and the drum spins faster) the hotter it runs.

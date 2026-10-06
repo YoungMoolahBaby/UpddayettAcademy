@@ -22,7 +22,16 @@ impl Plugin for GamePlugin {
                 Update,
                 (
                     sim::step_sim,
-                    (scene::shake_washer, scene::bend_strips, scene::update_leds, scene::place_board_cam, arrows::draw, arrows::neon),
+                    (
+                        scene::shake_washer,
+                        scene::bend_strips,
+                        scene::update_leds,
+                        scene::flicker_lights,
+                        scene::salty_props,
+                        scene::place_board_cam,
+                        arrows::draw,
+                        arrows::neon,
+                    ),
                 )
                     .chain(),
             )

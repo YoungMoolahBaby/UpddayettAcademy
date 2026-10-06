@@ -4,7 +4,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 use cortenforge::sim::thermostat::WellState;
-use cortenforge_play::trade::{Cycle, World, qubo};
+use cortenforge_play::trade::{Cycle, Sabotage, World, qubo, salties};
 
 use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
@@ -21,6 +21,8 @@ const ICY: egui::Color32 = egui::Color32::from_rgb(140, 200, 255);
 const HUNGRY: egui::Color32 = egui::Color32::from_rgb(255, 150, 60);
 /// Gifts and Karma: the same warm gold as the gift arrows (`arrows::GIFT`).
 const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
+/// The Salties: road-salt white with a cold blue cast.
+const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
 
 /// Below this window size the panels go compact.
 const COMPACT: egui::Vec2 = egui::vec2(1280.0, 760.0);
@@ -160,6 +162,14 @@ pub fn panels(
                 for it in w.items.iter().filter(|it| it.gift) {
                     ui.label(egui::RichText::new(format!("{} gives away: {}", w.npcs[it.owner].name, it.name)).small().color(GIFT_EGUI));
                 }
+                if let Some(s) = lm.sabotage() {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("SALTIES AROUND").strong().color(SALT));
+                        ui.label(egui::RichText::new(s.brag()).small().italics().color(SALT));
+                    })
+                    .response
+                    .on_hover_text("Somebody's been hanging around the counter. Which of their brags is real physics? Check before you spin.");
+                }
                 if !small {
                     ui.label(egui::RichText::new(format!("{} trades + {gifts} gifts on the board", lm.tc.cycles.len() - gifts)).small());
                 }
@@ -187,7 +197,12 @@ pub fn panels(
                 match lm.mode {
                     Mode::Cycle { .. } => {
                         let p = lm.progress() as f32;
-                        let label = if p < 0.98 { "spinning down..." } else { "drum stopping" };
+                        let label = match (lm.power_out(), lm.battery) {
+                            (true, false) => "POWER CUT: the drum stopped",
+                            (true, true) => "power cut: running on the battery",
+                            _ if p < 0.98 => "spinning down...",
+                            _ => "drum stopping",
+                        };
                         ui.add(egui::ProgressBar::new(p).text(label));
                     }
                     Mode::Done => {
@@ -324,6 +339,53 @@ pub fn panels(
                     } else if !small {
                         ui.small("Give something away and the drum sends it where it does the most good.");
                     }
+
+                    // Red-team the machine before the Salties do: find the
+                    // magnet, cover it, or bring the battery.
+                    ui.separator();
+                    ui.label(egui::RichText::new("DEFENSES").strong().color(SALT));
+                    ui.horizontal_wrapped(|ui| {
+                        if ui
+                            .button("Idle check")
+                            .on_hover_text("Stop the drum, let the strips settle, and read every Hall sensor against what the springs say. A stray field means a magnet.")
+                            .clicked()
+                        {
+                            lm.idle_check();
+                        }
+                        if let Some(stray) = &lm.idle {
+                            let (k, top) = stray.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b });
+                            let x = top / lm.flat();
+                            let text = if x >= 0.01 {
+                                format!("strip {k} feels {x:.2}x the flattening field nobody installed")
+                            } else {
+                                format!("every strip sits where the springs say ({x:.2}x)")
+                            };
+                            ui.label(egui::RichText::new(text).small().color(if x >= 0.01 { SALT } else { egui::Color32::GRAY }));
+                        }
+                    });
+                    let mut shield = lm.shield;
+                    ui.horizontal(|ui| {
+                        let mut on = shield.is_some();
+                        ui.checkbox(&mut on, "Steel shield over strip").on_hover_text(format!(
+                            "A plate from a dead hard drive. It passes {:.0}% of a magnet's field, but only if it covers the magnet (within {} strips).",
+                            100.0 * salties::SHIELD,
+                            salties::SHIELD_SPAN
+                        ));
+                        let mut at = shield.unwrap_or(lm.idle.as_ref().map_or(n / 2, |s| {
+                            s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0
+                        }));
+                        ui.add_enabled(on, egui::DragValue::new(&mut at).range(0..=n.saturating_sub(1)));
+                        shield = on.then_some(at);
+                    });
+                    if shield != lm.shield {
+                        lm.set_shield(shield);
+                    }
+                    let mut battery = lm.battery;
+                    ui.checkbox(&mut battery, if lm.battery_cost < 0.5 { "Battery: Vape Lady's 18650s (free tonight)".to_string() } else { format!("Battery: Vape Lady's 18650s (costs the block {:.0} Goo)", lm.battery_cost) })
+                        .on_hover_text("Finishes the cycle if the power goes. They're the cells Upddayett wants for his balance bot: while they run the drum, nobody trades them.");
+                    if battery != lm.battery {
+                        lm.set_battery(battery);
+                    }
                 });
                 let mut watch = lm.watch;
                 if ui
@@ -378,6 +440,13 @@ pub fn panels(
             );
             rule(ui, "A want", GOLD, "gets delivered the cheapest way. Its price is what everyone else gives up.");
             rule(ui, "A give-away", GIFT_EGUI, "costs the giver its Goo and leaves the trades. It earns Karma wherever the drum sends it.");
+            rule(
+                ui,
+                "The Salties",
+                SALT,
+                "brag about big physics; only the honest kind works. A magnet really pushes the strips (find it with the idle check, \
+                 cover it with the shield). A \"solar flare\" is them flipping the breaker (the battery finishes the cycle). The \"EMP\" does nothing.",
+            );
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());
 
@@ -421,12 +490,25 @@ pub fn panels(
                     };
                     ui.label(egui::RichText::new(line).strong().color(GOLD));
                 }
+                let ai = egui::Color32::from_rgb(255, 150, 220);
+                let salty = lm.salty_lines();
+                for (brag, roast) in &salty {
+                    if !brag.is_empty() {
+                        ui.label(egui::RichText::new(format!("Salties: {brag}")).italics().color(SALT));
+                    }
+                    ui.label(egui::RichText::new(format!("AI: \"{roast}\"")).italics().color(ai));
+                }
+                // A miss on a sabotaged night has its own explanation above.
                 let line = if lm.tc.is_optimal(best) {
-                    "AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\""
+                    Some("AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\"")
+                } else if matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
+                    Some("AI: \"You spun it too fast. The strips froze before they could agree.\"")
                 } else {
-                    "AI: \"You spun it too fast. The strips froze before they could agree.\""
+                    None
                 };
-                ui.label(egui::RichText::new(line).italics().color(egui::Color32::from_rgb(255, 150, 220)));
+                if let Some(line) = line {
+                    ui.label(egui::RichText::new(line).italics().color(ai));
+                }
                 ui.separator();
             }
             let room = (rules_top - 24.0 - ui.cursor().min.y).max(80.0);

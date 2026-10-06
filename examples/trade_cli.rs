@@ -9,11 +9,17 @@
 //!                    rate; --costly keeps only wants that cost the block Goo
 //!   night            tonight's conditions, and what every want is worth and means
 //!   nights           how much 200 nights vary (board size, best value)
+//!   magnets          sweep a magnet's strength and position: hit rate vs the clean best set,
+//!                    Goo lost, the i9's idle check, and the calibration load
+//!   cuts             sweep when the breaker trips, and the battery
 //!
 //!   --night N        which night (default 1)
 //!
 //!   --want WHO:WHAT  backward mode, e.g. --want upd:hub
 //!   --give WHO:WHAT  WHO gives WHAT away tonight (a gift strip), e.g. --give upd:phone
+//!   --magnet POS:S   a magnet under strip POS pushing S x the flattening field (+ on, - off)
+//!   --shield         the hard-drive steel over the magnet   --cut F  the breaker trips F (0..1) in
+//!   --salty          whatever the Salties roll tonight (magnet or cut)
 //!   --clamp C        want clamp, x the well-flattening field (0 = off)  --margin M
 //!   --seed N  --runs N
 //!   --beta B  --penalty P  --dv DV  --gamma G  --dt DT
@@ -22,7 +28,7 @@
 use std::time::Instant;
 
 use cortenforge::sim::thermostat::WellState;
-use cortenforge_play::trade::{self, Anneal, Latch, Machine, Physics, TradeComputer, qubo};
+use cortenforge_play::trade::{self, Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, qubo, salties};
 
 #[derive(Clone)]
 struct Opts {
@@ -35,6 +41,9 @@ struct Opts {
     chain: usize,
     want: Option<String>,
     give: Option<String>,
+    magnet: Option<Magnet>,
+    shield: bool,
+    salty: bool,
     seed: u64,
     night: u64,
     runs: usize,
@@ -55,6 +64,9 @@ fn parse() -> Opts {
         chain: trade::cycles::MAX_CHAIN,
         want: None,
         give: None,
+        magnet: None,
+        shield: false,
+        salty: false,
         seed: 1,
         night: 1,
         runs: 48,
@@ -75,6 +87,14 @@ fn parse() -> Opts {
         match a {
             "--want" => o.want = Some(val()),
             "--give" => o.give = Some(val()),
+            "--magnet" => {
+                let v = val();
+                let (p, s) = v.split_once(':').expect("--magnet POS:STRENGTH");
+                o.magnet = Some(Magnet { pos: num(p.into()), strength: num(s.into()) });
+            }
+            "--shield" => o.shield = true,
+            "--salty" => o.salty = true,
+            "--cut" => o.anneal.cut = Some(num(val())),
             "--bench" => o.bench = true,
             "--costly" => o.costly = true,
             "--margin" => o.margin = Some(num(val())),
@@ -215,7 +235,8 @@ fn run(o: &Opts) -> Result<(), trade::Error> {
 
     println!("\nSPIN CYCLE (seed {}): # = trade on, . = off, ~ = strip mid-flip; i9 = best latched so far", o.seed);
     println!("  time   drum kT  strips{}  value  i9", " ".repeat(n.saturating_sub(6)));
-    let mut m = tc.machine(o.physics, o.seed)?;
+    report_sabotage(&tc, o);
+    let mut m = board(&tc, o, o.seed);
     let t0 = Instant::now();
     let every = o.anneal.total_time() / 30.0;
     let latch = tc.spin(&mut m, &o.anneal, SAMPLE, every, |m, l| {
@@ -259,6 +280,50 @@ fn run(o: &Opts) -> Result<(), trade::Error> {
 /// How often the i9 reads the Hall sensors, in sim time units.
 const SAMPLE: f64 = 1.0;
 
+/// The magnet as it reaches the strips (through the shield, if any).
+fn magnet(o: &Opts) -> Option<Magnet> {
+    o.magnet.map(|m| if o.shield { m.shielded() } else { m })
+}
+
+/// A fresh board, with the magnet under it if there is one.
+fn board(tc: &TradeComputer, o: &Opts, seed: u64) -> Machine {
+    match magnet(o) {
+        Some(m) => tc.tampered_machine(o.physics, seed, &m),
+        None => tc.machine(o.physics, seed),
+    }
+    .expect("machine")
+}
+
+/// The i9's idle check on a fresh board: the biggest stray field it reads
+/// (x the flattening field) and on which strip.
+fn idle_check(tc: &TradeComputer, o: &Opts) -> (f64, usize) {
+    let mut m = board(tc, o, o.seed);
+    m.rest(30.0).expect("rest");
+    let flat = trade::machine::max_safe_field(o.physics.delta_v);
+    m.stray_field(&tc.ising).iter().enumerate().fold((0.0, 0), |b, (i, x)| if x.abs() / flat > b.0 { (x.abs() / flat, i) } else { b })
+}
+
+/// Hit rate vs the clean best set, and mean Goo lost, over `o.runs` spins.
+fn hit_and_loss(tc: &TradeComputer, o: &Opts) -> (f64, f64, f64) {
+    let r = spin_many(tc, o);
+    let n = r.len() as f64;
+    let best = tc.evaluate(tc.ground_state()).0;
+    let hits = r.iter().filter(|x| tc.is_optimal(x.0.best_bits)).count() as f64 / n;
+    let lost = r.iter().map(|x| best - tc.evaluate(x.0.best_bits).0).sum::<f64>() / n;
+    let clashes = r.iter().filter(|x| tc.evaluate(x.0.best_bits).1).count() as f64 / n;
+    (hits, lost, clashes)
+}
+
+/// Tonight's sabotage into the options (`--salty`).
+fn apply_salties(o: &mut Opts) {
+    match trade::world::laundromat(o.night).night.sabotage {
+        Some(Sabotage::Magnet(m)) => o.magnet = Some(m),
+        Some(Sabotage::PowerCut(at)) => o.anneal.cut = Some(at),
+        Some(Sabotage::Emp) => println!("The Salties try their \"EMP\". It made popcorn."),
+        None => {}
+    }
+}
+
 /// `o.runs` seeded spin cycles from fresh random strips, on all cores.
 /// Returns each run's latch and wall time.
 fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
@@ -270,7 +335,7 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
                     (t..o.runs)
                         .step_by(threads)
                         .map(|r| {
-                            let mut m = tc.machine(o.physics, o.seed + r as u64 * 7919).expect("machine");
+                            let mut m = board(tc, o, o.seed + r as u64 * 7919);
                             let t = Instant::now();
                             let l = tc.spin(&mut m, &o.anneal, SAMPLE, f64::INFINITY, |_, _| {}).expect("spin");
                             (l, t.elapsed().as_secs_f64())
@@ -283,10 +348,26 @@ fn spin_many(tc: &TradeComputer, o: &Opts) -> Vec<(Latch, f64)> {
     })
 }
 
+/// What the Salties did to this run, and what the i9's idle check sees.
+fn report_sabotage(tc: &TradeComputer, o: &Opts) {
+    if let Some(m) = o.magnet {
+        let (stray, strip) = idle_check(tc, o);
+        println!(
+            "Sabotage: {}{}. The i9's idle check reads a stray field of {stray:.2}x flattening on strip {strip}. Scored against the clean best set.",
+            Sabotage::Magnet(m).describe(),
+            if o.shield { format!(", behind the shield ({:.2}x gets through)", m.shielded().strength.abs()) } else { String::new() }
+        );
+    }
+    if let Some(at) = o.anneal.cut {
+        println!("Sabotage: {}; the drum stops at t={:.0}.", Sabotage::PowerCut(at).describe(), o.anneal.stop_time());
+    }
+}
+
 fn bench(o: &Opts) -> Result<(), trade::Error> {
     let tc = setup(o);
     let ground = report_problem(&tc, o);
     let (gv, _) = tc.evaluate(ground);
+    report_sabotage(&tc, o);
     let threads = std::thread::available_parallelism().map_or(4, |n| n.get());
     let t0 = Instant::now();
     let results = spin_many(&tc, o);
@@ -321,7 +402,10 @@ fn bench(o: &Opts) -> Result<(), trade::Error> {
 }
 
 fn main() -> Result<(), trade::Error> {
-    let o = parse();
+    let mut o = parse();
+    if o.salty {
+        apply_salties(&mut o);
+    }
     match o.mode.as_str() {
         "run" => run(&o),
         "bench" => bench(&o),
@@ -381,6 +465,10 @@ fn main() -> Result<(), trade::Error> {
             let tc = setup(&o);
             let w = &tc.world;
             println!("Night {}: {}. {} trades on the board ({} left off).", o.night, w.weather(), tc.cycles.len(), tc.dropped);
+            match w.night.sabotage {
+                Some(s) => println!("  The Salties: {} (--salty replays it).", s.describe()),
+                None => println!("  No Salties tonight."),
+            }
             for (k, npc) in w.npcs.iter().enumerate() {
                 let c = w.conditions(k);
                 let covered = if w.needs_covered(k) { "needs covered" } else { "needs NOT covered" };
@@ -433,6 +521,57 @@ fn main() -> Result<(), trade::Error> {
             println!(
                 "  the food goes first to someone hungry on {fed_hungry}; to someone fed while a hungry person wanted it on {gift_to_fed}"
             );
+            Ok(())
+        }
+        "magnets" => {
+            // A magnet's strength (at mid-board) and position, open and
+            // shielded: hit rate vs the clean best set, Goo lost, what the
+            // idle check reads, and how often the calibration load misses.
+            let tc = setup(&o);
+            let calib = salties::calibration_load();
+            let (best, _) = tc.evaluate(tc.ground_state());
+            let mid = (tc.cycles.len() as f64 - 1.0) / 2.0;
+            let clean = hit_and_loss(&tc, &Opts { magnet: None, ..o.clone() });
+            let calib_clean = hit_and_loss(&calib, &Opts { magnet: None, ..o.clone() });
+            println!(
+                "Night {}: {} strips, best set {best:.1}. No magnet: best set {:.0}%, calibration load missed {:.0}%. {} runs each.",
+                o.night,
+                tc.cycles.len(),
+                100.0 * clean.0,
+                100.0 * (1.0 - calib_clean.0),
+                o.runs
+            );
+            println!("  magnet                       | open: best  lost  clash  idle  calib-miss | shielded: best  lost  idle  calib-miss");
+            let mut configs: Vec<Magnet> = [-1.5, -1.0, -0.6, -0.3, 0.3, 0.6, 1.0, 1.5].iter().map(|&s| Magnet { pos: mid, strength: s }).collect();
+            configs.extend([3.0, 6.0, 12.0].iter().map(|&d| Magnet { pos: mid + d, strength: -1.0 }));
+            for m in configs {
+                let mut row = format!("  {:<28}", Sabotage::Magnet(m).describe().replace("a magnet under ", ""));
+                for shield in [false, true] {
+                    let oo = Opts { magnet: Some(m), shield, ..o.clone() };
+                    let (hit, lost, clash) = hit_and_loss(&tc, &oo);
+                    let (idle, _) = idle_check(&tc, &oo);
+                    let (cal, _, _) = hit_and_loss(&calib, &oo);
+                    row += &if shield {
+                        format!(" |           {:>3.0}% {lost:>5.1} {idle:>5.2}  {:>5.0}%", 100.0 * hit, 100.0 * (1.0 - cal))
+                    } else {
+                        format!(" |       {:>3.0}% {lost:>5.1}  {:>4.0}% {idle:>5.2}  {:>5.0}%", 100.0 * hit, 100.0 * clash, 100.0 * (1.0 - cal))
+                    };
+                }
+                println!("{row}");
+            }
+            Ok(())
+        }
+        "cuts" => {
+            // When the breaker trips, and the battery that finishes the cycle.
+            let tc = setup(&o);
+            let (best, _) = tc.evaluate(tc.ground_state());
+            println!("Night {}: best set {best:.1}, {} runs each, {:.0}-unit cool-down.", o.night, o.runs, o.anneal.duration);
+            for cut in [Some(0.15), Some(0.3), Some(0.5), Some(0.7), Some(0.85), None] {
+                let oo = Opts { anneal: Anneal { cut, ..o.anneal }, ..o.clone() };
+                let (hit, lost, clash) = hit_and_loss(&tc, &oo);
+                let what = cut.map_or("no cut (battery)".to_string(), |c| format!("cut {:.0}% in (kT x{:.2})", 100.0 * c, o.anneal.temperature(c * o.anneal.duration)));
+                println!("  {what:<26} best set {:>3.0}%, lost {lost:>4.1} Goo, clashes {:>3.0}%", 100.0 * hit, 100.0 * clash);
+            }
             Ok(())
         }
         "cycles" => {

@@ -3,6 +3,7 @@
 //! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
 //! `UPD_NEXT=1` goes to the next night first (checks the night switch).
 //! `UPD_GIVE=what` (e.g. `phone`) has Upddayett give that away (before the want).
+//! `UPD_BATTERY=1`, `UPD_IDLE=1`, `UPD_SHIELD=<strip>|found`: defenses (see below).
 //! For checking the look without sitting in front of the window.
 
 use bevy::prelude::*;
@@ -37,6 +38,26 @@ pub fn drive(
                 Some(item) => lm.set_give(Some(item)),
                 None => error!("UPD_GIVE: Upddayett has nothing like {what:?} to give"),
             }
+        }
+        // Defenses: UPD_BATTERY=1, UPD_IDLE=1 (idle check), UPD_SHIELD=<strip>
+        // or UPD_SHIELD=found (over the strip the idle check flags).
+        if std::env::var_os("UPD_BATTERY").is_some() {
+            lm.set_battery(true);
+        }
+        let shield = std::env::var("UPD_SHIELD").ok();
+        if std::env::var_os("UPD_IDLE").is_some() || shield.as_deref() == Some("found") {
+            lm.idle_check();
+        }
+        match shield.as_deref() {
+            Some("found") => {
+                let at = lm.idle.as_ref().map(|s| s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0);
+                lm.set_shield(at);
+            }
+            Some(s) => match s.parse() {
+                Ok(at) => lm.set_shield(Some(at)),
+                Err(_) => error!("UPD_SHIELD: a strip number or \"found\", not {s:?}"),
+            },
+            None => {}
         }
         if let Some((who, what)) = std::env::var("UPD_WANT").ok().as_deref().and_then(|w| w.split_once(':')) {
             let npc = lm.tc.world.find_npc(who);

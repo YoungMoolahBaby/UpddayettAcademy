@@ -43,22 +43,31 @@ pub struct Anneal {
     pub cold: f64,
     pub duration: f64,
     pub settle: f64,
+    /// A tripped breaker: the drum stops this far (0..1) through the
+    /// cool-down and the settle starts early, so the strips freeze into
+    /// whatever they had (a quench). `None`: the power holds.
+    pub cut: Option<f64>,
 }
 
 impl Default for Anneal {
     fn default() -> Self {
-        Self { hot: 4.0, cold: 0.35, duration: 1000.0, settle: 20.0 }
+        Self { hot: 4.0, cold: 0.35, duration: 1000.0, settle: 20.0, cut: None }
     }
 }
 
 impl Anneal {
+    /// When the drum stops shaking: the end of the cool-down, or the cut.
+    pub fn stop_time(&self) -> f64 {
+        self.duration * self.cut.map_or(1.0, |c| c.clamp(0.0, 1.0))
+    }
+
     pub fn total_time(&self) -> f64 {
-        self.duration + self.settle
+        self.stop_time() + self.settle
     }
 
     /// Drum temperature multiplier at time `t`.
     pub fn temperature(&self, t: f64) -> f64 {
-        if t >= self.duration {
+        if t >= self.stop_time() {
             0.0
         } else {
             self.hot * (self.cold / self.hot).powf(t / self.duration)
@@ -81,6 +90,17 @@ pub struct Machine {
 
 impl Machine {
     pub fn new(ising: &Ising, physics: Physics, seed: u64) -> Result<Self, Error> {
+        Self::build(ising, physics, seed, None)
+    }
+
+    /// A board with a field the i9 didn't install on top (a magnet under
+    /// the counter): a second `ExternalField` in the stack, so it sums with
+    /// the trade biases and the want. `stray` has one entry per strip.
+    pub fn with_stray_field(ising: &Ising, physics: Physics, seed: u64, stray: &[f64]) -> Result<Self, Error> {
+        Self::build(ising, physics, seed, Some(stray))
+    }
+
+    fn build(ising: &Ising, physics: Physics, seed: u64, stray: Option<&[f64]>) -> Result<Self, Error> {
         let n = ising.n;
         // One actuator slot so ctrl[0] exists; it drives temperature, not force.
         let xml = generate_mjcf(n, 1, physics.dt, (0.0, 10.0));
@@ -95,6 +115,10 @@ impl Machine {
         }
         assert_eq!(ising.h.len(), n, "ExternalField needs one entry per bit");
         b = b.with(ExternalField::new(ising.h.clone()));
+        if let Some(stray) = stray {
+            assert_eq!(stray.len(), n, "ExternalField needs one entry per bit");
+            b = b.with(ExternalField::new(stray.to_vec()));
+        }
         b = b.with(
             LangevinThermostat::new(DVector::from_element(n, physics.gamma), physics.k_b_t, seed, 0)
                 .with_ctrl_temperature(0),
@@ -168,5 +192,33 @@ impl Machine {
 
     pub fn all_in_wells(&self) -> bool {
         (0..self.n).all(|i| self.well(i).is_in_well())
+    }
+
+    /// Stop the drum for `time` units so the strips come to rest (the
+    /// damping takes a strip's ringing down by e^-15 in 30 units).
+    pub fn rest(&mut self, time: f64) -> Result<(), Error> {
+        self.set_temperature(0.0);
+        let steps = (time / self.physics.dt).round() as usize;
+        for _ in 0..steps {
+            self.step()?;
+        }
+        Ok(())
+    }
+
+    /// The i9's idle check, on strips at rest ([`Machine::rest`]): each
+    /// strip's Hall reading says where it sits, so the well's pull there is
+    /// known, and it must balance the springs and the fields the i9
+    /// installed (`ising`). Whatever is left over is a field it didn't
+    /// install: a magnet. A strip sitting `d` off its usual rest point
+    /// reads about `8 dV d` here (the well's stiffness).
+    pub fn stray_field(&self, ising: &Ising) -> Vec<f64> {
+        let x = self.positions();
+        // V = dV (x^2 - 1)^2 with x0 = 1 (as built above); V' = 4 dV x (x^2 - 1).
+        let mut f: Vec<f64> = (0..self.n).map(|i| 4.0 * self.physics.delta_v * x[i] * (x[i] * x[i] - 1.0) - ising.h[i]).collect();
+        for (&(i, k), &j) in ising.edges.iter().zip(&ising.j) {
+            f[i] -= j * x[k];
+            f[k] -= j * x[i];
+        }
+        f
     }
 }

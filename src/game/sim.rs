@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
-use cortenforge_play::trade::{Anneal, Latch, Machine, Physics, TradeComputer, world};
+use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, machine, salties, world};
 
 /// What the drum is doing.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -47,6 +47,18 @@ pub struct Laundromat {
     /// What he could give away (someone wants it), with what it costs him
     /// (his own value for it tonight, in Goo).
     pub give_menu: Vec<(usize, f64)>,
+    /// Steel shield over this strip, if placed. It stops a magnet only if it
+    /// covers it ([`salties::SHIELD_SPAN`]).
+    pub shield: Option<usize>,
+    /// The drum runs on the vape-cell battery tonight (the cells leave the
+    /// trades).
+    pub battery: bool,
+    /// What the battery costs the block tonight (Goo off the best set).
+    pub battery_cost: f64,
+    /// The last idle check: the stray field on each strip (the Hall offsets).
+    pub idle: Option<Vec<f64>>,
+    /// Sim time the breaker trips this cycle, on a power-cut night.
+    pub cut_at: Option<f64>,
 }
 
 /// A wash program: how long the drum takes to cool (the physics), and how
@@ -75,18 +87,28 @@ fn upddayett(w: &world::World) -> usize {
 }
 
 /// Tonight's trade computer for night `night`, with Upddayett giving `give`
-/// away (if anything).
-fn open(night: u64, give: Option<usize>) -> TradeComputer {
+/// away (if anything) and the battery holding its cells (if it runs).
+fn board_for(night: u64, give: Option<usize>, battery: bool) -> TradeComputer {
     let mut w = world::laundromat(night);
     if let Some(item) = give {
         w.set_gift(item, true);
     }
-    let tc = TradeComputer::new(w, 5.0, 1.6);
+    if battery {
+        w.set_held(w.find_item(salties::BATTERY_CELLS).expect("Vape Lady's cells"), true);
+    }
+    TradeComputer::new(w, 5.0, 1.6)
+}
+
+/// [`board_for`], logged.
+fn open(night: u64, give: Option<usize>, battery: bool) -> TradeComputer {
+    let tc = board_for(night, give, battery);
     let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
     info!(
-        "night {night} (UPD_SEED={night} replays it): {}{}, {} trades + {gifts} gifts{}",
+        "night {night} (UPD_SEED={night} replays it): {}{}{}{}, {} trades + {gifts} gifts{}",
         tc.world.weather(),
         give.map_or(String::new(), |item| format!(", Upddayett gives away the {}", tc.world.items[item].name)),
+        tc.world.night.sabotage.map_or(String::new(), |s| format!(", the Salties try {}", s.describe())),
+        if battery { ", drum on the battery" } else { "" },
         tc.cycles.len() - gifts,
         if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
     );
@@ -108,13 +130,18 @@ impl Laundromat {
         let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let tc = open(night, None);
+        let tc = open(night, None, false);
         let machine = tc.machine(physics, night).expect("build the slap-bit board");
         let mut lm = Self {
             want_menu: vec![],
             picker_npc: 0,
             give: None,
             give_menu: vec![],
+            shield: None,
+            battery: false,
+            battery_cost: 0.0,
+            idle: None,
+            cut_at: None,
             tc,
             machine,
             physics,
@@ -130,7 +157,127 @@ impl Laundromat {
             activity: vec![],
         };
         lm.price_wants();
+        lm.machine = lm.board(night);
         lm
+    }
+
+    /// What the Salties try tonight, if anything.
+    pub fn sabotage(&self) -> Option<Sabotage> {
+        self.tc.world.night.sabotage
+    }
+
+    /// Tonight's magnet as it reaches the strips (through the shield).
+    pub fn magnet(&self) -> Option<Magnet> {
+        match self.sabotage() {
+            Some(Sabotage::Magnet(m)) => Some(m.through(self.shield.map(|s| s as f64))),
+            _ => None,
+        }
+    }
+
+    /// A fresh board for tonight, with the magnet under it if there is one.
+    fn board(&self, seed: u64) -> Machine {
+        match self.magnet() {
+            Some(m) => self.tc.tampered_machine(self.physics, seed, &m),
+            None => self.tc.machine(self.physics, seed),
+        }
+        .expect("build the slap-bit board")
+    }
+
+    /// The well-flattening field, the unit the Salties' numbers are quoted in.
+    pub fn flat(&self) -> f64 {
+        machine::max_safe_field(self.physics.delta_v)
+    }
+
+    /// Has the breaker tripped this cycle?
+    pub fn power_out(&self) -> bool {
+        self.cut_at.is_some_and(|t| self.machine.time() >= t)
+    }
+
+    /// The i9's idle check: stop the drum, let the strips come to rest, and
+    /// read every Hall sensor against what the springs and fields say.
+    pub fn idle_check(&mut self) {
+        if matches!(self.mode, Mode::Cycle { .. }) {
+            return;
+        }
+        self.dial = 0.0;
+        self.mode = Mode::Manual;
+        self.machine.rest(30.0).expect("rest the strips");
+        let stray = self.machine.stray_field(&self.tc.ising);
+        let (i, top) = stray.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1.abs() { (i, *x) } else { b });
+        info!("idle check: largest stray field {:.2}x flattening on strip {i}", top.abs() / self.flat());
+        self.idle = Some(stray);
+    }
+
+    /// Put the steel shield over strip `at` (or take it off). The field on
+    /// the strips changes, so the board is rebuilt with the strips carried over.
+    pub fn set_shield(&mut self, at: Option<usize>) {
+        if matches!(self.mode, Mode::Cycle { .. }) || at == self.shield {
+            return;
+        }
+        self.shield = at;
+        let mut board = self.board(self.seed);
+        board.take_state_from(&self.machine).expect("carry the strips over");
+        self.machine = board;
+        self.idle = None;
+        self.latch = Latch::new();
+        self.mode = Mode::Manual;
+        info!("shield: {}", at.map_or("off".into(), |s| format!("over strip {s}")));
+    }
+
+    /// Run the drum on the vape-cell battery tonight (or not). The cells
+    /// leave the trades, so the board is rebuilt.
+    pub fn set_battery(&mut self, on: bool) {
+        if matches!(self.mode, Mode::Cycle { .. }) || on == self.battery {
+            return;
+        }
+        self.battery = on;
+        self.reopen();
+    }
+
+    /// After the spin: what the Salties did, with the measured numbers
+    /// (their brag first, then the AI's roast).
+    pub fn salty_lines(&self) -> Vec<(String, String)> {
+        let lost = self.tc.evaluate(self.ground).0 - self.tc.evaluate(self.latch.best_bits).0;
+        let cost = if lost < 0.5 { "The drum still found the best set.".to_string() } else { format!("It cost the block {lost:.0} Goo.") };
+        let mut lines = match self.sabotage() {
+            Some(Sabotage::Magnet(raw)) => {
+                let n = self.n();
+                let k = raw.strip(n);
+                let open = raw.field(n, self.physics.delta_v)[k].abs() / self.flat();
+                let got = self.magnet().map_or(0.0, |m| m.field(n, self.physics.delta_v)[k].abs() / self.flat());
+                let roast = if got < open {
+                    format!("Their magnet pushed strip {k} at {open:.2}x the flattening field. Your shield took it to {got:.2}x. Steel: 1, Salt: 0.")
+                } else if open > 1.0 {
+                    format!("A magnet under strip {k}, {open:.2}x the flattening field: past it, so those strips were pinned. {cost}")
+                } else {
+                    format!("A magnet under strip {k}, {open:.2}x the flattening field. It quietly tilted the drum. {cost}")
+                };
+                vec![("\"Magnet stuff, baby.\"".into(), roast)]
+            }
+            Some(Sabotage::PowerCut(at)) => {
+                let t = self.anneal.temperature(at * self.anneal.duration - 1e-9) * self.physics.k_b_t;
+                let roast = if self.battery {
+                    let held = if self.battery_cost < 0.5 {
+                        ", and nobody needed them for a trade tonight".to_string()
+                    } else {
+                        format!(", but holding them back cost the block {:.0} Goo of trades", self.battery_cost)
+                    };
+                    format!("A flare doesn't flip breakers. A hand does: {:.0}% in. Six 18650s finished the cycle{held}.", 100.0 * at)
+                } else {
+                    format!(
+                        "A flare doesn't flip breakers. A hand does: {:.0}% in, at {t:.2} kT. The strips froze where they were: a quench, not an anneal. {cost}",
+                        100.0 * at
+                    )
+                };
+                vec![("\"Solar flare!\"".into(), roast)]
+            }
+            Some(Sabotage::Emp) => vec![("\"EMP, baby!\"".into(), "It made popcorn.".into())],
+            None => vec![],
+        };
+        if self.battery && self.battery_cost >= 0.5 && !matches!(self.sabotage(), Some(Sabotage::PowerCut(_))) {
+            lines.push((String::new(), format!("Nobody touched the breaker. The battery sat there and cost the block {:.0} Goo of trades.", self.battery_cost)));
+        }
+        lines
     }
 
     /// Board-dependent state for a fresh night: the best set, every want's
@@ -156,6 +303,9 @@ impl Laundromat {
         }
         let upd = upddayett(&kept);
         self.give_menu = kept.giveable(upd).into_iter().map(|item| (item, kept.value[upd][item])).collect();
+        // What the battery takes off tonight's best set.
+        let best = |tc: &TradeComputer| tc.evaluate(tc.forward_best).0;
+        self.battery_cost = (best(&board_for(self.night, self.give, false)) - best(&board_for(self.night, self.give, true))).max(0.0);
         self.ground = tc.ground_state();
         self.activity = vec![0.0; tc.cycles.len()];
     }
@@ -192,8 +342,10 @@ impl Laundromat {
         if self.give.is_some_and(|item| !world::laundromat(self.night).giveable(upd).contains(&item)) {
             self.give = None;
         }
-        self.tc = open(self.night, self.give);
-        self.machine = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
+        self.tc = open(self.night, self.give, self.battery);
+        self.idle = None;
+        self.cut_at = None;
+        self.machine = self.board(self.seed);
         self.latch = Latch::new();
         self.mode = Mode::Manual;
         self.price_wants();
@@ -213,7 +365,8 @@ impl Laundromat {
     /// Fresh laundry: rebuild the board with new random strip positions.
     pub fn new_load(&mut self) {
         self.seed += 1;
-        self.machine = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
+        self.machine = self.board(self.seed);
+        self.cut_at = None;
         self.latch = Latch::new();
         self.mode = Mode::Manual;
         info!("new load: seed {}, strips re-randomized", self.seed);
@@ -234,7 +387,7 @@ impl Laundromat {
             }
             None => self.tc.clear_want(),
         }
-        let mut board = self.tc.machine(self.physics, self.seed).expect("build the slap-bit board");
+        let mut board = self.board(self.seed);
         board.take_state_from(&self.machine).expect("carry the strips over");
         self.machine = board;
         self.ground = self.tc.ground_state();
@@ -259,6 +412,13 @@ impl Laundromat {
         self.new_load();
         let p = &PROGRAMS[self.program];
         self.anneal.duration = p.duration;
+        // The breaker trips on a power-cut night; the battery keeps the drum going.
+        let cut = match self.sabotage() {
+            Some(Sabotage::PowerCut(at)) => Some(at),
+            _ => None,
+        };
+        self.anneal.cut = cut.filter(|_| !self.battery);
+        self.cut_at = cut.map(|at| self.machine.time() + at * p.duration);
         self.mode = Mode::Cycle { start: self.machine.time() };
         info!(
             "spin cycle: {} (kT x{} -> x{} over {} units; i9 finds the best set {} of the time), watching at {:.0} units/s",

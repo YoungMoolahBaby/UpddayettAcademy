@@ -1,6 +1,8 @@
 //! Laundromat customers, what they bring, what they want, and tonight's
 //! conditions (who's hungry, who's cold), which set what everything is worth.
 
+use super::salties::Sabotage;
+
 /// Why someone wants (or holds) a thing. The tag goes on the want, not the
 /// item: Pigeon Lady wants kale to feed her pigeons, Tamara wants it to eat.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -39,6 +41,9 @@ pub struct Item {
     /// Given away tonight: it can start a gift chain, and its owner asks
     /// nothing for it.
     pub gift: bool,
+    /// Off the market tonight (the battery is running on it): nobody but
+    /// its owner wants it, so no trade moves it.
+    pub held: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -67,29 +72,35 @@ pub struct Night {
     pub cold: bool,
     pub hungry: Vec<bool>,
     pub animals_hungry: Vec<bool>,
+    /// What the Salties try tonight, if they show up. It doesn't change what
+    /// anything is worth; it changes the machine.
+    pub sabotage: Option<Sabotage>,
 }
 
 impl Night {
-    /// Nobody hungry, mild weather, animals fed.
+    /// Nobody hungry, mild weather, animals fed, no Salties.
     pub fn calm(n_npcs: usize) -> Self {
-        Self { seed: 0, cold: false, hungry: vec![false; n_npcs], animals_hungry: vec![false; n_npcs] }
+        Self { seed: 0, cold: false, hungry: vec![false; n_npcs], animals_hungry: vec![false; n_npcs], sabotage: None }
     }
 
     /// Roll a night. People sleeping out go hungry more often; only people
     /// with animals can have hungry animals. A business draws its
     /// hunger coin too (and ignores it), so every later coin stays put.
+    /// The Salties' draws come last, so the nights from before they
+    /// existed keep their weather and hunger.
     pub fn roll(npcs: &[Npc], seed: u64) -> Self {
         let mut s = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
-        let mut coin = |p: f64| {
+        let mut uniform = || {
             s ^= s << 13;
             s ^= s >> 7;
             s ^= s << 17;
-            ((s >> 11) as f64 / (1u64 << 53) as f64) < p
+            (s >> 11) as f64 / (1u64 << 53) as f64
         };
-        let cold = coin(0.5);
-        let hungry = npcs.iter().map(|n| coin(if n.sleeps_out { 0.6 } else { 0.15 }) && !n.business).collect();
-        let animals_hungry = npcs.iter().map(|n| n.has_animals && coin(0.6)).collect();
-        Self { seed, cold, hungry, animals_hungry }
+        let cold = uniform() < 0.5;
+        let hungry = npcs.iter().map(|n| uniform() < (if n.sleeps_out { 0.6 } else { 0.15 }) && !n.business).collect();
+        let animals_hungry = npcs.iter().map(|n| n.has_animals && uniform() < 0.6).collect();
+        let sabotage = Sabotage::roll(std::array::from_fn(|_| uniform()));
+        Self { seed, cold, hungry, animals_hungry, sabotage }
     }
 }
 
@@ -139,7 +150,7 @@ impl World {
 
     /// Adds an item held by `owner`, worth `base` to them on a neutral night.
     fn has(&mut self, owner: usize, name: &'static str, base: f64, owner_use: Use) -> usize {
-        self.items.push(Item { name, owner, owner_use, base, gift: false });
+        self.items.push(Item { name, owner, owner_use, base, gift: false, held: false });
         self.items.len() - 1
     }
 
@@ -166,6 +177,9 @@ impl World {
             value[it.owner][id] = if it.gift { 0.0 } else { whole_goo(it.base * scale) };
         }
         for w in &self.wants {
+            if self.items[w.item].held {
+                continue;
+            }
             let (scale, _) = rule(w.use_, &self.npcs[w.npc], w.npc, &self.night);
             value[w.npc][w.item] = whole_goo(w.base * scale);
         }
@@ -194,6 +208,13 @@ impl World {
     /// owner asks nothing for it.
     pub fn set_gift(&mut self, item: usize, gift: bool) {
         self.items[item].gift = gift;
+        self.set_night(self.night.clone());
+    }
+
+    /// Take `item` off the market tonight, or put it back: while it's held
+    /// nobody wants it, so no trade or gift moves it.
+    pub fn set_held(&mut self, item: usize, held: bool) {
+        self.items[item].held = held;
         self.set_night(self.night.clone());
     }
 

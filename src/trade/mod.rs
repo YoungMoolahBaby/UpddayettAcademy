@@ -9,11 +9,13 @@
 pub mod cycles;
 pub mod machine;
 pub mod qubo;
+pub mod salties;
 pub mod world;
 
 pub use cycles::{Cycle, Kind, Leg};
 pub use machine::{Anneal, Error, Machine, Physics};
 pub use qubo::{Ising, Qubo, TradeProblem};
+pub use salties::{Magnet, Sabotage};
 pub use world::World;
 
 use cortenforge::sim::thermostat::ising::exact_distribution;
@@ -283,6 +285,13 @@ impl TradeComputer {
 
     pub fn machine(&self, physics: Physics, seed: u64) -> Result<Machine, Error> {
         Machine::new(&self.ising, physics, seed)
+    }
+
+    /// The board with a magnet under the counter. The i9 doesn't know about
+    /// it: it still latches and scores by the clean night's QUBO, so
+    /// whatever the magnet costs shows up as a loss.
+    pub fn tampered_machine(&self, physics: Physics, seed: u64, magnet: &Magnet) -> Result<Machine, Error> {
+        Machine::with_stray_field(&self.ising, physics, seed, &magnet.field(self.ising.n, physics.delta_v))
     }
 
     /// Runs a spin cycle while the i9 watches: every `sample` time units it
@@ -693,5 +702,152 @@ mod tests {
                 assert_eq!(given.value, w.value, "taking it back restores the night");
             }
         }
+    }
+
+    #[test]
+    fn the_salties_draw_last_so_old_nights_stay_put() {
+        // The roll as it was before the Salties (3.3c), frozen here.
+        fn old_roll(npcs: &[world::Npc], seed: u64) -> (bool, Vec<bool>, Vec<bool>) {
+            let mut s = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
+            let mut coin = |p: f64| {
+                s ^= s << 13;
+                s ^= s >> 7;
+                s ^= s << 17;
+                ((s >> 11) as f64 / (1u64 << 53) as f64) < p
+            };
+            let cold = coin(0.5);
+            let hungry = npcs.iter().map(|n| coin(if n.sleeps_out { 0.6 } else { 0.15 }) && !n.business).collect();
+            let animals = npcs.iter().map(|n| n.has_animals && coin(0.6)).collect();
+            (cold, hungry, animals)
+        }
+        let npcs = world::laundromat(1).npcs;
+        let (mut magnets, mut cuts, mut emps) = (0, 0, 0);
+        for seed in 0..500 {
+            let night = world::Night::roll(&npcs, seed);
+            assert_eq!((night.cold, night.hungry.clone(), night.animals_hungry.clone()), old_roll(&npcs, seed), "night {seed}");
+            match night.sabotage {
+                Some(Sabotage::Magnet(m)) => {
+                    magnets += 1;
+                    assert!((0.2..=1.6).contains(&m.strength.abs()) && (-0.5..=19.5).contains(&m.pos));
+                }
+                Some(Sabotage::PowerCut(at)) => {
+                    cuts += 1;
+                    assert!((0.15..=0.85).contains(&at));
+                }
+                Some(Sabotage::Emp) => emps += 1,
+                None => {}
+            }
+        }
+        let salty = (magnets + cuts + emps) as f64 / 500.0;
+        assert!((salty - salties::SALTY_NIGHTS).abs() < 0.06, "Salties on {salty:.2} of nights");
+        assert!(magnets > cuts && cuts > emps && emps > 0, "{magnets} magnets, {cuts} cuts, {emps} EMPs");
+    }
+
+    #[test]
+    fn a_magnets_field_falls_off_with_distance() {
+        let flat = machine::max_safe_field(5.0);
+        let m = Magnet { pos: 6.0, strength: -0.8 };
+        let f = m.field(20, 5.0);
+        assert!((f[6] + 0.8 * flat).abs() < 1e-12, "full strength right above it");
+        assert!(f.iter().all(|&x| x < 0.0), "one direction everywhere: pushing off");
+        for d in 1..6 {
+            assert!(f[6 + d].abs() < f[6 + d - 1].abs() && (f[6 + d] - f[6 - d]).abs() < 1e-12, "falls off evenly");
+        }
+        // Far away (r >> DEPTH) it's a plain 1/r^3.
+        let r = 13.0;
+        let far = 0.8 * flat * (salties::DEPTH / r).powi(3);
+        assert!((f[19].abs() / far - 1.0).abs() < 0.03, "1/r^3 far away: {} vs {far}", f[19]);
+        let s = m.shielded().field(20, 5.0);
+        assert!(f.iter().zip(&s).all(|(a, b)| (b / a - salties::SHIELD).abs() < 1e-12), "the shield passes a fixed fraction");
+    }
+
+    #[test]
+    fn the_idle_check_reads_the_magnet_on_top_of_the_want() {
+        let physics = Physics::default();
+        for night in [1, 4, 7] {
+            let mut tc = tc(night);
+            // A want's clamp is the biggest field the i9 installs itself.
+            let upd = tc.world.find_npc("upddayett").unwrap();
+            let item = tc.deliverable(upd)[0];
+            assert!(tc.want(upd, item));
+            let mut clean = tc.machine(physics, night).unwrap();
+            clean.rest(30.0).unwrap();
+            let quiet = clean.stray_field(&tc.ising).iter().fold(0.0f64, |m, x| m.max(x.abs()));
+            assert!(quiet < 1e-3, "night {night}: a clean board reads {quiet} of stray field");
+
+            let magnet = Magnet { pos: 3.0, strength: 0.3 };
+            let mut m = tc.tampered_machine(physics, night, &magnet).unwrap();
+            m.rest(30.0).unwrap();
+            let read = m.stray_field(&tc.ising);
+            for (i, (r, f)) in read.iter().zip(magnet.field(tc.ising.n, physics.delta_v)).enumerate() {
+                assert!((r - f).abs() < 1e-3, "night {night} strip {i}: the i9 reads {r}, the magnet pushes {f}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_strong_magnet_pins_the_strips_it_overpowers() {
+        use cortenforge::sim::thermostat::WellState;
+        let physics = Physics::default();
+        let flat = machine::max_safe_field(physics.delta_v);
+        let mut pinned = 0;
+        for night in [1, 2, 5] {
+            let tc = tc(night);
+            let n = tc.ising.n;
+            // The strongest push toward "on" the strip's own board could give
+            // it, with every neighbor anywhere in its wells (|x| <= 1.1).
+            let mut most = tc.ising.h.clone();
+            for (&(a, b), &j) in tc.ising.edges.iter().zip(&tc.ising.j) {
+                most[a] += 1.1 * j.abs();
+                most[b] += 1.1 * j.abs();
+            }
+            let magnet = Magnet { pos: n as f64 / 2.0, strength: -1.6 };
+            let field = magnet.field(n, physics.delta_v);
+            for seed in 0..4 {
+                let mut m = tc.tampered_machine(physics, seed, &magnet).unwrap();
+                m.rest(30.0).unwrap();
+                for i in (0..n).filter(|&i| most[i] + field[i] < -flat) {
+                    assert_eq!(m.well(i), WellState::Left, "night {night} seed {seed}: strip {i} should be pinned off");
+                    pinned += 1;
+                }
+            }
+        }
+        assert!(pinned >= 4, "only {pinned} strips were overpowered: the test checks nothing");
+    }
+
+    #[test]
+    fn the_shield_works_only_over_the_magnet() {
+        let m = Magnet { pos: 7.3, strength: 1.0 };
+        assert_eq!(m.through(None), m);
+        assert_eq!(m.through(Some(6.0)), m.shielded(), "within the plate's span");
+        assert_eq!(m.through(Some(12.0)), m, "a plate somewhere else does nothing");
+        assert_eq!(m.strip(20), 7);
+        assert_eq!(Magnet { pos: 19.4, strength: 1.0 }.strip(12), 11, "past the end of a short board");
+    }
+
+    #[test]
+    fn the_battery_takes_its_cells_off_the_market() {
+        for night in NIGHTS {
+            let mut w = world::laundromat(night);
+            let cells = w.find_item(salties::BATTERY_CELLS).unwrap();
+            let open = TradeComputer::new(w.clone(), 5.0, 1.6);
+            w.set_held(cells, true);
+            let held = TradeComputer::new(w.clone(), 5.0, 1.6);
+            assert!(held.cycles.iter().all(|c| c.legs.iter().all(|l| l.item != cells)), "night {night}: a held item moved");
+            let cost = open.evaluate(open.forward_best).0 - held.evaluate(held.forward_best).0;
+            assert!(cost >= -1e-9, "night {night}: holding something can't help");
+            w.set_held(cells, false);
+            assert_eq!(w.value, open.world.value, "putting it back restores the night");
+        }
+    }
+
+    #[test]
+    fn a_power_cut_stops_the_drum_early() {
+        let a = Anneal { cut: Some(0.4), ..Anneal::default() };
+        assert_eq!(a.stop_time(), 400.0);
+        assert_eq!(a.total_time(), 420.0);
+        assert!(a.temperature(399.0) > a.cold, "still shaking hot when the power goes");
+        assert_eq!(a.temperature(400.0), 0.0);
+        assert_eq!(Anneal::default().total_time(), 1020.0, "no cut, the full cycle");
     }
 }

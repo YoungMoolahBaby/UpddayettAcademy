@@ -163,7 +163,8 @@ half of his personality next to the soda.
 
 ## The Salties
 
-Decided 2026-10-05; not built yet. The game can't be only jolly. Some people
+Decided 2026-10-05; built 2026-10-06 (Step 3.6: magnet, power cut, "EMP";
+theft waits for nights that carry over). The game can't be only jolly. Some people
 always got ahead by keeping others down, it's all they know, and they hate
 watching the Loin climb out. They're fictional locals, not a stand-in for any
 real group, and the jokes land on their bad physics, not on who they are.
@@ -198,14 +199,28 @@ AI roasts the rest with a real result.
 
 ### How it plays
 
-- **Sabotage nights** are a night condition, rolled like the weather. The
-  player learns the signs (an idle Hall offset, flickering lights) and picks
-  a defense before spinning.
+- **Sabotage nights** are a night condition, rolled like the weather (3 in
+  10 nights: the magnet half the time, the breaker about a third, the "EMP"
+  the rest). The banner says the Salties are around and shows their brag;
+  the player decides which brag is real physics, reads the signs (an idle
+  Hall offset, flickering lights) and picks a defense before spinning.
+- **The defenses cost something or take skill.** The idle check is free
+  and reads every strip's stray field. The shield covers only a few strips
+  (two either side of where it's put), so it works only over the magnet:
+  find it first. The battery runs on Vape Lady's 18650s, which leave the
+  trades while they power the drum; the game prices that in Goo every
+  night.
+- **What the magnet does depends on where it is.** Pushing strips "on"
+  hurts almost anywhere (trades that clash get pushed together). Pushing
+  "off" hurts only over a strip in the best set; over an unused strip it
+  does nothing, and on a hard night it can even help by accident.
 - **The costs are real:** a sabotaged night costs Goo, can feed the wrong
   person and can lose items. Getting someone's stuff back counts as relief
   Karma; a sabotaged night the player still saves is the payoff.
-- **Every roast is a sim result:** "Their magnet tilted strip 7 by 0.3. Your
-  shield took it to 0.02. Steel: 1, Salt: 0."
+- **Every roast is a sim result:** "Their magnet pushed strip 7 at 0.84x
+  the flattening field. Your shield took it to 0.08x. Steel: 1, Salt: 0."
+  The numbers are the i9's idle-check readings and the Goo the run lost
+  against the clean night's best set.
 - **Endgame (optional):** one Saltie gets a bench kit too. No speech; they
   quietly start building something.
 

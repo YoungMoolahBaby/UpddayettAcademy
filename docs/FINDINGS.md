@@ -80,6 +80,20 @@ Probes live in `examples/` and run with `cargo run --release --example <name>`.
   judge answers by value, not by bits.
 - The exact-solver NaN bug (below) is the only CortenForge defect found in
   Step 3; everything else was problem design on our side.
+- Composition pays off (3.6, the Salties' magnet): a second
+  `ExternalField` in the same `PassiveStack` just sums with the first
+  (stack.rs iterates the components, and each adds into `qfrc_passive`).
+  That's the cleanest way to model a disturbance the controller doesn't
+  know about: the i9 keeps scoring with the clean problem, and the idle
+  check finds the hidden field to 1e-3 by force balance on strips at rest.
+  Two small gaps: the docs never say that two components of the same type
+  can share a stack (a line in stack.rs would settle it), and reading the
+  force balance meant re-deriving the double well's force from its formula
+  (double_well.rs:208), since a component can't report its force at a given
+  `qpos` without a `Model` and `Data`.
+- A power cut is just the anneal schedule dropping to zero early, and the
+  crate's Langevin dynamics make it behave like a real quench, with no
+  special support needed.
 
 ## Friction log
 

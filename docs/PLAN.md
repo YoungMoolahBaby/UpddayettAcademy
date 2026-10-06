@@ -5,10 +5,10 @@ whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
 CLI in `examples/trade_cli.rs`, Bevy game in `src/main.rs` + `src/game/`).
-Step 3 so far (see the Step 3 plan below): 3.0, 3.1 and all of 3.3 done
-(3.3a-d plus the costly-want clamp); 3.2 deferred to a later
+Step 3 so far (see the Step 3 plan below): 3.0, 3.1, all of 3.3 (3.3a-d plus
+the costly-want clamp) and 3.6 (the Salties) done; 3.2 deferred to a later
 voice-and-music step.
-Next action: **3.6 The Salties** (sabotage nights; planned below).
+Next action: **3.4 the escrow counter**, then 3.5 polish.
 
 ## Step 1 result
 
@@ -617,6 +617,71 @@ banner and condition tags). Theft waits for Level 2 (nights that carry over).
 - Watch for: a magnet field that moves the drum's best set changes what
   "optimal" means. Score sabotaged runs against the clean night's best set,
   so Goo lost to the magnet shows up as a loss.
+
+**3.6 done (2026-10-06).** The Salties show up on 3 nights in 10: a magnet
+(half), the breaker (about a third) or the "EMP" (the rest). Their draws come
+after every older coin, so each night keeps its weather and hunger, and
+every earlier bench number stands (a test replays the old roll on 500
+nights). Salties nights among the first 40: magnets 1, 16, 20, 21, 27, 29;
+cuts 4, 17, 31; EMP 10.
+- **Library** (`src/trade/salties.rs`): `Magnet { pos, strength }` (strength
+  in units of the flattening field, + pushes strips on). Its field is
+  `strength * (DEPTH / r)^3` with `DEPTH` 1.5 strips: a dipole pointing
+  along the swing, so the sign is the same everywhere. `Magnet::shielded`
+  passes 10%. `Magnet::through(shield)` applies the shield only if the
+  plate covers the magnet (within 2 strips). `Machine::with_stray_field`
+  adds it as a second `ExternalField` in the stack, so the i9 still
+  scores by the clean QUBO. `Machine::rest` + `Machine::stray_field` is the
+  idle check: force balance on strips at rest, which reads the hidden
+  field to 1e-3. `Anneal::cut` drops the temperature to 0 early (the
+  quench). `World::set_held` takes the battery's cells off the market.
+  The calibration load is night 1 (98% on Normal).
+- **Game:** the banner shows SALTIES AROUND with their brag ("Magnet stuff
+  tonight. Science, baby." / "We're calling down a solar flare." / "EMP
+  tonight."). DEFENSES in SPIN CYCLE: Idle check ("strip 9 feels 0.47x the
+  flattening field nobody installed"), a steel shield over a chosen strip,
+  and the battery (Vape Lady's 18650s, priced every night: 7 Goo on
+  night 1, 9 on night 17). On a breaker night the tubes flicker before the
+  spin, the room goes dark when it trips, and the progress bar says POWER
+  CUT. After the spin the magnet appears taped to the washer and the AI
+  roasts with the numbers ("Their magnet pushed strip 1 at 1.10x the
+  flattening field. Your shield took it to 0.11x. Steel: 1, Salt: 0.").
+  A battery spent on a quiet night gets called out too. HOW IT WORKS gains
+  "The Salties". `UPD_IDLE`, `UPD_SHIELD=<strip>|found`, `UPD_BATTERY`.
+- **Magnet bench** (`trade_cli magnets`, 48 runs per cell, Normal, nights
+  1, 2, 3, 5, 7):
+  - Pushing **on** is the real attack. At mid-board, 0.6x and up drops the
+    best set from 67-98% to 0-17% and costs 1-8 Goo a run (the clashing
+    trades get pushed together).
+  - Pushing **off** only hurts over a strip in the best set (night 1,
+    strip 14 at 1.0x: 0%, 5.2 Goo lost). Over an unused strip it does
+    nothing. On a hard night it can even help (night 2: 67% to 88-92%).
+  - Past the end of the board the field has fallen to 0.04-0.09x and does
+    little.
+  - **The shield** brings easy nights back to baseline (night 1: 96-100%;
+    night 3: 90-94%). On hard nights a strong "on" magnet still hurts
+    through it (night 2: 35-46% vs 67%; night 7: 48-58% vs 77%), since
+    10% of 1.5x is 0.15x.
+  - **The idle check** always catches the magnet, even shielded (it reads
+    0.03x for a shielded 0.3x).
+  - **The calibration load** gives a 2% false alarm. It flags 83-100% of
+    "on" magnets of 0.6x and up, but it only tests its own board: a 1.0x
+    "off" magnet under strip 9 costs night 5 the best set (25%) and never
+    trips it. The idle check is the reliable tell; the calibration load
+    stays CLI-only.
+- **Power-cut bench** (`trade_cli cuts`, nights 1-10):
+  - A cut 15% in (kT 2.78) drops the best set to 17-60% and costs 1-2 Goo.
+  - A cut 30% in costs a little.
+  - From 50% in, the result matches the battery, because the i9 latch
+    has already caught the best set (median t of about 140-300).
+  - The quench shows at rest: night 17 at 27%, at rest best set 8% and
+    35% clashes, while the latch still finds it 71% of the time.
+  - So the battery is a gamble: it saves early cuts, but its cells cost
+    Goo every night it runs (9 on night 17, more than the cut cost).
+- Tests: 21 (falloff and shield, the idle check reading magnet + want, a
+  strong magnet pinning the strips it overpowers, the cut schedule, the
+  held cells, old nights unchanged), 1.6 s. Screenshots: night 1 open and
+  shielded, night 16 idle check, night 17 cut and battery.
 
 ## Gotchas (from the probes)
 
