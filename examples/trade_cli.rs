@@ -16,6 +16,8 @@
 //!   learn            train the smart wash program with CEM on --train nights (A..B or a,b,c; default 11..22),
 //!                    --gens G x --pop P spins, then test it on --nights A..B (default 1..10)
 //!   versus           Normal vs the smart wash (--smart = the learned one, or --params a,b,c,d[,stall,ln cool-down,ln patience]) per night
+//!   rematch          is the learned wash (or --params) really better than run 3 (or --vs a,b,..)? Normal, A and B
+//!                    on the same boards and seeds, then sim-opt bootstrap CIs on the difference (paired and not)
 //!
 //!   --night N        which night (default 1)
 //!
@@ -69,6 +71,8 @@ struct Opts {
     /// `versus` / `learn` also try one want and one give-away a night (`--mix`).
     mix: bool,
     params: Option<Vec<f64>>,
+    /// `rematch`'s program B (default run 3).
+    vs: Option<Vec<f64>>,
     program: Option<SmartWash>,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
@@ -106,6 +110,7 @@ fn parse() -> Opts {
         smart: false,
         mix: false,
         params: None,
+        vs: None,
         program: None,
         gens: 60,
         restarts: None,
@@ -156,6 +161,7 @@ fn parse() -> Opts {
             "--smart" => o.smart = true,
             "--mix" => o.mix = true,
             "--params" => o.params = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
+            "--vs" => o.vs = Some(val().split(',').map(|s| num(s.trim().into())).collect()),
             "--gens" => o.gens = num(val()) as usize,
             "--restarts" => o.restarts = Some(num(val())),
             "--patience" => o.patience = Some(num(val())),
@@ -628,6 +634,91 @@ fn learn(o: &Opts) -> Result<(), trade::Error> {
     Ok(())
 }
 
+/// Is program A really better than program B? Runs Normal, A and B on the
+/// same boards with the same seeds (common random numbers), then asks
+/// sim-opt's bootstrap for a 95% CI on the difference in hit rate. A is the
+/// learned program (or `--params`), B is run 3 (or `--vs`). The CI comes
+/// two ways: paired (on per-board differences, the right test here) and the
+/// way `bootstrap_diff_means` does it (the two samples resampled apart).
+fn rematch(o: &Opts, a: &SmartWash, b: &SmartWash) {
+    use cortenforge::sim::opt::analysis::{bimodality_coefficient, bootstrap_diff_means};
+    use rand::SeedableRng;
+    println!(
+        "rematch: A {:?} vs B {:?}, {} spins a board, nights {}..{}{}",
+        a.params().iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>(),
+        b.params().iter().map(|p| (p * 1000.0).round() / 1000.0).collect::<Vec<_>>(),
+        o.runs,
+        o.nights.0,
+        o.nights.1,
+        if o.mix { " (with a want and a give-away)" } else { "" }
+    );
+    // Per board: (Normal, A, B) hit rates.
+    let mut rows: Vec<(f64, f64, f64)> = vec![];
+    let t0 = Instant::now();
+    for night in o.nights.0..=o.nights.1 {
+        for (label, tc) in scenarios(o, night) {
+            let mut on = o.clone();
+            on.night = night;
+            on.program = None;
+            let n = hit_and_loss(&tc, &on).0;
+            on.program = Some(a.clone());
+            let ha = hit_and_loss(&tc, &on).0;
+            on.program = Some(b.clone());
+            let hb = hit_and_loss(&tc, &on).0;
+            println!(
+                "  night {night:>3}: Normal {:>3.0}%, A {:>3.0}%, B {:>3.0}%  ({:.0} s){}",
+                100.0 * n,
+                100.0 * ha,
+                100.0 * hb,
+                t0.elapsed().as_secs_f64(),
+                if o.mix { format!("  {label}") } else { String::new() }
+            );
+            rows.push((n, ha, hb));
+        }
+    }
+    let mut rng = rand::rngs::StdRng::seed_from_u64(o.seed);
+    let mut report = |what: &str, rows: &[(f64, f64, f64)]| {
+        let col = |f: fn(&(f64, f64, f64)) -> f64| rows.iter().map(f).collect::<Vec<f64>>();
+        let (n, ha, hb) = (col(|r| r.0), col(|r| r.1), col(|r| r.2));
+        let d: Vec<f64> = ha.iter().zip(&hb).map(|(x, y)| x - y).collect();
+        let dn: Vec<f64> = ha.iter().zip(&n).map(|(x, y)| x - y).collect();
+        let mean = |v: &[f64]| 100.0 * v.iter().sum::<f64>() / v.len() as f64;
+        println!(
+            "\n{what} ({} boards): Normal {:.1}%, A {:.1}%, B {:.1}%",
+            rows.len(),
+            mean(&n),
+            mean(&ha),
+            mean(&hb)
+        );
+        let ci = |name: &str, ci: cortenforge::sim::opt::analysis::BootstrapCi| {
+            println!(
+                "  {name:<34} {:+5.1} points, 95% CI [{:+5.1}, {:+5.1}] -> {:?}",
+                100.0 * ci.point_estimate,
+                100.0 * ci.lower,
+                100.0 * ci.upper,
+                ci.classify()
+            );
+        };
+        // Paired: resample per-board differences (B side is a constant 0).
+        ci("A - B, paired", bootstrap_diff_means(&d, &[0.0], &mut rng));
+        ci("A - B, unpaired (diff_means as is)", bootstrap_diff_means(&ha, &hb, &mut rng));
+        ci("A - Normal, paired", bootstrap_diff_means(&dn, &[0.0], &mut rng));
+        println!(
+            "  boards A won {}, B won {}, tied {}; bimodality of A - B {:.2} (> 0.56 = two humps)",
+            d.iter().filter(|&&x| x > 0.0).count(),
+            d.iter().filter(|&&x| x < 0.0).count(),
+            d.iter().filter(|&&x| x == 0.0).count(),
+            if d.len() >= 4 { bimodality_coefficient(&d) } else { f64::NAN }
+        );
+    };
+    report("all boards", &rows);
+    // Hard boards, picked by Normal (not by A or B, so the pick can't favor either).
+    let mut hard = rows.clone();
+    hard.sort_by(|x, y| x.0.total_cmp(&y.0));
+    hard.truncate(rows.len().div_ceil(4));
+    report("hardest quarter by Normal", &hard);
+}
+
 fn main() -> Result<(), trade::Error> {
     let mut o = parse();
     if o.smart || o.params.is_some() || o.restarts.is_some() || o.patience.is_some() {
@@ -652,6 +743,11 @@ fn main() -> Result<(), trade::Error> {
         "run" => run(&o),
         "bench" => bench(&o),
         "learn" => learn(&o),
+        "rematch" => {
+            let b = o.vs.as_ref().map_or_else(|| SmartWash::new(o.anneal.duration, &smart::RUN_3), |p| SmartWash::new(o.anneal.duration, p));
+            rematch(&o, &o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration)), &b);
+            Ok(())
+        }
         "versus" => {
             versus(&o, &o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration)));
             Ok(())

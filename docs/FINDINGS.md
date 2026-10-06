@@ -1526,6 +1526,47 @@ From the source; not run (the probe exercises only CEM's training loop).
 - **docs** (2026-10-04): the `Algorithm` docs tell Bevy users to write their
   own training loops, but no published example shows how.
 
+### `sim-opt`
+
+Paths are under sim-opt's `src/`. Found by `trade_cli rematch` (run 5 vs run
+3 of the smart wash, on 60 boards with common seeds).
+
+- **works** (2026-10-06): `analysis::bootstrap_diff_means` and `classify()`
+  settled a question two 20-night tests couldn't: the learned run 5 beats
+  run 3 by +2.7 points, 95% CI [+1.5, +4.1], Positive. It took 17 min of
+  spins and 10k resamples in milliseconds.
+- **docs** (2026-10-06): `bootstrap_diff_means` says "Paired resampling
+  draws `n_a` samples ... from `r_a` and `n_b` samples ... from `r_b`,
+  independently" (analysis.rs:159-161). Independent resampling is the
+  unpaired bootstrap, and there is no paired variant (API). On paired data
+  (same boards, same seeds) the night-to-night spread swamps the effect:
+
+  | Boards | Paired CI | `diff_means` as is |
+  |---|---|---|
+  | All 60 | [+1.5, +4.1], Positive | [-0.1, +5.7], Ambiguous |
+  | Hardest 15 | [+1.5, +8.8], Positive | [-1.8, +11.9], Ambiguous |
+
+  The workaround is `bootstrap_diff_means(&diffs, &[0.0], rng)`. A
+  `bootstrap_paired_diff` (or an honest doc line) would stop people from
+  under-reading their wins.
+- **docs** (2026-10-06): the public API is written for one experiment.
+  `RematchOutcome::Positive` is "SA reliably outperforms CEM" (:72), and the
+  docs cite "Ch 32 §3.3", "Ch 30" and "Ch 51" (:58, :117, :154), a book a
+  crates.io user doesn't have. The functions are general. The docs should
+  say "A beats B" and define the protocol inline.
+- **docs** (2026-10-06): `bimodality_coefficient` says it guards
+  near-constant input by "returning `0.0` defensively" (:278-279). For
+  exactly constant input, m2 = 0, so g = kappa = 0 and it returns
+  1/correction (0.33 for large n, 0.074 at n = 4), never 0. It also panics
+  below 4 values (:292) where a NaN or `Option` would be kinder. On our
+  differences it read 0.59 (> 5/9, "bimodal") only because a third of the
+  boards tie at exactly 0. That would flip `run_rematch`'s pipeline to
+  medians on zero-inflated data, which isn't two humps.
+- **API** (2026-10-06): it takes `&mut impl rand::Rng` from rand 0.9
+  without re-exporting rand (the lock holds rand 0.8, 0.9 and 0.10), so a
+  caller must find and pin the matching major. `B = 10_000` and the 95%
+  level are fixed (:155).
+
 ### `cf-design`
 
 Paths are under cf-design's `src/`. Found by `examples/probe_drum.rs`.

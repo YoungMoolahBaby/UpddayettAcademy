@@ -54,7 +54,8 @@ Read first:
   against the learned program per night (~2 min for 10 nights x 48 spins); `bench --smart` benches it;
   `learn --params ... --train 12,20,.. --gens 66 --pop 32` retrains it (~16 min, one core;
   the full command is in PLAN "Step 4 follow-up"); paste the printed params into `LEARNED`. It has latch
-  memory (reheats when the strips freeze): `--restarts K` sets the cool-downs on the clock, `--patience F`
+  memory (reheats when the strips freeze): `rematch [--vs a,b,..]` puts run 5 vs run 3 (or any pair) through sim-opt bootstrap CIs on the
+  same boards and seeds (~17 min for 60 nights x 48 spins; PLAN "run 3 vs run 5, settled"); `--restarts K` sets the cool-downs on the clock, `--patience F`
   how long the strips must sit still (x a cool-down) before it reheats. `--mix` makes `versus` / `learn` also
   run each night with one want and one give-away (3x the time).
 - The drum tumbler (Step 5, `src/trade/drum.rs` + `src/game/drum.rs`): tonight's items tumble in a cf-design drum on a

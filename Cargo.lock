@@ -2942,6 +2942,7 @@ dependencies = [
  "bevy_egui",
  "cortenforge",
  "nalgebra 0.34.2",
+ "rand 0.9.5",
 ]
 
 [[package]]

@@ -26,8 +26,8 @@ probe:
 game's fifth program, "Smart (learned)". It finds the best set 93% of the
 time on unseen nights, against Normal's 83%, in the same time (see "Step 4
 so far" below). Its follow-up, latch memory (reheat when the strips
-freeze), ties on average and helps a little on the hardest nights (see
-"Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
+freeze), beats it: +2.7 points over run 3 on 60 fresh nights, 95% CI
+[+1.5, +4.1] (sim-opt bootstrap; see "Step 4 follow-up"). It handles wants and give-aways too (94% vs 83% on
 mixed unseen boards); training on them made it worse, so run 5 stays.
 **Step 5 done** (2026-10-06): backlog item 1, the drum tumbler. Tonight's
 items tumble behind the porthole in a cf-design drum, stepped by sim-core
@@ -130,7 +130,7 @@ CortenForge pieces the game doesn't use yet:
    The drum's inside is concave, which sim-core supports
    (`sdf/shapes/concave.rs`). Start with a feasibility probe
    (`examples/probe_drum.rs`): contact stability and speed.
-2. **Settle run 3 vs run 5 with statistics** (sim-opt `analysis`:
+2. **(Done: run 5 wins, +2.7 [+1.5, +4.1]; see "Step 4 follow-up: run 3 vs run 5".)** **Settle run 3 vs run 5 with statistics** (sim-opt `analysis`:
    bootstrap CI on the difference of means). Is the smart wash's
    3-point edge on hard nights real? Small.
 3. **A row of washers: parallel tempering** (sim-opt `Pt`, or replica
@@ -1344,6 +1344,35 @@ Reproduce: `trade_cli learn --mix --smart --train 12,20,25,27,29,33,35,37,48,56,
 2.7 cool-downs, 94% on mixed unseen boards against Normal's 83%. To go
 further would take more than CEM tuning: scoring candidates over several
 spins, or a held-out check during training.
+
+### Step 4 follow-up: run 3 vs run 5, settled (2026-10-06)
+
+Backlog item 2. `trade_cli rematch` runs Normal, A (the learned run 5) and B
+(run 3, or `--vs`) on the same boards with the same seeds. It then gives
+sim-opt bootstrap 95% CIs on the per-board difference in hit rate: paired
+(the right test for common seeds), unpaired the way `bootstrap_diff_means`
+does it, and A vs Normal. It also reports the hardest quarter, picked by
+Normal's rate so the pick can't favor A or B.
+
+```
+cargo run --release --example trade_cli -- rematch --nights 81..140 --runs 48 --seed 2000   # ~17 min
+```
+
+60 fresh nights (no training or earlier test night), 48 spins each:
+
+| Boards | Normal | Run 5 | Run 3 | Run 5 - run 3, paired CI | Unpaired CI | Run 5 - Normal |
+|---|---|---|---|---|---|---|
+| All 60 | 84.5% | 95.1% | 92.4% | +2.7 [+1.5, +4.1], Positive | [-0.1, +5.7], Ambiguous | +10.6 [+8.3, +13.1] |
+| Hardest 15 | 63.9% | 86.7% | 81.9% | +4.7 [+1.5, +8.8], Positive | [-1.8, +11.9], Ambiguous | +22.8 [+19.4, +26.0] |
+
+On all 60 boards, run 5 won 32, run 3 won 8, and 20 tied. On the hardest
+15, run 5 won 9, run 3 won 1, and 5 tied.
+
+**Run 5 (latch memory) really is better than run 3.** The edge is small,
+2.7 points overall, and bigger on hard boards (4.7). The 20-night tests
+called it a tie because 20 boards were too few. Shipping run 5 stands.
+The unpaired bootstrap would have missed the effect on both cuts
+(FINDINGS sim-opt).
 
 ## Gotchas (from the probes)
 

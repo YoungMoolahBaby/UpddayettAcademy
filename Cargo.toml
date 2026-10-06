@@ -14,3 +14,7 @@ default = ["solari"]
 # Ray-traced lighting (Bevy Solari). Needs a GPU with hardware ray tracing;
 # F2 toggles it in game (off at start).
 solari = ["bevy/bevy_solari"]
+
+[dev-dependencies]
+# rematch: sim-opt's bootstrap takes a rand 0.9 Rng and doesn't re-export rand.
+rand = "0.9"

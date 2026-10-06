@@ -60,7 +60,9 @@ pub const NO_PATIENCE: f64 = 6.907_755_278_982_137; // ln 1000
 /// cooler the longer the latch goes without a better set. Each cool-down
 /// starts at 5.9x kT. Held out (48 spins a night): 88% vs Normal's 81% on
 /// nights 1-10, 95% vs 83% on fresh nights 61-80, 88% vs 63% on the six
-/// hardest of those. `None` falls back to Normal.
+/// hardest of those. On 60 fresh nights (81-140) it beats run 3 by +2.7
+/// points, paired 95% CI [+1.5, +4.1] (`trade_cli rematch`). `None` falls
+/// back to Normal.
 pub const LEARNED: Option<[f64; N_PARAMS]> = Some([
     1.7711103739966765,
     -2.2574816421985116,
@@ -72,8 +74,8 @@ pub const LEARNED: Option<[f64; N_PARAMS]> = Some([
 ]);
 
 /// Run 3 (2026-10-06), the clock-only program before the memory: six
-/// cool-downs, no stall weight, no patience. Ties run 5 on average (95% on
-/// nights 61-80) and does a little worse on the hardest nights (85%).
+/// cool-downs, no stall weight, no patience. Looked like a tie with run 5 on 20
+/// nights; on 60 it is 2.7 points worse (92.4% vs 95.1%, CI [+1.5, +4.1]).
 pub const RUN_3: [f64; N_PARAMS] = [
     1.6260607631131936,
     -2.304621695618709,
