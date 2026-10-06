@@ -222,6 +222,78 @@ Ideas for later:
 - the row as a teaching beat in "How it works";
 - a ladder that adapts its rungs to equalize swap rates.
 
+## Step 7: Upddayett prints things (plan, 2026-10-06)
+
+Backlog item 4. Upddayett has a salvaged FDM printer behind the counter
+("Build your own safety net"). He designs a part in code, CortenForge
+checks that it prints, and the print joins tonight's board as his item, to
+trade or give away. One Solid runs the whole pipeline: the design, the print
+checks, the STL, the sim body, the mesh on screen, and the collider that
+tumbles in the drum.
+
+The CortenForge pieces (all in the 0.9.0 facade, none used yet):
+- `cf_design`: `Mechanism` with a `PrintProfile` (clearance, min wall,
+  min hole); `Mechanism::validate()` gives `DesignWarning`s (wall too
+  thin, hole too small, feature below resolution, anchor out of bounds);
+  `to_stl_kit` (each part shrunk by half the clearance); `to_mjcf`;
+  `templates::bracket` / `link`.
+- `mesh::printability`: `validate_for_printing(mesh, PrinterConfig::
+  fdm_default())` (overhangs, bridges, thin walls, watertight,
+  manifold, build volume) and `find_optimal_orientation`.
+- `mesh::io::save_stl`; `sim::mjcf::load_model` for the MJCF.
+
+### 7.0 Feasibility probe (`examples/probe_print.rs`)
+
+- Design three or four parts (catalog below) as Solids or Mechanisms.
+- Run both checkers. Do they agree, and do they catch the planted flaws
+  (a 0.5 mm wall, an unsupported roof)?
+- Orient each part for the bed, and save its STL to `prints/`. Check one
+  print in a slicer by hand.
+- The hinge test: one print-in-place hinge goes through `to_mjcf`, then
+  `load_model`, then sim-core. Does the lid swing, with the clearance gap
+  doing its job?
+- Time each step. The game needs a check in well under a second, or a
+  worker thread like the drum's.
+
+### 7.1 The catalog (proposed; the user may want different parts)
+
+Each part is someone's want, so a print opens new trades and gift chains:
+
+| Part | Wanted by | Why |
+|---|---|---|
+| 6x18650 battery sled with a hinged lid | Upddayett (balance bot), Bike Kitchen Dave | the Mechanism + MJCF hinge |
+| Pigeon feeder with a roof | Pigeon Lady, Librarian Tamara (courtyard) | the overhang: orientation matters |
+| Shopping-cart caster bracket | Shopping-Cart Guy | `templates::bracket` |
+| Headphone hook | Sound Guy Ray | a small, quick print |
+
+Every part has a v1 with a real flaw (thin wall, roof without supports)
+that the check catches with numbers ("wall 0.5 mm, the printer needs 0.8").
+Upddayett fixes it in v2. That is the lesson beat: CortenForge catches a
+bad print before it wastes the night.
+
+### 7.2 Library (`src/trade/print.rs`, tested)
+
+- `Print { name, design() -> Mechanism, wanted_by, base }`.
+- `check(&Print) -> PrintReport`: cf-design warnings plus printability
+  issues, pass or fail, orientation, volume and print time.
+- `World::add_print(...)`: the print becomes Upddayett's item, with its
+  wants.
+- `trade_cli print [--part P] [--v1]`: the checks, the STL out, and what
+  the print does to tonight's best set.
+
+### 7.3 In the game
+
+- A PRINT section in the left panel: pick a part, see the check (pass, or
+  the flaws with numbers), then print. One print a night.
+- A printer prop by the counter (cf-design CSG too). The part grows on the
+  bed layer by layer, then goes into the drum and onto the board.
+- Its trades and gifts show up like any other item's.
+
+### 7.4 FINDINGS
+
+Log whatever the pipeline costs a newcomer: how the two checkers relate,
+units, MJCF round-trip gaps, speed.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
