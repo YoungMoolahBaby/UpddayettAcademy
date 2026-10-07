@@ -184,7 +184,8 @@ fn score(w: &World, legs: &[Leg]) -> Option<Cycle> {
         let got = legs[k];
         let gave = legs[(k + 1) % n];
         debug_assert_eq!(got.to, gave.from);
-        let g = w.value[got.to][got.item] - w.value[gave.from][gave.item];
+        // A yucky recipient needs the tax on top before the trade is worth it.
+        let g = w.value[got.to][got.item] - w.value[gave.from][gave.item] - w.yuck_tax(got.to);
         if g <= 0.0 {
             return None;
         }

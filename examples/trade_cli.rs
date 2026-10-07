@@ -22,10 +22,13 @@
 //!   print [--part P] Upddayett's prints: each design's v1 and v2 through the print check, STLs into prints/, and
 //!                    what the print does to --night N's best set
 //!   rowmatch         the row vs run 5 at equal compute, and K whole-cycle washers vs the best of K run-5 washers
+//!   yuck             does yuck make the street harder to compute? clean vs 2 yucky people vs a pump per night
+//!                    (hit rate, Goo lost, strips, best set, glassiness), paired bootstrap CIs
 //!
 //!   --washers K      spin a row of K washers sharing one cycle's compute (--full: each runs the whole cycle)
 //!   --swap S  --rcold T  --rhot T   swap interval and the row's ladder ends (default 1, 1.4, 4)
 //!   --best-of K      keep the best of K separate washers
+//!   --yuck WHO,WHO   these people are yucky tonight   --pump hungry|cold  everyone it touches is   --tax T  Goo a trade (2)
 //!
 //!   --night N        which night (default 1)
 //!
@@ -94,6 +97,11 @@ struct Opts {
     best_of: usize,
     /// `print --part P`: one catalog part.
     part: Option<String>,
+    /// Yuck (DESIGN "Yuck: the one enemy"): these people are yucky tonight (`--yuck WHO,WHO`),
+    /// or a pump makes everyone it touches yucky (`--pump hungry|cold`); each pays `--tax T` Goo a trade.
+    yuck: Vec<String>,
+    pump: Option<String>,
+    tax: f64,
     gens: usize,
     /// Cool-downs per cycle for the smart wash (`--restarts K`).
     restarts: Option<f64>,
@@ -140,6 +148,9 @@ fn parse() -> Opts {
         rhot: None,
         best_of: 1,
         part: None,
+        yuck: vec![],
+        pump: None,
+        tax: 2.0,
         gens: 60,
         restarts: None,
         patience: None,
@@ -198,6 +209,9 @@ fn parse() -> Opts {
             "--rhot" => o.rhot = Some(num(val())),
             "--best-of" => o.best_of = num(val()) as usize,
             "--part" => o.part = Some(val()),
+            "--yuck" => o.yuck = val().split(',').map(str::to_string).collect(),
+            "--pump" => o.pump = Some(val()),
+            "--tax" => o.tax = num(val()),
             "--restarts" => o.restarts = Some(num(val())),
             "--patience" => o.patience = Some(num(val())),
             "--pop" => o.pop = num(val()) as usize,
@@ -238,6 +252,7 @@ fn setup(o: &Opts) -> TradeComputer {
         w.set_gift(item, true);
         println!("{} gives away the {}.", w.npcs[npc].name, w.items[item].name);
     }
+    apply_yuck(o, &mut w, true);
     let mut tc = board_for(o, w);
     if let Some(w) = &o.want {
         let (who, what) = w.split_once(':').expect("--want WHO:WHAT");
@@ -1021,6 +1036,10 @@ fn main() -> Result<(), trade::Error> {
             rowmatch(&o);
             Ok(())
         }
+        "yuck" => {
+            yuck_mode(&o);
+            Ok(())
+        }
         "versus" => {
             versus(&o, &o.program.clone().unwrap_or_else(|| SmartWash::learned(o.anneal.duration)));
             Ok(())
@@ -1244,5 +1263,128 @@ fn main() -> Result<(), trade::Error> {
             Ok(())
         }
         m => panic!("unknown mode {m}"),
+    }
+}
+
+/// Make people yucky on `w` per the options: `--yuck WHO,..` by name and
+/// `--pump P` by tonight's conditions, each taxing trades `--tax T` Goo.
+fn apply_yuck(o: &Opts, w: &mut trade::world::World, say: bool) {
+    let mut who: Vec<usize> = o.yuck.iter().map(|n| w.find_npc(n).unwrap_or_else(|| panic!("nobody called {n}"))).collect();
+    if let Some(p) = &o.pump {
+        assert!(matches!(p.as_str(), "hungry" | "cold"), "--pump hungry|cold");
+        who.extend(w.pump(p));
+    }
+    who.sort_unstable();
+    who.dedup();
+    for &k in &who {
+        w.set_yuck(k, o.tax);
+    }
+    if say && !who.is_empty() {
+        let names: Vec<&str> = who.iter().map(|&k| w.npcs[k].name).collect();
+        println!("Yucky tonight ({} Goo tax a trade): {}", o.tax, names.join(", "));
+    }
+}
+
+/// How glassy a board is: the valid sets within 10% of the best set's value
+/// that aren't tied with it (rivals), and the most strips any rival differs
+/// from the best set by.
+fn glass(tc: &TradeComputer) -> (usize, u32) {
+    let masks = qubo::conflict_masks(&tc.cycles);
+    let value = |s: u32| qubo::chosen(s, tc.cycles.len()).iter().map(|&i| tc.cycles[i].value()).sum::<f64>();
+    let best_bits = tc.ground_state();
+    let best = value(best_bits);
+    let (mut rivals, mut far) = (0, 0);
+    qubo::for_each_valid_set(&masks, |s| {
+        let v = value(s);
+        if v < best - 1e-9 && v >= 0.9 * best {
+            rivals += 1;
+            far = far.max((s ^ best_bits).count_ones());
+        }
+    });
+    (rivals, far)
+}
+
+/// `yuck`: does yuck make the street harder to compute? On each of --nights,
+/// three boards with a `--tax T` Goo yuck tax: clean, two yucky people
+/// (picked by the night), and a pump (`--pump`, default hungry). For each:
+/// strips, trades, the best set's Goo, how glassy it is, and the machine's
+/// hit rate and Goo lost over --runs spins. Then paired sim-opt bootstrap
+/// CIs against clean.
+fn yuck_mode(o: &Opts) {
+    use cortenforge::sim::opt::analysis::bootstrap_diff_means;
+    use rand::SeedableRng;
+    let pump = o.pump.clone().unwrap_or_else(|| "hungry".into());
+    let labels = ["clean".to_string(), "2 people".to_string(), format!("{pump} pump")];
+    println!(
+        "yuck: tax {} Goo a trade, nights {}..{}, {} spins a board ({})",
+        o.tax,
+        o.nights.0,
+        o.nights.1,
+        o.runs,
+        if o.program.is_some() { "smart wash" } else { "Normal" }
+    );
+    // Per night and board: [hit, lost, strips, trades, best Goo, rivals, far, yucky].
+    let mut rows: Vec<[[f64; 8]; 3]> = vec![];
+    let t0 = Instant::now();
+    for night in o.nights.0..=o.nights.1 {
+        let base = trade::world::laundromat(night);
+        let n = base.npcs.len();
+        let a = (night as usize * 7) % n;
+        let b = (a + 1 + (night as usize * 3) % (n - 1)) % n;
+        let who = [vec![], vec![a, b], base.pump(&pump)];
+        let mut row = [[0.0; 8]; 3];
+        let mut on = o.clone();
+        on.night = night;
+        for (k, people) in who.iter().enumerate() {
+            let mut w = base.clone();
+            for &p in people {
+                w.set_yuck(p, o.tax);
+            }
+            let tc = board_for(&on, w);
+            let (hit, lost, _) = hit_and_loss(&tc, &on);
+            let (rivals, far) = glass(&tc);
+            let trades = tc.cycles.iter().filter(|c| !c.is_gift()).count();
+            let best: f64 = qubo::chosen(tc.ground_state(), tc.cycles.len()).iter().map(|&i| tc.cycles[i].value()).sum();
+            row[k] = [hit, lost, tc.cycles.len() as f64, trades as f64, best, rivals as f64, far as f64, people.len() as f64];
+        }
+        println!(
+            "  night {night:>3}: {}  ({:.0} s)",
+            row.iter()
+                .zip(&labels)
+                .map(|(r, l)| format!(
+                    "{l} [{} yucky] {:>3.0}% lost {:>4.1}, {:>2} strips {:>2} trades, best {:>5.1}, rivals {:>3} far {:>2}",
+                    r[7], 100.0 * r[0], r[1], r[2], r[3], r[4], r[5], r[6]
+                ))
+                .collect::<Vec<_>>()
+                .join(" | "),
+            t0.elapsed().as_secs_f64()
+        );
+        rows.push(row);
+    }
+    let mut rng = rand::rngs::StdRng::seed_from_u64(o.seed);
+    let stats = ["hit rate (points)", "Goo lost a spin", "strips", "trades", "best set Goo", "rivals", "far"];
+    for k in [1, 2] {
+        // A pump that touched nobody tonight is just the clean board again.
+        let used: Vec<&[[f64; 8]; 3]> = rows.iter().filter(|r| r[k][7] > 0.0).collect();
+        println!("\n{} - clean ({} nights where it touched anyone):", labels[k], used.len());
+        if used.len() < 2 {
+            continue;
+        }
+        for (s, name) in stats.iter().enumerate() {
+            let scale = if s == 0 { 100.0 } else { 1.0 };
+            let d: Vec<f64> = used.iter().map(|r| scale * (r[k][s] - r[0][s])).collect();
+            let ci = bootstrap_diff_means(&d, &[0.0], &mut rng);
+            let mean = |b: usize| scale * used.iter().map(|r| r[b][s]).sum::<f64>() / used.len() as f64;
+            println!(
+                "  {name:<18} clean {:>7.2}, yucky {:>7.2}: {:+7.2}, 95% CI [{:+7.2}, {:+7.2}] -> {}",
+                mean(0),
+                mean(k),
+                ci.point_estimate,
+                ci.lower,
+                ci.upper,
+                // Not `classify()`: it calls a CI wholly below zero "Null" (FINDINGS sim-opt).
+                if ci.lower > 0.0 { "up" } else if ci.upper < 0.0 { "down" } else { "can't tell" }
+            );
+        }
     }
 }

@@ -620,17 +620,37 @@ of power.
     pump. When it's a person, it just helps them.
 - **Karma = yuck cured,** whoever had it. No points for siding, no points
   for accusing.
-- **What it does to the board** (a hypothesis to test, not a claim yet):
-  - A yucky customer needs a bigger gain before they'll trade (a "yuck
-    tax"), so trades through them get fragile.
-  - In the machine's terms, that adds conflicting couplings: spin-glass
-    *frustration*, a real Ising term for bonds that can't all be
-    satisfied at once.
-  - If it's right, yuck literally makes the street harder to compute: the
-    drum needs more cooling and the i9's hit rate drops. Curing yuck
-    gives the machine an easier board.
-  - Measure it with `trade_cli bench` on yucky vs clean boards before the
-    game says so.
+- **What it does to the board, measured** (2026-10-06, `trade_cli yuck`;
+  PLAN "Yuck, measured"):
+  - **The guess was wrong.** We expected yuck to frustrate the machine:
+    more conflicting couplings, a harder board. It does the opposite.
+  - **It shrinks the world.** A yucky person needs the tax on top of
+    their gain before a trade is worth it, so trades through them die. Two
+    yucky people at a 2 Goo tax cut the board from 11.5 trades to 7.2, and
+    the street's best set from 41.6 Goo to 31.1, over 30 nights. The
+    drum then finds that smaller, poorer answer *more* easily: the i9's
+    hit rate rises from 82% to 94% (+12 points, 95% CI [+7, +17]). The
+    near-ties (rival sets within 10%) halve, so it's less glassy. Every
+    tax (1, 2 and 4 Goo) and every source agree, and the effect grows
+    with the tax.
+  - **Yuck costs everyone you deal with.** Each yucky person costs the
+    street about 5 Goo a night at a 2 Goo tax, whatever the source. That's
+    two and a half times their own tax: when their trade dies, everyone
+    else in it loses their gain too.
+  - **Pumps cost more because they're bigger.**
+    | Source | People | Best set Goo |
+    |---|---|---|
+    | 2 people | 2 | -10.5 |
+    | Hunger pump | 2.7 on average | -15.0 |
+    | Cold pump | 4 on cold nights | -22.2 |
+
+    Per person it's the same; a pump just touches more people at once.
+    That's why fixing a pump is the big cure.
+  - **What the game says:** a yucky street isn't confusing, it's simple
+    and poor. Fewer deals are worth doing, so everyone settles fast into
+    less. The same goes for the heat death: fewer states, nothing left to
+    work out. The yuck shows on the board as *missing* trades, not as
+    noise.
 - **The farm thread:** the kill floor is the biggest pump. The cores
   buying the plant and reclaiming it (above) is removing the handle.
 - **Real history for each rule:**
@@ -653,19 +673,37 @@ of power.
     "Out of California". Someone misread the O as a zero, and he was
     blamed for bringing AIDS to North America. Worobey's 2016 study in
     *Nature* showed he didn't; the virus had reached New York around 1970.
+- **Decided** (the user left these to us, 2026-10-06):
+  - **Diagnosis works through ghost strips.** The i9 knows what tonight's
+    board would be without the yuck, so it shows the trades that *didn't*
+    happen as faint ghost strips, each with what it would have paid. Where
+    the ghosts cluster (around one person, or around everyone touched by
+    the cold or hunger) is the John Snow map. The player calls person or
+    pump from the ghosts, never from a label.
+  - **"Yucky" is never painted on anyone.** There's no chip to reveal.
+    The player sees ghost strips before and trades coming back after,
+    which keeps "label the behavior, not the person" true on screen.
+  - **Upddayett cures his own yuck by giving something away.** He can't
+    see his own yuck, but the give-away already exists, and giving lifts
+    the giver: Dunn, Aknin and Norton (*Science*, 2008) found people
+    randomly assigned to spend on others ended up happier than those who
+    spent on themselves.
+  - **The TV is a pump, and you can switch it off.** Changing the channel
+    doesn't help: both channels pump equally (the both-sides rule). Off,
+    its yuck stops, but so do the Shrug Network's true numbers and
+    PromiseTV's checkable promises. The facts come wrapped in the yuck,
+    and that's the trade-off. The ads, being commercials, still air
+    between nights.
+  - **Karma's scale is measured:** curing one person restores about 5 Goo
+    of trades at a 2 Goo tax, and a pump restores that times everyone it
+    touched.
 - **Building it, later** (not planned yet):
-  - a hidden `yucky` condition in the night roll (`src/trade/world.rs`)
-    with a spread rule along chosen trades, and pumps from the night's
-    conditions;
-  - the i9's map as a panel, with a "person or pump?" call that costs
-    something to make;
-  - the yuck tax measured on the thermostat machine first.
-- **Open questions:**
-  - Can a player cure their own yuck (Upddayett's), and how?
-  - Should the TV's yuck (both channels) be a pump the player can switch
-    off, at the cost of the ads?
-  - How visible should the hidden chip be: never, or after N nights of
-    good diagnoses?
+  - the yuck in the night roll (`World::yuck`, `World::pump` exist now
+    for the measurement), with a spread rule along chosen trades;
+  - the ghost strips, from a second board built without the yuck;
+  - a person-or-pump call that costs something, and a wrong call spreads
+    the yuck to the caller;
+  - the TV's off switch as a pump fix.
 
 ### Candidate ideas (not decided)
 

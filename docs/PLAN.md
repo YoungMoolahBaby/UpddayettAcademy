@@ -512,6 +512,48 @@ Built in `src/game/tape.rs`:
   a finite solid thinner than the cell. The 7 mm tape pack at a 5 cm cell
   did, and Bevy Solari panicked on it.
 
+## Yuck, measured (2026-10-06)
+
+The user asked us to measure the yuck tax (DESIGN "Yuck: the one enemy")
+with `trade_cli bench`, and a pump.
+- **The model:** `World::yuck` holds each person's tax in Goo.
+  - In `cycles::score`, a yucky recipient's gain shrinks by the tax, and
+    a trade only happens if everyone still gains. Gifts aren't taxed.
+  - `World::pump("hungry" | "cold")` returns everyone a pump touches
+    tonight.
+  - The test `yuck_taxes_trades_not_gifts` covers it.
+- **The tools:**
+  - `trade_cli bench --yuck upd,vape` (or `--pump hungry|cold`,
+    `--tax T`) runs one board.
+  - `trade_cli yuck --nights 1..30 --runs 48 [--tax T] [--pump P]` runs,
+    per night, clean vs two yucky people (picked by the night) vs the
+    pump. It reports Normal's hit rate, Goo lost, strips, trades, the best
+    set's Goo and glassiness: the rival sets within 10% of the best, and
+    how many strips apart they are. Then paired sim-opt bootstrap CIs.
+  - About 5 min a run.
+- **Results** (30 nights, 48 spins a board; every CI below excludes 0):
+
+  | Board | Tax | Trades | Best set Goo | Hit rate | Rivals |
+  |---|---|---|---|---|---|
+  | clean | - | 11.5 | 41.6 | 82% | 10.2 |
+  | 2 people | 1 | 9.6 | 36.4 | 91% (+8.6) | 8.9 |
+  | 2 people | 2 | 7.2 | 31.1 | 94% (+12.0) | 5.1 |
+  | 2 people | 4 | 4.6 | 24.4 | 96% (+13.4) | 2.6 |
+  | hunger pump (2.7 people) | 2 | 6.5 | 26.7 | 95% (+13.8) | 3.0 |
+  | cold pump (4 people, 13 cold nights) | 2 | 4.1 | 19.0 | 98% (+17.5) | 1.1 |
+
+  The cold-pump row compares with its own clean baseline (41.2 Goo, 80%).
+- **Verdict:** the frustration hypothesis is false.
+  - Yuck doesn't make the board harder; it makes it smaller. Trades die,
+    the near-ties go, and the drum finds the poorer answer more easily.
+  - The cost is welfare: about 5 Goo per yucky person per night at a
+    2 Goo tax, two and a half times the tax, because a dead trade takes
+    everyone's gain with it.
+  - Pumps cost the same per person but touch more people.
+  - DESIGN now says this, and turns it into the ghost-strip diagnosis.
+- **FINDINGS** (sim-opt): `classify()` calls a CI wholly below zero
+  `Null`. The yuck mode prints its own up/down verdict.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

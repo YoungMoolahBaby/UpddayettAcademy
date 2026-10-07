@@ -1017,4 +1017,30 @@ mod tests {
         bad.done.push(a);
         assert!(bad.check(w, &tc.cycles).is_err(), "one item moved twice");
     }
+
+    /// Yuck (DESIGN "Yuck: the one enemy"): a yucky person's tax kills the
+    /// trades it outweighs and trims the rest; their gifts stay as they were.
+    #[test]
+    fn yuck_taxes_trades_not_gifts() {
+        for night in NIGHTS {
+            let clean = world::laundromat(night);
+            let upd = clean.find_npc("Upddayett").unwrap();
+            let mut yucky = clean.clone();
+            yucky.set_yuck(upd, 2.0);
+            let trades = |w: &World| cycles::enumerate(w, MAX_LOOP);
+            let (a, b) = (trades(&clean), trades(&yucky));
+            assert!(b.len() <= a.len(), "night {night}: yuck added trades");
+            for t in &b {
+                // Each surviving trade is the clean one with 2 Goo off Upddayett's gain.
+                let same = a.iter().find(|c| c.legs == t.legs).expect("a trade only yuck allows");
+                for ((l, g), g0) in t.legs.iter().zip(&t.gains).zip(&same.gains) {
+                    let tax = if l.to == upd { 2.0 } else { 0.0 };
+                    assert!((g0 - tax - g).abs() < 1e-9, "night {night}");
+                }
+            }
+            let gifts = |w: &World| cycles::enumerate_gifts(w, cycles::MAX_CHAIN).len();
+            assert_eq!(gifts(&clean), gifts(&yucky), "night {night}: kindness gets through");
+            assert_eq!(clean.yuck_tax(upd), 0.0);
+        }
+    }
 }

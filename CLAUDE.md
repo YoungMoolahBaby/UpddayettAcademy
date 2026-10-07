@@ -69,6 +69,9 @@ Read first:
   (env `PART=sled|feeder|bracket|hook`, `TOL=0.5` mm; never 0.1, it runs for minutes). `verdict` is the policy the game will use;
   STLs land in `prints/` (git-ignored). The library is `src/trade/print.rs` (catalog, `check`, `World::add_print`);
   `trade_cli print [--part sled|feeder|bracket|hook] [--night N]` runs each v1 and v2 and shows what the print does to the board.
+- Yuck (DESIGN "Yuck: the one enemy", PLAN "Yuck, measured"): any mode takes `--yuck WHO,WHO` or `--pump hungry|cold` with `--tax T`
+  (Goo a trade, default 2); `trade_cli yuck --nights 1..30 --runs 48` compares clean vs 2 yucky people vs a pump per night
+  with paired bootstrap CIs (~5 min). Yuck shrinks the board (fewer trades, less Goo) and makes it easier, not harder.
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

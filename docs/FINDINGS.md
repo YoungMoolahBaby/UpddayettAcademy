@@ -1625,6 +1625,15 @@ Paths are under sim-opt's `src/`. Found by `trade_cli rematch` (run 5 vs run
   docs cite "Ch 32 §3.3", "Ch 30" and "Ch 51" (:58, :117, :154), a book a
   crates.io user doesn't have. The functions are general. The docs should
   say "A beats B" and define the protocol inline.
+- **API** (2026-10-06): `classify()` is one-sided. A CI wholly below zero
+  (A reliably *worse*) is `Null`, the same as "no effect"
+  (`classify_outcome`, analysis.rs:139-149; `RematchOutcome::Null`,
+  :74-76). Measuring a cost, it reads backwards: `trade_cli yuck` found
+  that two yucky people cut the best set by -10.5 Goo, 95% CI [-11.7,
+  -9.2], and `classify()` printed `Null`. A `Negative` variant (or the
+  doc saying "Null includes reliably worse") would stop someone from
+  reading a solid effect as none. We print our own up/down/can't-tell
+  verdict.
 - **docs** (2026-10-06): `bimodality_coefficient` says it guards
   near-constant input by "returning `0.0` defensively" (:278-279). For
   exactly constant input, m2 = 0, so g = kappa = 0 and it returns

@@ -113,6 +113,11 @@ pub struct World {
     pub wants: Vec<Want>,
     pub night: Night,
     pub value: Vec<Vec<f64>>,
+    /// Yuck (DESIGN "Yuck: the one enemy"): the tax each person puts on a trade
+    /// tonight, in Goo. A yucky person needs this much more before a trade is
+    /// worth it to them. Gifts aren't taxed: kindness gets through. Empty =
+    /// nobody yucky.
+    pub yuck: Vec<f64>,
 }
 
 /// Values are whole Goo: easier to read, and near-ties (36.6 vs 36.7) that
@@ -140,7 +145,7 @@ fn rule(use_: Use, npc: &Npc, i: usize, night: &Night) -> (f64, Tag) {
 
 impl World {
     fn empty() -> Self {
-        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![] }
+        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![], yuck: vec![] }
     }
 
     fn npc(&mut self, name: &'static str, sleeps_out: bool, has_animals: bool, has_phone: bool) -> usize {
@@ -276,6 +281,29 @@ impl World {
             c.push("no phone");
         }
         c
+    }
+
+    /// The yuck tax `npc` puts on a trade tonight (0 = not yucky).
+    pub fn yuck_tax(&self, npc: usize) -> f64 {
+        self.yuck.get(npc).copied().unwrap_or(0.0)
+    }
+
+    /// Make `npc` yucky tonight, with a tax of `tax` Goo per trade.
+    pub fn set_yuck(&mut self, npc: usize, tax: f64) {
+        self.yuck.resize(self.npcs.len(), 0.0);
+        self.yuck[npc] = tax;
+    }
+
+    /// Who a pump makes yucky tonight: `"hungry"` (hangry), `"cold"` (out in
+    /// the cold), or nobody for a pump that isn't running.
+    pub fn pump(&self, pump: &str) -> Vec<usize> {
+        (0..self.npcs.len())
+            .filter(|&k| match pump {
+                "hungry" => self.night.hungry[k],
+                "cold" => self.night.cold && self.npcs[k].sleeps_out,
+                _ => false,
+            })
+            .collect()
     }
 
     /// "cold night" / "mild night"
