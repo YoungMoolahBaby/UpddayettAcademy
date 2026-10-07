@@ -451,11 +451,17 @@ only help. The game shows it in corners, fine print and TV shrugs.
      - the old crew keeps its jobs, now making the faux product.
   5. From there they keep buying, farm by farm and plant by plant, until
      every relative is free.
-  6. *(Kept: the user, 2026-10-06.)* The
-     faux-meat corps fund a space program, launched from the old plant's
-     parking lot. It's the clash of yuck coming full circle: they become
-     the billionaires with the rockets, and the Shrug Network shrugs ("a
-     pig named a rocket after itself. Again.").
+  6. *(Kept: the user, 2026-10-06.)* The faux-meat corps fund a space
+     program, launched from the old plant's parking lot. Then, in the
+     user's words: "everyones a billionaire with rockets in the end and
+     space just keeps on going until the power runs out".
+     - Nobody wins the clash of yuck. It just goes to space with everyone
+       else, and the Shrug Network shrugs ("a pig named a rocket after
+       itself. Again.").
+     - "Until the power runs out" is the game's own physics at full
+       scale. The drum cools until the strips stop moving; the universe
+       cools until nothing does. It's the same thermodynamics as the
+       laundry machine, with the heat death as the last night.
 - **Real precedents for each step** (the user asked that it make sense):
   1. **Paying for the brains with truffles.** Italy banned truffle pigs
      in 1985 (they dig up the beds and eat the truffles), and dogs took
