@@ -5,6 +5,8 @@
 //! `UPD_GIVE=what` (e.g. `phone`) has Upddayett give that away (before the want).
 //! `UPD_BATTERY=1`, `UPD_IDLE=1`, `UPD_SHIELD=<strip>|found`: defenses (see below).
 //! `UPD_SCOPE=<strip>`: put that trade's strip on the scope.
+//! `UPD_PRINT=sled|feeder|bracket|hook`: Upddayett prints that part first (`shots/print_1_draft1.png`,
+//! `print_2_printing.png`, `print_3_done.png`), then the cycle runs with it on the board.
 //! `UPD_RESPIN=1`: after the cycle, shield what the spin check caught (battery if the
 //! power went out) and spin again (`shots/respin_*.png`).
 //! For checking the look without sitting in front of the window.
@@ -27,14 +29,68 @@ pub fn drive(
     mut respun: Local<bool>,
     mut exit: MessageWriter<AppExit>,
     drum: Res<super::drum::DrumView>,
+    mut shop: ResMut<super::printer::PrintShop>,
+    mut printing: Local<u8>,
+    mut set_up: Local<bool>,
 ) {
+    use super::printer::{PRINT_SECS, Stage};
     // The drum's model takes ~12 s to build; start once it tumbles.
     if !drum.ready() {
         return;
     }
     *frame += 1;
     let f = *frame;
-    if f == 30 {
+    // UPD_PRINT=<part>: Upddayett prints it first (draft 1 rejected, the
+    // fix, the print), with a screenshot at each step.
+    if f >= 30
+        && *printing != 4
+        && let Ok(key) = std::env::var("UPD_PRINT")
+    {
+        let shot = |commands: &mut Commands, name: &str| {
+            std::fs::create_dir_all("shots").ok();
+            commands.spawn(Screenshot::primary_window()).observe(save_to_disk(format!("shots/{name}.png")));
+        };
+        match *printing {
+            0 => match cortenforge_play::trade::print::CATALOG.iter().position(|p| p.key == key) {
+                Some(k) => {
+                    lm.watch = 2.0;
+                    shop.start(k);
+                    *printing = 1;
+                }
+                None => {
+                    error!("UPD_PRINT: no part {key:?} (sled, feeder, bracket, hook)");
+                    *printing = 4;
+                }
+            },
+            // Draft 1 comes back rejected: picture it, then fix it.
+            1 if shop.stage == Stage::Rejected && shop.v2.is_none() => {
+                shot(&mut commands, "print_1_draft1");
+                *since = f;
+                *printing = 5;
+            }
+            5 if f >= *since + 10 => {
+                shop.check(true);
+                *printing = 6;
+            }
+            6 if shop.stage == Stage::Approved => {
+                shop.stage = Stage::Printing { t: 0.0 };
+                *printing = 2;
+            }
+            2 if matches!(shop.stage, Stage::Printing { t } if t > 0.6 * PRINT_SECS) => {
+                shot(&mut commands, "print_2_printing");
+                *printing = 3;
+            }
+            3 if shop.stage == Stage::Done => {
+                shot(&mut commands, "print_3_done");
+                *printing = 4;
+                *frame = 0;
+            }
+            _ => {}
+        }
+        return;
+    }
+    if f == 30 && !*set_up {
+        *set_up = true;
         lm.watch = 4.0;
         if std::env::var_os("UPD_NEXT").is_some() {
             lm.next_night();

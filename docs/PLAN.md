@@ -32,6 +32,10 @@ mixed unseen boards); training on them made it worse, so run 5 stays.
 **Step 5 done** (2026-10-06): backlog item 1, the drum tumbler. Tonight's
 items tumble behind the porthole in a cf-design drum, stepped by sim-core
 on a worker thread (see "Step 5" below).
+**Step 7 done** (2026-10-06): backlog item 4, Upddayett prints things. He designs
+parts in cf-design; the i9 rejects his first draft with the printability
+checker's numbers, he fixes it, and the print joins the board and the drum
+(see "Step 7" below; FINDINGS cf-design and mesh). The backlog is empty.
 **Step 6 done** (2026-10-06): backlog item 3, a row of washers (parallel
 tempering). Four washers share one Normal cycle's compute and trade loads.
 On 60 fresh nights they beat the learned run 5 by +3.7 points (96.8% vs
@@ -368,6 +372,46 @@ feeder takes ~30 s to check, so the game checks on a worker thread.
   bed layer by layer, then goes into the drum and onto the board.
 - Its trades and gifts show up like any other item's.
 
+### 7.3 result (2026-10-06): in the game
+
+Run it: `cargo run --release`, then UPDDAYETT PRINTS... in the left
+panel. `UPD_SHOT=1 UPD_PRINT=sled|feeder|bracket|hook` shoots the flow.
+- **The flow** (`src/game/printer.rs`, `PrintShop`): pick a part, then:
+  1. "Check his draft": the i9 checks draft 1 on a worker thread, which
+     also builds the display meshes. It comes back WON'T PRINT, with the
+     flaws in shop words and "Why: ...".
+  2. "Fix it and check again": draft 2 PRINTS, with the fix, the parts,
+     the cm^3 of PLA and a rough print time. printability's own estimate
+     is never filled in, so ours is ~40% of the solid at 15 cm^3 an hour.
+  3. "Print it": a 10 s print (at 1x watch speed). The STLs go to
+     `prints/`, and `Laundromat::add_print` puts the item on tonight's
+     board.
+
+  One print a night: a new night clears it. Printing can't change the
+  board mid-spin, so it waits for the drum to stop.
+- **The printer**: a cf-design CSG prop (stool, frame, bed, gantry,
+  nozzle) in front of the washer, between Amir and Upddayett, low enough
+  not to hide the porthole.
+  - Each kit part grows on the bed in turn (y-scale by height share), with
+    the nozzle and gantry following the layer.
+  - Finished parts step off to the side.
+  - A bubble under the printer shows the verdict or the progress. Above
+    it, the bubble covered the porthole.
+- **The board**: `board_for` adds the print before a give-away, so
+  Upddayett can give his print away too. On night 1 with the feeder, the i9's
+  call was "Upddayett gives the printed pigeon feeder to Pigeon Lady,
+  Pigeon Lady gives the birdseed to Librarian Tamara, Tamara gives the
+  Wi-Fi password to Upddayett".
+- **The counter** has a spare crate for the print, Upddayett's color,
+  hidden until a print joins. The crate count is asserted per item.
+- **The drum** builds a body for each catalog print at startup: 21 bodies,
+  13.0 s instead of 12. A fresh print always goes into the load, tumbling
+  as the very Solid that was checked (`Print::solid`: v2's parts at their
+  joint positions). The test `prints_tumble` shows the 140 mm feeder and
+  the sled drop in and stay in.
+- Checks in the game: hook 0.4-0.7 s, sled 4.5-5.8 s, feeder 16 s (draft
+  1) and 33 s (draft 2).
+
 ### 7.4 FINDINGS
 
 Log whatever the pipeline costs a newcomer: how the two checkers relate,
@@ -392,7 +436,7 @@ CortenForge pieces the game doesn't use yet:
    exchange on our own boards). Several washers run copies of tonight's
    board at different temperatures and swap loads, the textbook fix for
    rugged boards like night 4. Compare at equal compute.
-4. **Upddayett prints things** (cf-design `Mechanism` -> MJCF + STL,
+4. **(Done: Step 7.)** **Upddayett prints things** (cf-design `Mechanism` -> MJCF + STL,
    print-profile checks). He designs a part in code, CortenForge checks
    it prints, and it becomes a new item on the board. Fits the
    "Build your own safety net" lore. The biggest of the four.

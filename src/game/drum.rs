@@ -12,6 +12,7 @@ use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use cortenforge::cf_design::{AttributedMesh, Solid};
 use cortenforge_play::trade::drum::{self, Tumbler};
+use cortenforge_play::trade::print;
 use nalgebra::Vector3;
 
 use super::scene::WasherRoot;
@@ -45,6 +46,8 @@ struct Shared {
 #[derive(Resource)]
 pub struct DrumView {
     shared: Arc<Mutex<Shared>>,
+    /// Each body's item name (the world's items, then the print catalog).
+    names: Vec<&'static str>,
     items: Vec<usize>,
     done_at: Option<f32>,
 }
@@ -73,12 +76,15 @@ pub fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut mats: ResMut<Assets<StandardMaterial>>,
 ) {
-    let names: Vec<&'static str> = lm.tc.world.items.iter().map(|i| i.name).collect();
+    // One body per world item, plus one per print in Upddayett's catalog
+    // (built now: the model takes ~12 s, so a print can't wait for one).
+    let names: Vec<&'static str> = lm.tc.world.items.iter().map(|i| i.name).chain(print::CATALOG.iter().map(|p| p.item)).collect();
+    let bodies = names.clone();
     let shared = Arc::new(Mutex::new(Shared { poses: vec![None; names.len()], ..default() }));
     let worker = shared.clone();
     std::thread::Builder::new()
         .name("drum".into())
-        .spawn(move || run(&names, &worker))
+        .spawn(move || run(&bodies, &worker))
         .expect("drum thread");
 
     let steel = mats.add(StandardMaterial {
@@ -94,13 +100,10 @@ pub fn setup(
         .with_scale(Vec3::splat(SCALE));
     let t = Instant::now();
     let drum_mesh = meshes.add(to_mesh(&drum::drum_solid().mesh(4.0)));
-    let items: Vec<_> = lm
-        .tc
-        .world
-        .items
+    let items: Vec<_> = names
         .iter()
-        .map(|i| {
-            let look = drum::item_look(i.name);
+        .map(|&name| {
+            let look = drum::item_look(name);
             let mesh = meshes.add(to_mesh(&look.solid.mesh(tolerance(&look.solid))));
             let [r, g, b] = look.color;
             let mat = mats.add(StandardMaterial { base_color: Color::srgb(r, g, b), perceptual_roughness: 0.6, ..default() });
@@ -121,7 +124,7 @@ pub fn setup(
             Transform::from_translation(CENTER + Vec3::new(0.0, 0.3, 0.25)),
         ));
     });
-    commands.insert_resource(DrumView { shared, items: vec![], done_at: None });
+    commands.insert_resource(DrumView { shared, names, items: vec![], done_at: None });
 }
 
 /// Mesh tolerance for an item: a quarter of its thinnest side, 0.7-4 mm.
@@ -132,7 +135,7 @@ fn tolerance(s: &Solid) -> f64 {
     })
 }
 
-fn to_mesh(m: &AttributedMesh) -> Mesh {
+pub(super) fn to_mesh(m: &AttributedMesh) -> Mesh {
     let pos: Vec<[f32; 3]> = m.geometry.vertices.iter().map(|p| [p.x as f32, p.y as f32, p.z as f32]).collect();
     let idx: Vec<u32> = m.geometry.faces.iter().flatten().copied().collect();
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
@@ -215,18 +218,21 @@ fn run(names: &[&str], shared: &Mutex<Shared>) {
 }
 
 /// Tonight's drum load: the items in the most trades on the board (not the
-/// answer: that would give it away before the spin).
-fn load(lm: &Laundromat) -> Vec<usize> {
-    let mut count = vec![0usize; lm.tc.world.items.len()];
+/// answer: that would give it away before the spin), as drum bodies. A
+/// fresh print always goes in: Upddayett wants to see it tumble.
+fn load(lm: &Laundromat, names: &[&str]) -> Vec<usize> {
+    let w = &lm.tc.world;
+    let mut count = vec![0usize; w.items.len()];
     for c in lm.tc.cycles.iter().take(lm.n()) {
         for leg in &c.legs {
             count[leg.item] += 1;
         }
     }
-    let mut items: Vec<usize> = (0..count.len()).filter(|&i| count[i] > 0 && !lm.tc.world.items[i].held).collect();
-    items.sort_by_key(|&i| (std::cmp::Reverse(count[i]), i));
+    let fresh = |i: usize| print::CATALOG.iter().any(|p| p.item == w.items[i].name);
+    let mut items: Vec<usize> = (0..count.len()).filter(|&i| (count[i] > 0 || fresh(i)) && !w.items[i].held).collect();
+    items.sort_by_key(|&i| (!fresh(i), std::cmp::Reverse(count[i]), i));
     items.truncate(drum::MAX_ITEMS);
-    items
+    items.into_iter().filter_map(|i| names.iter().position(|&n| n == w.items[i].name)).collect()
 }
 
 /// The drum's speed for the wash program right now: a tumble from ~0.25x
@@ -253,7 +259,7 @@ pub fn update(
     mut spinner: Single<&mut Transform, (With<Spinner>, Without<ItemBody>)>,
     mut bodies: Query<(&ItemBody, &mut Transform, &mut Visibility), Without<Spinner>>,
 ) {
-    let items = load(&lm);
+    let items = load(&lm, &view.names);
     let target = target(&lm, &mut view, time.elapsed_secs());
     let changed = items != view.items;
     if changed {

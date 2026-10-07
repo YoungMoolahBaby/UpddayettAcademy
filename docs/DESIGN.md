@@ -336,6 +336,31 @@ physics collider and the mesh you see, and sim-core runs the contacts.
 - The strips on top do the deciding. The drum shows how hard they are
   being shaken.
 
+### Upddayett's printer (built in Step 7)
+
+Upddayett has a salvaged 3D printer on a stool in front of the washer.
+"Build your own safety net": he designs parts in code (`cf_design`), and
+once a night he can print one. It becomes his item on tonight's board, to
+trade or give away.
+- **The catalog:** each part is something a regular wants:
+  - a 6x18650 battery sled (Bike Kitchen Dave, Vape Lady);
+  - a pigeon feeder (Pigeon Lady, Librarian Tamara's courtyard birds);
+  - a shopping-cart caster bracket (Shopping-Cart Guy);
+  - a headphone hook (Sound Guy Ray).
+- **The lesson beat:** his first draft never prints, and the i9 says why
+  in the checker's own numbers:
+  - "15202 mm^2 hangs over air at up to 90 deg (the printer manages 45)";
+  - "walls down to 0.08 mm thick (1.0 mm at least)";
+  - a 300 mm bracket on a 200 mm bed.
+
+  He fixes it, the second draft checks out, and it prints. CortenForge
+  catches a bad print before it wastes the night.
+- **On screen:** the part grows on the bed layer by layer, with the nozzle
+  sweeping, and a little screen under the printer shows the verdict. Then
+  the print joins the board: new trades, new gift chains, a crate at his
+  feet. It tumbles in the drum as the very same shape that was checked.
+  The STLs land in `prints/` and are real files for a real slicer.
+
 ### The TVs (built in Step 3.5)
 
 Every laundromat has a TV bolted in the corner. The Suds & Duds has two

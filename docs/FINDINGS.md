@@ -1799,6 +1799,13 @@ Found by `probe_print` (Step 7.0; paths under `cortenforge-mesh-*-0.9.0/src/`).
   breaks watertightness instead.
 - **perf** (2026-10-06): checks on 300k-800k-face parts take 3-16 s each, and
   orientation takes 0.1-0.4 s. A game check needs a worker thread.
+- **API** (2026-10-06): `validate_for_printing` calls mesh-repair's
+  self-intersection search, which logs `WARN Found 100 self-intersecting
+  triangle pair(s)` through `tracing` (mesh-repair intersect.rs:363) on
+  every check of every cf-design part. The finding is already in the
+  returned `PrintValidation`, so the log line just repeats it, in the
+  game's log. Libraries returning a result shouldn't also warn; `debug!`
+  would do.
 
 ### Platform
 

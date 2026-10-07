@@ -44,6 +44,8 @@ pub struct Print {
     pub owner_use: Use,
     /// Who wants it: (a piece of their name, Goo on a neutral night, why).
     pub wants: &'static [(&'static str, f64, Use)],
+    /// The filament color (sRGB).
+    pub color: [f32; 3],
     /// What v1 gets wrong, and what v2 changed.
     pub flaw: &'static str,
     pub fix: &'static str,
@@ -55,6 +57,26 @@ impl Print {
     pub fn design(&self, fixed: bool) -> Mechanism {
         (self.design)(fixed)
     }
+
+    /// v2 assembled (each part at its joint's reference position), centered
+    /// on the origin: what tumbles in the drum.
+    pub fn solid(&self) -> Solid {
+        let m = self.design(true);
+        let origins = m.reference_origins().unwrap_or_default();
+        let s = m
+            .parts()
+            .iter()
+            .map(|p| p.solid().clone().translate(origins.get(p.name()).copied().unwrap_or_else(Vector3::zeros)))
+            .reduce(Solid::union)
+            .expect("a print has parts");
+        match s.bounds() {
+            Some(b) => {
+                let c = (b.min.coords + b.max.coords) / 2.0;
+                s.translate(-c)
+            }
+            None => s,
+        }
+    }
 }
 
 pub const CATALOG: [Print; 4] = [
@@ -64,6 +86,7 @@ pub const CATALOG: [Print; 4] = [
         base: 3.0,
         owner_use: Use::Build,
         wants: &[("Dave", 7.0, Use::Build), ("Vape Lady", 5.0, Use::Build)],
+        color: [1.0, 0.45, 0.1],
         flaw: "0.5 mm walls: the nozzle lays 0.4 mm lines, so they come out as two-line slivers that crack",
         fix: "2 mm walls and floor, square dividers between the cells, and a flat lid that pins on",
         design: sled,
@@ -74,6 +97,7 @@ pub const CATALOG: [Print; 4] = [
         base: 2.0,
         owner_use: Use::Build,
         wants: &[("Pigeon Lady", 6.0, Use::FeedAnimals), ("Tamara", 4.0, Use::FeedAnimals)],
+        color: [0.1, 0.7, 0.62],
         flaw: "a flat roof in one piece: 140 mm of plastic over thin air, which the printer can't bridge",
         fix: "the roof is its own print: a steep cone standing on its rim, dropped onto the posts",
         design: feeder,
@@ -84,6 +108,7 @@ pub const CATALOG: [Print; 4] = [
         base: 2.0,
         owner_use: Use::Build,
         wants: &[("Shopping-Cart", 6.0, Use::Build), ("Dave", 3.0, Use::Build)],
+        color: [0.22, 0.22, 0.25],
         flaw: "drawn 300 mm long: the bed is 200 mm, and even corner to corner it's 283",
         fix: "60 x 40 x 5 mm with four 4.2 mm bolt holes",
         design: bracket,
@@ -94,6 +119,7 @@ pub const CATALOG: [Print; 4] = [
         base: 1.0,
         owner_use: Use::Build,
         wants: &[("Sound Guy Ray", 4.0, Use::Enjoy), ("Tamara", 2.0, Use::Enjoy)],
+        color: [0.85, 0.15, 0.2],
         flaw: "a 0.6 mm arm: thinner than the 1 mm the printer can make, and it would snap under headphones anyway",
         fix: "a 6 mm arm, the J extruded 10 mm and printed lying on its side",
         design: hook,
@@ -232,8 +258,10 @@ fn hook(fixed: bool) -> Mechanism {
 pub struct PartReport {
     pub part: String,
     pub prints: bool,
-    /// Why not, in the checker's words (with its numbers).
+    /// Why not, in the checker's words (with its numbers), and in shop
+    /// words (one line per kind of flaw).
     pub flaws: Vec<String>,
+    pub short: Vec<String>,
     /// As placed on the bed (mm), and whether that's the designer's
     /// orientation or the one `find_optimal_orientation` picked.
     pub size: Vector3<f64>,
@@ -259,8 +287,29 @@ impl PrintReport {
 
     /// Every part's flaws, labeled by part when there are several.
     pub fn flaws(&self) -> Vec<String> {
+        self.labeled(|p| &p.flaws)
+    }
+
+    /// The same in shop words.
+    pub fn short(&self) -> Vec<String> {
+        self.labeled(|p| &p.short)
+    }
+
+    fn labeled(&self, f: impl Fn(&PartReport) -> &Vec<String>) -> Vec<String> {
         let label = self.parts.len() > 1;
-        self.parts.iter().flat_map(|p| p.flaws.iter().map(move |f| if label { format!("{}: {f}", p.part) } else { f.clone() })).collect()
+        self.parts.iter().flat_map(|p| f(p).iter().map(move |s| if label { format!("{}: {s}", p.part) } else { s.clone() })).collect()
+    }
+
+    /// Plastic in every part (cm^3).
+    pub fn plastic_cm3(&self) -> f64 {
+        self.parts.iter().map(|p| p.volume).sum::<f64>() / 1000.0
+    }
+
+    /// A rough print time (hours) on a cheap FDM printer: ~40% of the solid
+    /// (walls plus 20% infill) at ~15 cm^3 an hour. printability's own
+    /// estimate is never filled in (FINDINGS mesh).
+    pub fn hours(&self) -> f64 {
+        self.plastic_cm3() * 0.4 / 15.0
     }
 }
 
@@ -275,16 +324,16 @@ pub fn check(m: &Mechanism, tol: f64) -> PrintReport {
         .into_iter()
         .map(|(part, mesh)| {
             let flat = place_on_build_plate(&mesh);
-            let (mut prints, mut flaws) = verdict(&flat);
+            let mut v = verdict(&flat);
             let mut on_bed = flat;
             let mut rotated = false;
-            if !prints {
+            if !v.prints {
                 // `find_optimal_orientation` scores overhang alone (it stands
                 // a 2 mm lid on its edge), so it's only the fallback.
                 let turned = place_on_build_plate(&apply_orientation(&mesh, &find_optimal_orientation(&mesh, &cfg, 24)));
-                let (ok, f) = verdict(&turned);
-                if ok {
-                    (prints, flaws, on_bed, rotated) = (true, f, turned, true);
+                let t = verdict(&turned);
+                if t.prints {
+                    (v, on_bed, rotated) = (t, turned, true);
                 }
             }
             let (lo, hi) = bounds(&on_bed);
@@ -293,18 +342,20 @@ pub fn check(m: &Mechanism, tol: f64) -> PrintReport {
             // A part thinner than the mesh tolerance meshes to (almost)
             // nothing, and nothing has no flaws: the sled v1's 0.5 mm lid.
             if size.min() < 2.0 * tol || volume < 1.0 {
-                prints = false;
-                flaws.push(format!("thin wall: {:.1} mm at its thinnest, below what the {tol} mm mesh (and the 0.4 mm nozzle) can make", size.min().max(0.0)));
+                v.prints = false;
+                v.flaws.push(format!("thin wall: {:.1} mm at its thinnest, below what the {tol} mm mesh (and the 0.4 mm nozzle) can make", size.min().max(0.0)));
+                v.short.push(format!("{:.1} mm thin: less than one 0.4 mm line of plastic", size.min().max(0.0)));
             }
-            PartReport { part, prints, flaws, size, rotated, volume, mesh: on_bed }
+            PartReport { part, prints: v.prints, flaws: v.flaws, short: v.short, size, rotated, volume, mesh: on_bed }
         })
         .collect();
     PrintReport { parts, design_warnings, secs: t.elapsed().as_secs_f64() }
 }
 
 /// Will this mesh (on the bed) print? printability's critical issues, minus
-/// the mesher's slivers and zero-area triangles.
-pub fn verdict(mesh: &IndexedMesh) -> (bool, Vec<String>) {
+/// the mesher's slivers and zero-area triangles. `flaws` are in the
+/// checker's words; `short` says the same in shop words, one per kind.
+pub fn verdict(mesh: &IndexedMesh) -> Verdict {
     let sound = {
         let r = validate_mesh(mesh);
         r.is_watertight && r.is_manifold
@@ -319,9 +370,10 @@ pub fn verdict(mesh: &IndexedMesh) -> (bool, Vec<String>) {
             .sum()
     };
     let Ok(v) = validate_for_printing(mesh, &PrinterConfig::fdm_default()) else {
-        return (false, vec!["nothing to print (empty mesh)".into()]);
+        return Verdict { prints: false, flaws: vec!["nothing to print (empty mesh)".into()], short: vec!["nothing to print".into()] };
     };
     let mut flaws = vec![];
+    let mut kinds: Vec<String> = vec![];
     for i in &v.issues {
         if format!("{:?}", i.severity) != "Critical" {
             continue;
@@ -334,8 +386,39 @@ pub fn verdict(mesh: &IndexedMesh) -> (bool, Vec<String>) {
             continue;
         }
         flaws.push(format!("{}: {}", plain(&kind), i.description));
+        if !kinds.contains(&kind) {
+            kinds.push(kind);
+        }
     }
-    (flaws.is_empty(), flaws)
+    let cfg = &v.config;
+    let short = kinds
+        .iter()
+        .map(|k| match k.as_str() {
+            "ExcessiveOverhang" => {
+                let big = v.overhangs.iter().filter(|r| r.area >= MIN_REGION);
+                let (angle, total) = big.fold((0.0f64, 0.0), |(a, t), r| (a.max(r.angle), t + r.area));
+                format!("{total:.0} mm^2 hangs over air at up to {angle:.0} deg (the printer manages {:.0})", cfg.max_overhang_angle)
+            }
+            "LongBridge" => {
+                let span = v.long_bridges.iter().map(|r| r.span).fold(0.0, f64::max);
+                format!("a {span:.0} mm bridge with nothing under it ({:.0} mm at most)", cfg.max_bridge_span)
+            }
+            "ThinWall" => {
+                let t = v.thin_walls.iter().filter(|r| r.area >= MIN_REGION).map(|r| r.thickness).fold(f64::INFINITY, f64::min);
+                format!("walls down to {t:.2} mm thick ({:.1} mm at least)", cfg.min_wall_thickness)
+            }
+            "ExceedsBuildVolume" => format!("too big for the {:.0} x {:.0} mm bed", cfg.build_volume.0, cfg.build_volume.1),
+            other => format!("{}", plain(other)),
+        })
+        .collect();
+    Verdict { prints: flaws.is_empty(), flaws, short }
+}
+
+/// [`verdict`]'s answer.
+pub struct Verdict {
+    pub prints: bool,
+    pub flaws: Vec<String>,
+    pub short: Vec<String>,
 }
 
 /// printability's issue types in shop words.

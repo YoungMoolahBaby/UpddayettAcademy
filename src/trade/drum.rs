@@ -94,6 +94,11 @@ fn pillow(x: f64, y: f64, z: f64, r: f64) -> Solid {
 /// Every item's shape, by its name in `world` (real sizes, squeezed to fit
 /// a 500 mm drum where they don't). Anything unknown is a 80 mm box.
 pub fn item_look(name: &str) -> Look {
+    // Upddayett's prints tumble as what they are: the same Solid that was
+    // checked and printed (PLA at ~40% fill).
+    if let Some(p) = super::print::CATALOG.iter().find(|p| p.item == name) {
+        return look(p.solid(), 500.0, p.color);
+    }
     let has = |s: &str| name.contains(s);
     if has("Mtn Goo") {
         look(pillow(100.0, 66.0, 62.0, 6.0), 1350.0, [0.35, 0.95, 0.1])
@@ -453,5 +458,22 @@ mod tests {
         t.set_items(&[4, 5]);
         run(&mut t, 0.6 * critical(), 1.5);
         assert_eq!(t.items_in().collect::<Vec<_>>(), vec![4, 5]);
+    }
+
+    /// Upddayett's prints tumble too, as their own Solids: the biggest (the
+    /// feeder, 140 mm) and the two-part sled drop in and stay in.
+    #[test]
+    fn prints_tumble() {
+        let names: Vec<&str> = super::super::print::CATALOG.iter().map(|p| p.item).collect();
+        let mut t = Tumbler::new(&names).expect("build");
+        t.set_items(&[0, 1]);
+        for _ in 0..(5.0 / t.dt()) as usize {
+            t.step(0.6 * critical()).expect("step");
+        }
+        assert_eq!(t.items_in().count(), 2, "both dropped in");
+        for k in t.items_in() {
+            let p = t.qpose(k).0;
+            assert!((p.x * p.x + p.z * p.z).sqrt() < R && p.y.abs() < HALF_DEPTH + 30.0, "{} left the drum: {p:?}", names[k]);
+        }
     }
 }

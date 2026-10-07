@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
-use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, salties, world};
+use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, print, salties, world};
 use cortenforge_play::trade::row::{Row, RowSpin};
 use cortenforge_play::trade::smart::{self, SmartWash};
 
@@ -86,6 +86,9 @@ pub struct Laundromat {
     pub row_spin: Option<RowSpin>,
     /// Sim time each washer last traded loads, ours first.
     pub swapped_at: Vec<f64>,
+    /// What Upddayett printed tonight (an index into `print::CATALOG`): his
+    /// item on tonight's board.
+    pub printed: Option<usize>,
 }
 
 /// One scope sample: sim time, the drum's kT, every strip's deflection.
@@ -132,8 +135,12 @@ fn upddayett(w: &world::World) -> usize {
 
 /// Tonight's trade computer for night `night`, with Upddayett giving `give`
 /// away (if anything) and the battery holding its cells (if it runs).
-fn board_for(night: u64, give: Option<usize>, battery: bool) -> TradeComputer {
+fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
     let mut w = world::laundromat(night);
+    // The print first: it is an item Upddayett could also give away.
+    if let Some(k) = printed {
+        w.add_print(&print::CATALOG[k]);
+    }
     if let Some(item) = give {
         w.set_gift(item, true);
     }
@@ -144,8 +151,8 @@ fn board_for(night: u64, give: Option<usize>, battery: bool) -> TradeComputer {
 }
 
 /// [`board_for`], logged.
-fn open(night: u64, give: Option<usize>, battery: bool) -> TradeComputer {
-    let tc = board_for(night, give, battery);
+fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
+    let tc = board_for(night, give, battery, printed);
     let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
     info!(
         "night {night} (UPD_SEED={night} replays it): {}{}{}{}, {} trades + {gifts} gifts{}",
@@ -177,7 +184,7 @@ impl Laundromat {
         let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let tc = open(night, None, false);
+        let tc = open(night, None, false, None);
         let machine = tc.machine(physics, night).expect("build the slap-bit board");
         let mut lm = Self {
             want_menu: vec![],
@@ -201,6 +208,7 @@ impl Laundromat {
             row: vec![],
             row_spin: None,
             swapped_at: vec![],
+            printed: None,
             tc,
             machine,
             physics,
@@ -422,7 +430,7 @@ impl Laundromat {
         self.give_menu = kept.giveable(upd).into_iter().map(|item| (item, kept.value[upd][item])).collect();
         // What the battery takes off tonight's best set.
         let best = |tc: &TradeComputer| tc.evaluate(tc.forward_best).0;
-        self.battery_cost = (best(&board_for(self.night, self.give, false)) - best(&board_for(self.night, self.give, true))).max(0.0);
+        self.battery_cost = (best(&board_for(self.night, self.give, false, self.printed)) - best(&board_for(self.night, self.give, true, self.printed))).max(0.0);
         self.ground = tc.ground_state();
         self.activity = vec![0.0; tc.cycles.len()];
         // The smart Salties scout the board as it stands (they don't see wants).
@@ -436,8 +444,21 @@ impl Laundromat {
             return;
         }
         self.night += 1;
+        // One print a night: tomorrow's board starts without it.
+        self.printed = None;
         self.seed = self.night;
         self.reopen();
+    }
+
+    /// Upddayett printed catalog part `k` tonight: it joins the board as his
+    /// item (one print a night), so the board is rebuilt.
+    pub fn add_print(&mut self, k: usize) {
+        if matches!(self.mode, Mode::Cycle { .. }) || self.printed.is_some() {
+            return;
+        }
+        self.printed = Some(k);
+        self.reopen();
+        info!("Upddayett's print joins the board: the {}", print::CATALOG[k].item);
     }
 
     /// Upddayett gives `give` away tonight (or keeps everything). The item
@@ -458,10 +479,14 @@ impl Laundromat {
     fn reopen(&mut self) {
         let want = self.tc.want;
         let upd = upddayett(&self.tc.world);
-        if self.give.is_some_and(|item| !world::laundromat(self.night).giveable(upd).contains(&item)) {
+        let mut tonight = world::laundromat(self.night);
+        if let Some(k) = self.printed {
+            tonight.add_print(&print::CATALOG[k]);
+        }
+        if self.give.is_some_and(|item| !tonight.giveable(upd).contains(&item)) {
             self.give = None;
         }
-        self.tc = open(self.night, self.give, self.battery);
+        self.tc = open(self.night, self.give, self.battery, self.printed);
         self.idle = None;
         self.cut_at = None;
         self.spin_check = SpinCheck::default();

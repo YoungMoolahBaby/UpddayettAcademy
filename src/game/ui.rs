@@ -101,12 +101,17 @@ pub fn panels(
     keys: Res<ButtonInput<KeyCode>>,
     mut hidden: Local<bool>,
     tv: Res<super::tv::Tv>,
+    mut shop: ResMut<super::printer::PrintShop>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (cam, cam_tf) = *camera;
     let screen = egui::vec2(window.width(), window.height());
     let small = screen.x < COMPACT.x || screen.y < COMPACT.y;
     let spinning = matches!(lm.mode, Mode::Cycle { .. });
+
+    if let Ok(p) = cam.world_to_viewport(cam_tf, super::printer::bubble_anchor()) {
+        super::printer::bubble(ctx, &shop, matches!(lm.mode, Mode::Cycle { .. }), egui::pos2(p.x, p.y));
+    }
 
     // Portrait cards where the arrows start and end, with tonight's
     // conditions under the name.
@@ -418,6 +423,10 @@ pub fn panels(
                     } else if !small {
                         ui.small("Give something away and the drum sends it where it does the most good.");
                     }
+
+                    // Upddayett prints a part: the i9 checks his draft first.
+                    ui.separator();
+                    super::printer::panel(ui, &mut shop, &lm, small);
 
                     // Red-team the machine before the Salties do: find the
                     // magnet, cover it, or bring the battery.

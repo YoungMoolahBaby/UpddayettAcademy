@@ -76,6 +76,17 @@ pub fn setup(
             Transform::from_translation(at),
         ));
     }
+    // A spare crate for tonight's print (Upddayett's, and always the item
+    // after the world's own), hidden until he prints one.
+    let upd = w.find_npc("upddayett").unwrap_or(0);
+    let at = home(&spots.0, &owners, owners.len() - 1);
+    commands.spawn((
+        Crate { item: w.items.len(), from: at, to: at, t0: 0.0 },
+        Mesh3d(cube),
+        MeshMaterial3d(paint[upd % paint.len()].clone()),
+        Transform::from_translation(at),
+        Visibility::Hidden,
+    ));
 }
 
 /// Slot `item` beside whoever holds it in `holder`: a stack on the floor at
@@ -101,7 +112,7 @@ fn on_counter(k: usize) -> Vec3 {
 /// Fly every crate to where it belongs right now: home before a cycle, on
 /// the counter while the drum spins, and with its new holder (per the
 /// counter's settlement) once it stops.
-pub fn fly(time: Res<Time>, lm: Res<Laundromat>, spots: Res<NpcSpots>, mut crates: Query<(&mut Crate, &mut Transform)>) {
+pub fn fly(time: Res<Time>, lm: Res<Laundromat>, spots: Res<NpcSpots>, mut crates: Query<(&mut Crate, &mut Transform, &mut Visibility)>) {
     let now = time.elapsed_secs();
     let w = &lm.tc.world;
     let owners: Vec<usize> = w.items.iter().map(|it| it.owner).collect();
@@ -119,9 +130,15 @@ pub fn fly(time: Res<Time>, lm: Res<Laundromat>, spots: Res<NpcSpots>, mut crate
         }
     }
     let mut n = 0;
-    for (mut c, mut tf) in &mut crates {
-        n += 1;
+    for (mut c, mut tf, mut vis) in &mut crates {
         let i = c.item;
+        // The print's crate, on a night without a print.
+        if i >= w.items.len() {
+            *vis = Visibility::Hidden;
+            continue;
+        }
+        *vis = Visibility::Inherited;
+        n += 1;
         let target = if !escrow::escrowed(w, i) {
             BATTERY
         } else if matches!(lm.mode, Mode::Cycle { .. }) {
