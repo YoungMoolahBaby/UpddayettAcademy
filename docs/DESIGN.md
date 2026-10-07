@@ -578,6 +578,95 @@ the player helps it along. A proposal; nothing is built yet.
   - which request first (the barn computer reuses Upddayett's printer);
   - whether heat joins the Salties or replaces them.
 
+### Yuck: the one enemy (proposed, 2026-10-06)
+
+The user's idea, thought through together: nobody wins the clash of yuck,
+so the game clashes against yuck itself. Yuck works like an undiagnosed
+illness: whoever carries it doesn't feel it, and it spreads. But it's
+curable. The only terminal thing in the game is the universe running out
+of power.
+
+- **Four rules:**
+  1. **Hidden.** Nobody thinks they're the yucky one. The jerky guy thinks
+     he's making a point, and the lecturer thinks they're helping. A
+     "yucky" chip stays hidden until someone diagnoses it.
+  2. **Contagious.** It passes to whoever deals with the carrier, along
+     tonight's trades (the trade board *is* the street's social network).
+  3. **Curable.** A kind trade, a gift or a meal treats it.
+  4. **Nobody is immune.** It rolls fresh every night like the other
+     conditions, so nobody is permanently a spreader or a healer.
+     Upddayett catches it too, and on those nights his heckles turn mean.
+     He can't diagnose himself; the i9 can.
+- **Two sources: a person or a pump.**
+  - **Person to person:** a carrier passes it to whoever they trade with.
+  - **A shared source** (a "pump", after John Snow's Broad Street pump):
+    the cold night, hunger (hangry is real), both TV channels (the shrug
+    and the empty promise), the Salties' brags, and the biggest one, the
+    kill floor.
+
+  Telling the two apart is the point. When everyone near a pump turns
+  yucky, it looks contagious but isn't (the Cohen-Cole and Fletcher
+  rebuttal below), and treating people one by one won't fix it.
+- **Diagnosis: the i9 maps it.** As John Snow did, it marks tonight's
+  yuck on the trade graph and asks: a person, or a pump?
+  - **A pump:** fix it. Feed the hungry (the drum already sends food),
+    shield the strip, turn off the TV, and (Lesson 4) buy the plant.
+    Removing the handle helps everyone at once.
+  - **A person:** treat them, but never tell them. The cure is a kind
+    trade, not a label.
+  - **A wrong accusation costs you:** calling someone a carrier when it
+    was a pump (or nothing) is yuck, and it spreads to you. The game
+    never says "patient zero". When the source is a pump, it names the
+    pump. When it's a person, it just helps them.
+- **Karma = yuck cured,** whoever had it. No points for siding, no points
+  for accusing.
+- **What it does to the board** (a hypothesis to test, not a claim yet):
+  - A yucky customer needs a bigger gain before they'll trade (a "yuck
+    tax"), so trades through them get fragile.
+  - In the machine's terms, that adds conflicting couplings: spin-glass
+    *frustration*, a real Ising term for bonds that can't all be
+    satisfied at once.
+  - If it's right, yuck literally makes the street harder to compute: the
+    drum needs more cooling and the i9's hit rate drops. Curing yuck
+    gives the machine an easier board.
+  - Measure it with `trade_cli bench` on yucky vs clean boards before the
+    game says so.
+- **The farm thread:** the kill floor is the biggest pump. The cores
+  buying the plant and reclaiming it (above) is removing the handle.
+- **Real history for each rule:**
+  - **Carriers who don't feel it:** Mary Mallon ("Typhoid Mary"), a New
+    York cook who carried typhoid without symptoms and never believed she
+    was sick. She was quarantined on North Brother Island 1907-1910 and
+    1915-1938, 26 years in all. A warning about what labels do, too.
+  - **Behavior spreads through networks:** Christakis and Fowler (BMJ,
+    2008) followed 4,739 people in the Framingham Heart Study and found
+    happiness clustering up to three degrees out.
+  - **...but shared environments fake contagion:** Cohen-Cole and
+    Fletcher (BMJ, same issue) used the same method to make acne,
+    headaches and height look contagious, and the effect went away once
+    shared surroundings were counted. That's the pump.
+  - **Map it, then fix the source:** John Snow mapped the 1854 Soho
+    cholera deaths around the Broad Street pump. The parish shut the pump
+    the day after he presented (by popular story, they took the handle
+    off).
+  - **Never "patient zero":** Gaetan Dugas was the CDC's "Patient O", for
+    "Out of California". Someone misread the O as a zero, and he was
+    blamed for bringing AIDS to North America. Worobey's 2016 study in
+    *Nature* showed he didn't; the virus had reached New York around 1970.
+- **Building it, later** (not planned yet):
+  - a hidden `yucky` condition in the night roll (`src/trade/world.rs`)
+    with a spread rule along chosen trades, and pumps from the night's
+    conditions;
+  - the i9's map as a panel, with a "person or pump?" call that costs
+    something to make;
+  - the yuck tax measured on the thermostat machine first.
+- **Open questions:**
+  - Can a player cure their own yuck (Upddayett's), and how?
+  - Should the TV's yuck (both channels) be a pump the player can switch
+    off, at the cost of the ads?
+  - How visible should the hidden chip be: never, or after N nights of
+    good diagnoses?
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone
