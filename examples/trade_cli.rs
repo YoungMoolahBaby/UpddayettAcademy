@@ -431,7 +431,7 @@ fn run(o: &Opts) -> Result<(), trade::Error> {
     println!("\nThe i9 calls it: {}", mask_string(latch.best_bits, n));
     print_chain(&tc, latch.best_bits);
     if tc.is_optimal(latch.best_bits) {
-        println!("That's the best possible set. \"It's not money laundering, it's a Boltzmann machine.\"");
+        println!("That's the best possible set.");
     } else {
         println!("\nThe best set was {}:", mask_string(ground, n));
         print_chain(&tc, ground);

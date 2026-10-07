@@ -242,9 +242,10 @@ The washing machine spins fast, then winds down, and the bits settle into the
 best three- or four-way trade chain: simulated annealing, done by a real
 washing machine. Clamp "I want a hub motor" and it runs backward to find the
 chain that gets you there. Upddayett takes a cut (Biddness); the same machine
-routes restaurant surplus to shelters (Karma). Running gag, AI: "It's not money
-laundering, it's a Boltzmann machine." He keeps printing MONEY LAUNDERING
-business cards.
+routes restaurant surplus to shelters (Karma). (The "it's not money
+laundering, it's a Boltzmann machine" gag was cut 2026-10-07 with the lesson's
+old name: nothing here is money laundering, so the sign and title say what it
+is.)
 
 ### How the machine decides
 

@@ -837,15 +837,8 @@ fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
         ui.label(egui::RichText::new(format!("AI: \"{roast}\"")).italics().color(ai));
     }
     // A miss on a sabotaged night has its own explanation above.
-    let line = if lm.tc.is_optimal(best) {
-        Some("AI: \"It's not money laundering, Daddy. It's a Boltzmann machine.\"")
-    } else if matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
-        Some("AI: \"You spun it too fast. The strips froze before they could agree.\"")
-    } else {
-        None
-    };
-    if let Some(line) = line {
-        ui.label(egui::RichText::new(line).italics().color(ai));
+    if !lm.tc.is_optimal(best) && matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
+        ui.label(egui::RichText::new("AI: \"You spun it too fast. The strips froze before they could agree.\"").italics().color(ai));
     }
 }
 
