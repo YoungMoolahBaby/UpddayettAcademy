@@ -603,7 +603,7 @@ the TV switch. The game keeps it in `Laundromat::yuck`.
   - a person: "Treat {name} kindly: a fair trade and a can of Goo. No
     label.";
   - hunger: "Ask Amir to feed everyone tonight.";
-  - the cold: "Open the Suds & Duds as a warming room.";
+  - the cold: "Open the Tumble & Trade as a warming room.";
   - the TV: "Switch the TV off."
 
   It shows "Cured: N Goo of trades came back." On night 1, the hunger cure

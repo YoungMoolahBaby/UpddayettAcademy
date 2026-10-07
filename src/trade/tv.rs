@@ -59,7 +59,7 @@ pub fn shrug(w: &World, trades: usize, brag: Option<&str>) -> Vec<Headline> {
     for it in w.items.iter().filter(|it| it.gift) {
         facts.push(format!("{} gives away the {}.", w.npcs[it.owner].name, it.name));
     }
-    facts.push(format!("{trades} trades on the board at the Suds & Duds."));
+    facts.push(format!("{trades} trades on the board at the Tumble & Trade."));
     if let Some(brag) = brag {
         facts.push(format!("Local guys brag: {brag}"));
     }
@@ -138,7 +138,7 @@ mod tests {
             assert!(lines[0].fact.starts_with(&want), "night {night}: {:?} vs {hungry} hungry", lines[0]);
             let cold = (0..w.npcs.len()).filter(|&k| w.night.cold && w.npcs[k].sleeps_out).count();
             assert_eq!(lines[1].fact.contains(&format!("{cold} sleeping out")), w.night.cold, "night {night}: {:?}", lines[1]);
-            assert!(lines.iter().any(|l| l.fact == "7 trades on the board at the Suds & Duds."));
+            assert!(lines.iter().any(|l| l.fact == "7 trades on the board at the Tumble & Trade."));
             for it in w.items.iter().filter(|it| it.gift) {
                 assert!(lines.iter().any(|l| l.fact.contains(it.name)), "night {night}: gift {} missing", it.name);
             }

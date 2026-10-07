@@ -283,7 +283,7 @@ business cards.
    8 (on nights it never trained on), and it helps most on the hard nights.
 
 
-### The regulars (Suds & Duds, Market Street)
+### The regulars (Tumble & Trade, Market Street)
 
 | Customer | Sleeps out | Notes |
 | --- | --- | --- |
@@ -380,7 +380,7 @@ label hand-lettered "BYO TAPE".
 
 ### The TVs (built in Step 3.5)
 
-Every laundromat has a TV bolted in the corner. The Suds & Duds has two
+Every laundromat has a TV bolted in the corner. The Tumble & Trade has two
 parody channels, and between them they make the drum the only honest thing
 in the room:
 - **The Shrug Network**, comedically apathetic news. It reads tonight's real

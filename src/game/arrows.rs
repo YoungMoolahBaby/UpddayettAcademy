@@ -168,5 +168,5 @@ pub fn neon(time: Res<Time>, mut g: Gizmos<Neon>) {
     let wall = Isometry3d::from_translation(Vec3::new(0.0, 3.7, -5.9));
     g.text(wall, "MONEY LAUNDERING", 0.55, Vec2::ZERO, green);
     let sub = Isometry3d::from_translation(Vec3::new(0.0, 3.05, -5.9));
-    g.text(sub, "(LEGALLY)  -  SUDS & DUDS  -  MARKET ST", 0.22, Vec2::ZERO, pink);
+    g.text(sub, "(LEGALLY)  -  TUMBLE & TRADE  -  MARKET ST", 0.22, Vec2::ZERO, pink);
 }

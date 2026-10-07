@@ -327,7 +327,7 @@ impl World {
 /// The regulars who face the TV from where they stand (Upddayett heckles it).
 pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Shopping-Cart Guy", "Librarian Tamara"];
 
-/// The regulars at the Suds & Duds on Market Street, on night `seed`. Values
+/// The regulars at the Tumble & Trade on Market Street, on night `seed`. Values
 /// are in Goo: what a can of Mtn Goo (the neon-green parody soda) is worth
 /// to that person. Bases are for a neutral night; the night scales them.
 pub fn laundromat(seed: u64) -> World {

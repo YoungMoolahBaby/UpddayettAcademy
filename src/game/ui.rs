@@ -765,7 +765,7 @@ fn ghost_rows(ui: &mut egui::Ui, lm: &Laundromat, small: bool, spinning: bool) -
                     format!("Right: it's {}, a pump.", pump_name(p)),
                     match p {
                         "hungry" => "Ask Amir to feed everyone tonight.".to_string(),
-                        "cold" => "Open the Suds & Duds as a warming room.".to_string(),
+                        "cold" => "Open the Tumble & Trade as a warming room.".to_string(),
                         _ => "Switch the TV off.".to_string(),
                     },
                 ),
