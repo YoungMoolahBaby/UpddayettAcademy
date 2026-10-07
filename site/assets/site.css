@@ -1,6 +1,6 @@
 /* Upddayett Academy: the West Coast as a Midwesterner pictures it with the
    whistle on and the lyrics off. Dusk on a historic downtown Main St: brick
-   and stone storefronts, acorn streetlamps, a lowered
+   and stone masonry blocks, acorn streetlamps, a lowered
    sedan at the curb, film grain over everything.
    Layout: one reading column of ~66ch under a full-width dusk band; figures
    break out wider as white plates in steel frames. The whistle (a gliding
@@ -20,7 +20,7 @@
   --plate: #ffffff;      /* figures are drawn on white */
   --goo: #8fd65a;
   --sil: #140c14;        /* everything against the sky */
-  --row: clamp(118px, 17vw, 180px); /* the storefronts' height */
+  --row: clamp(130px, 19vw, 200px); /* the buildings' height */
   --rust: var(--pink);   /* older markup's accent hook */
   --display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --gothic: "UnifrakturMaguntia", "Old English Text MT", "Big Shoulders Display", serif;
@@ -120,7 +120,7 @@ section {
 }
 @keyframes whistle { to { background-position: 160px 0; } }
 
-/* Market St, downtown: a row of historic storefronts (img/downtown.svg, just
+/* Market St, downtown: a row of historic masonry blocks (img/downtown.svg, just
    the architecture), and a lowered sedan at the curb in
    front of the sun that works its hydraulics every few seconds and hops
    while you hover the band (a strip jumping its hump). */

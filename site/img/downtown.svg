@@ -1,107 +1,167 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 230">
-  <!-- Market St at dusk: a row of historic storefronts, drawn for Upddayett
-       Academy (two-story brick blocks, stone fronts with parapets, awnings,
-       acorn streetlamps). Just the architecture, no signs or names; the row
-       tiles left to right. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240">
+  <!-- A historic downtown at dusk, drawn for Upddayett Academy: masonry
+       commercial blocks of the 1880s-1900s. Brick in running bond, cut-stone
+       ashlar, a rusticated Romanesque base, corbelled and bracketed cornices,
+       segmental, round and keystone arches, quoins, an oculus and an oriel.
+       Just the architecture, no signs or names; the row tiles left to right. -->
   <defs>
+    <!-- Masonry -->
+    <pattern id="brick" width="16" height="8" patternUnits="userSpaceOnUse">
+      <rect width="16" height="8" fill="#3b1e24"/>
+      <path d="M0 3.75H16M0 7.75H16M0.4 0V3.75M8.4 3.75V7.75" stroke="#56343a" stroke-width="0.7"/>
+    </pattern>
+    <pattern id="brick2" width="16" height="8" patternUnits="userSpaceOnUse">
+      <rect width="16" height="8" fill="#331a20"/>
+      <path d="M0 3.75H16M0 7.75H16M0.4 0V3.75M8.4 3.75V7.75" stroke="#4b2c31" stroke-width="0.7"/>
+    </pattern>
+    <pattern id="ashlar" width="30" height="12" patternUnits="userSpaceOnUse">
+      <rect width="30" height="12" fill="#463a36"/>
+      <path d="M0 5.8H30M0 11.8H30M0.4 0V5.8M15.4 5.8V11.8" stroke="#5c4d47" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="rustic" width="34" height="12" patternUnits="userSpaceOnUse">
+      <rect width="34" height="12" fill="#3e3230"/>
+      <path d="M0 11H34M0.8 0V11M17.8 0V11" stroke="#251c1b" stroke-width="1.8"/>
+      <path d="M0 1.2H34" stroke="#574843" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="dent" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#2a1a1e"/><rect x="1" width="3" height="5" fill="#5e463f"/>
+    </pattern>
+    <pattern id="brackets" width="18" height="12" patternUnits="userSpaceOnUse">
+      <rect width="18" height="12" fill="#241418"/>
+      <path d="M5 0 H11 V4 Q11 10 7 12 H5 Z" fill="#5e463f"/>
+    </pattern>
     <radialGradient id="glow">
-      <stop offset="0" stop-color="#ffd58a" stop-opacity="0.6"/>
+      <stop offset="0" stop-color="#ffd58a" stop-opacity="0.55"/>
       <stop offset="1" stop-color="#ffd58a" stop-opacity="0"/>
     </radialGradient>
-    <style>
-      .b1 { fill: #2e1820; } .b2 { fill: #37202a; } .stone { fill: #3d302f; }
-      .trim { fill: #1b1016; } .dark { fill: #140b12; } .lit { fill: #efb55a; } .dim { fill: #8f633c; }
-      .glass { fill: #e39a4a; opacity: 0.82; } .awn1 { fill: #5e2834; } .awn2 { fill: #2f4a45; }
-      .mull { stroke: #1b1016; stroke-width: 3; fill: none; }
-    </style>
+
+    <!-- Windows: the glass takes `color` (lit, dim or dark). -->
+    <g id="wseg"><!-- brick segmental lintel, stone sill -->
+      <path d="M-3 6 Q12 -2 27 6 L27 10 Q12 2 -3 10 Z" fill="#6a4a40"/>
+      <rect x="0" y="8" width="24" height="36" fill="currentColor"/>
+      <path d="M12 8V44M0 26H24" stroke="#1b1016" stroke-width="1.6"/>
+      <rect x="-3" y="44" width="30" height="3" fill="#7a6a5f"/>
+    </g>
+    <g id="wround"><!-- round arch, stone voussoirs, keystone -->
+      <path d="M-4 16 A16 16 0 0 1 28 16 L24 16 A12 12 0 0 0 0 16 Z" fill="#6b5a52"/>
+      <rect x="10" y="-2" width="4" height="7" fill="#8a786c"/>
+      <path d="M0 46 V16 A12 12 0 0 1 24 16 V46 Z" fill="currentColor"/>
+      <path d="M12 6V46" stroke="#1b1016" stroke-width="1.6"/>
+      <rect x="-3" y="46" width="30" height="3" fill="#7a6a5f"/>
+    </g>
+    <g id="wbig"><!-- big Romanesque arch -->
+      <path d="M-5 28 A30 30 0 0 1 55 28 L49 28 A24 24 0 0 0 1 28 Z" fill="#6b5a52"/>
+      <rect x="22" y="-3" width="6" height="9" fill="#8a786c"/>
+      <path d="M1 60 V28 A24 24 0 0 1 49 28 V60 Z" fill="currentColor"/>
+      <path d="M25 4V60M1 36H49" stroke="#1b1016" stroke-width="1.8"/>
+      <rect x="-4" y="60" width="58" height="3" fill="#7a6a5f"/>
+    </g>
+    <g id="whood"><!-- Italianate hood mold -->
+      <path d="M-4 9 Q11 -7 26 9 L26 12 Q11 -3 -4 12 Z" fill="#5e463f"/>
+      <rect x="0" y="11" width="22" height="40" fill="currentColor"/>
+      <path d="M11 11V51" stroke="#1b1016" stroke-width="1.6"/>
+      <rect x="-3" y="51" width="28" height="3" fill="#7a6a5f"/>
+    </g>
+    <g id="wkey"><!-- flat arch with a keystone -->
+      <path d="M-3 0 H29 L27 7 H-1 Z" fill="#6b5a52"/>
+      <path d="M10 -3 H16 L15 8 H11 Z" fill="#8a786c"/>
+      <rect x="0" y="7" width="26" height="34" fill="currentColor"/>
+      <path d="M13 7V41M0 24H26" stroke="#1b1016" stroke-width="1.6"/>
+      <rect x="-3" y="41" width="32" height="3" fill="#7a6a5f"/>
+    </g>
+    <g id="arch"><!-- street-level arched opening in heavy voussoirs -->
+      <path d="M-6 30 A31 31 0 0 1 56 30 L48 30 A23 23 0 0 0 2 30 Z" fill="#5a4a44"/>
+      <rect x="22" y="-2" width="6" height="9" fill="#7a6a5f"/>
+      <path d="M2 64 V30 A23 23 0 0 1 48 30 V64 Z" fill="currentColor"/>
+      <path d="M25 7V64" stroke="#1b1016" stroke-width="1.6"/>
+    </g>
+    <g id="lamp">
+      <circle cx="0" cy="164" r="26" fill="url(#glow)"/>
+      <rect x="-2" y="166" width="4" height="74" fill="#0f080d"/>
+      <rect x="-5" y="234" width="10" height="6" fill="#0f080d"/>
+      <circle cx="0" cy="162" r="6.5" fill="#ffe2a6"/>
+    </g>
   </defs>
 
-  <!-- 1. Brick block with a round upper window -->
-  <rect class="b1" x="0" y="50" width="232" height="180"/>
-  <rect class="trim" x="-2" y="40" width="236" height="6"/>
-  <rect class="trim" x="0" y="46" width="232" height="8"/>
-  <circle class="trim" cx="52" cy="96" r="28"/>
-  <circle class="lit" cx="52" cy="96" r="21"/>
-  <path class="mull" d="M31 96H73M52 75V117"/>
-  <rect class="dark" x="100" y="70" width="24" height="54"/>
-  <rect class="lit" x="140" y="70" width="24" height="54"/>
-  <rect class="dark" x="180" y="70" width="24" height="54"/>
-  <rect class="trim" x="0" y="138" width="232" height="7"/>
-  <rect class="trim" x="8" y="150" width="216" height="80"/>
-  <rect class="dim" x="14" y="155" width="204" height="8"/>
-  <rect class="glass" x="14" y="168" width="94" height="56"/>
-  <rect class="dark" x="112" y="168" width="10" height="62"/>
-  <rect class="glass" x="126" y="168" width="92" height="56"/>
+  <!-- 1. Three-story brick block: corbelled dentil cornice, belt courses -->
+  <rect x="0" y="24" width="240" height="216" fill="url(#brick)"/>
+  <rect x="-2" y="14" width="244" height="6" fill="#241418"/>
+  <rect x="0" y="20" width="240" height="6" fill="url(#dent)"/>
+  <rect x="0" y="26" width="240" height="3" fill="#5e463f"/>
+  <rect x="0" y="98" width="240" height="4" fill="#6b5a52"/>
+  <rect x="0" y="162" width="240" height="4" fill="#6b5a52"/>
+  <use href="#wseg" x="20" y="44" color="#140b12"/><use href="#wseg" x="64" y="44" color="#efb55a"/><use href="#wseg" x="108" y="44" color="#140b12"/><use href="#wseg" x="152" y="44" color="#140b12"/><use href="#wseg" x="196" y="44" color="#8f633c"/>
+  <use href="#wseg" x="20" y="110" color="#8f633c"/><use href="#wseg" x="64" y="110" color="#140b12"/><use href="#wseg" x="108" y="110" color="#efb55a"/><use href="#wseg" x="152" y="110" color="#140b12"/><use href="#wseg" x="196" y="110" color="#140b12"/>
+  <use href="#arch" x="18" y="176" color="#140b12"/><use href="#arch" x="95" y="176" color="#a8723f"/><use href="#arch" x="172" y="176" color="#140b12"/>
 
-  <!-- 2. Taller brick block, segmental-arch windows, an awning -->
-  <rect class="b2" x="232" y="40" width="240" height="190"/>
-  <rect class="trim" x="228" y="30" width="248" height="12"/>
-  <rect class="trim" x="236" y="42" width="8" height="10"/><rect class="trim" x="460" y="42" width="8" height="10"/>
-  <path class="trim" d="M248 68 Q270 56 292 68 Z M302 68 Q324 56 346 68 Z M356 68 Q378 56 400 68 Z M410 68 Q432 56 454 68 Z"/>
-  <rect class="lit" x="252" y="68" width="36" height="58"/>
-  <rect class="dark" x="306" y="68" width="36" height="58"/>
-  <rect class="dim" x="360" y="68" width="36" height="58"/>
-  <rect class="dark" x="414" y="68" width="36" height="58"/>
-  <rect class="trim" x="232" y="138" width="240" height="7"/>
-  <rect class="glass" x="250" y="168" width="212" height="58"/>
-  <path class="mull" d="M320 168V226M392 168V226"/>
-  <path class="awn1" d="M240 148 H464 L456 168 H248 Z"/>
+  <!-- 2. Romanesque stone: rusticated base, triple arches, an arcade, a medallion -->
+  <rect x="240" y="30" width="230" height="140" fill="url(#ashlar)"/>
+  <path d="M240 30 V20 H322 Q355 -6 388 20 H470 V30 Z" fill="url(#ashlar)"/>
+  <path d="M240 20 H322 Q355 -6 388 20 H470" fill="none" stroke="#5e4f49" stroke-width="2"/>
+  <circle cx="355" cy="16" r="7" fill="#6b5a52"/><circle cx="355" cy="16" r="3.5" fill="#241418"/>
+  <rect x="240" y="30" width="230" height="4" fill="#5e463f"/>
+  <use href="#wround" x="262" y="42" color="#140b12"/><use href="#wround" x="302" y="42" color="#140b12"/><use href="#wround" x="342" y="42" color="#efb55a"/><use href="#wround" x="382" y="42" color="#140b12"/><use href="#wround" x="422" y="42" color="#8f633c"/>
+  <rect x="240" y="96" width="230" height="4" fill="#6b5a52"/>
+  <use href="#wbig" x="262" y="104" color="#140b12"/><use href="#wbig" x="330" y="104" color="#8f633c"/><use href="#wbig" x="398" y="104" color="#140b12"/>
+  <rect x="240" y="170" width="230" height="70" fill="url(#rustic)"/>
+  <use href="#arch" x="270" y="176" color="#140b12"/><use href="#arch" x="388" y="176" color="#140b12"/>
+  <rect x="343" y="194" width="22" height="46" fill="#1c1016"/>
 
-  <!-- 3. Brick block with round-arched windows and a green door -->
-  <rect class="b1" x="472" y="58" width="180" height="172"/>
-  <rect class="trim" x="468" y="50" width="188" height="9"/>
-  <path class="dark" d="M492 134 V96 A16 16 0 0 1 524 96 V134 Z"/>
-  <path class="lit" d="M546 134 V96 A16 16 0 0 1 578 96 V134 Z"/>
-  <path class="dark" d="M600 134 V96 A16 16 0 0 1 632 96 V134 Z"/>
-  <path class="mull" d="M489 96 A19 19 0 0 1 527 96 M543 96 A19 19 0 0 1 581 96 M597 96 A19 19 0 0 1 635 96"/>
-  <rect class="trim" x="472" y="142" width="180" height="6"/>
-  <rect class="trim" x="476" y="152" width="172" height="78"/>
-  <rect class="glass" x="482" y="160" width="116" height="64"/>
-  <rect fill="#3d5a44" x="606" y="158" width="38" height="72"/>
+  <!-- 3. Italianate brick: bracketed cornice, hood molds, cast-iron front -->
+  <rect x="470" y="34" width="170" height="206" fill="url(#brick2)"/>
+  <rect x="466" y="16" width="178" height="6" fill="#241418"/>
+  <rect x="470" y="22" width="170" height="12" fill="url(#brackets)"/>
+  <use href="#whood" x="494" y="48" color="#140b12"/><use href="#whood" x="544" y="48" color="#8f633c"/><use href="#whood" x="594" y="48" color="#140b12"/>
+  <use href="#whood" x="494" y="108" color="#efb55a"/><use href="#whood" x="544" y="108" color="#140b12"/><use href="#whood" x="594" y="108" color="#140b12"/>
+  <rect x="470" y="168" width="170" height="5" fill="#241418"/>
+  <rect x="474" y="173" width="6" height="67" fill="#1b1016"/><rect x="530" y="173" width="6" height="67" fill="#1b1016"/><rect x="580" y="173" width="6" height="67" fill="#1b1016"/><rect x="630" y="173" width="6" height="67" fill="#1b1016"/>
+  <rect x="486" y="184" width="38" height="40" fill="#8f633c"/>
+  <rect x="542" y="184" width="32" height="56" fill="#1c1016"/>
+  <rect x="592" y="184" width="32" height="40" fill="#140b12"/>
 
-  <!-- 4. A narrow storefront with a sign board -->
-  <rect class="b2" x="652" y="76" width="120" height="154"/>
-  <rect class="trim" x="648" y="68" width="128" height="9"/>
-  <rect class="lit" x="668" y="92" width="32" height="42"/>
-  <rect class="dark" x="724" y="92" width="32" height="42"/>
-  <rect class="trim" x="652" y="142" width="120" height="26"/>
-  <rect class="glass" x="660" y="172" width="104" height="54"/>
-
-  <!-- 5. Stone front with a curved parapet, window hoods and small awnings -->
-  <rect class="stone" x="772" y="50" width="220" height="180"/>
-  <path class="stone" d="M772 50 V40 H850 Q882 6 914 40 H992 V50 Z"/>
-  <path class="trim" d="M772 48 H992 V54 H772 Z M862 30 Q882 14 902 30 Z"/>
-  <rect class="trim" x="792" y="68" width="42" height="6"/><rect class="trim" x="862" y="68" width="42" height="6"/><rect class="trim" x="932" y="68" width="42" height="6"/>
-  <rect class="dark" x="796" y="76" width="34" height="50"/>
-  <rect class="lit" x="866" y="76" width="34" height="50"/>
-  <rect class="dim" x="936" y="76" width="34" height="50"/>
-  <path class="awn2" d="M932 76 h42 l-6 12 h-30 z"/>
-  <rect class="trim" x="772" y="140" width="220" height="7"/>
-  <rect class="trim" x="778" y="150" width="208" height="80"/>
-  <rect class="glass" x="784" y="166" width="92" height="58"/>
-  <rect class="glass" x="886" y="166" width="94" height="58"/>
-  <path class="awn2" d="M880 150 H988 L982 166 H886 Z"/>
-
-  <!-- 6. Stone front with a bay window -->
-  <rect class="stone" x="992" y="52" width="208" height="178"/>
-  <path class="stone" d="M992 52 V42 H1060 Q1096 8 1132 42 H1200 V52 Z"/>
-  <path class="trim" d="M992 50 H1200 V56 H992 Z"/>
-  <rect class="dark" x="1012" y="76" width="32" height="50"/>
-  <rect class="lit" x="1056" y="76" width="32" height="50"/>
-  <rect class="trim" x="1108" y="66" width="70" height="72"/>
-  <rect class="lit" x="1114" y="74" width="18" height="56"/>
-  <rect class="dim" x="1136" y="74" width="18" height="56"/>
-  <rect class="lit" x="1158" y="74" width="14" height="56"/>
-  <rect class="trim" x="992" y="142" width="208" height="7"/>
-  <rect class="trim" x="998" y="152" width="196" height="78"/>
-  <rect class="glass" x="1004" y="166" width="100" height="58"/>
-  <rect class="glass" x="1112" y="166" width="76" height="58"/>
-  <path class="awn1" d="M1000 152 H1192 L1186 166 H1006 Z"/>
-
-  <!-- Acorn streetlamps between the blocks -->
-  <g>
-    <circle cx="232" cy="150" r="28" fill="url(#glow)"/><rect x="230" y="152" width="4" height="78" fill="#0f080d"/><circle cx="232" cy="148" r="7" fill="#ffe2a6"/>
-    <circle cx="472" cy="150" r="28" fill="url(#glow)"/><rect x="470" y="152" width="4" height="78" fill="#0f080d"/><circle cx="472" cy="148" r="7" fill="#ffe2a6"/>
-    <circle cx="992" cy="150" r="28" fill="url(#glow)"/><rect x="990" y="152" width="4" height="78" fill="#0f080d"/><circle cx="992" cy="148" r="7" fill="#ffe2a6"/>
+  <!-- 4. Stone front: curved parapet, quoins, keystone windows, arched entry -->
+  <rect x="640" y="28" width="190" height="212" fill="url(#ashlar)"/>
+  <path d="M640 28 V18 H700 Q735 -8 770 18 H830 V28 Z" fill="url(#ashlar)"/>
+  <path d="M640 18 H700 Q735 -8 770 18 H830" fill="none" stroke="#5e4f49" stroke-width="2"/>
+  <rect x="640" y="28" width="190" height="4" fill="#5e463f"/>
+  <g fill="#6f6058">
+    <rect x="640" y="36" width="12" height="10"/><rect x="640" y="58" width="8" height="10"/><rect x="640" y="80" width="12" height="10"/><rect x="640" y="102" width="8" height="10"/><rect x="640" y="124" width="12" height="10"/><rect x="640" y="146" width="8" height="10"/><rect x="640" y="168" width="12" height="10"/><rect x="640" y="190" width="8" height="10"/><rect x="640" y="212" width="12" height="10"/>
+    <rect x="818" y="36" width="12" height="10"/><rect x="822" y="58" width="8" height="10"/><rect x="818" y="80" width="12" height="10"/><rect x="822" y="102" width="8" height="10"/><rect x="818" y="124" width="12" height="10"/><rect x="822" y="146" width="8" height="10"/><rect x="818" y="168" width="12" height="10"/><rect x="822" y="190" width="8" height="10"/><rect x="818" y="212" width="12" height="10"/>
   </g>
+  <use href="#wkey" x="668" y="48" color="#140b12"/><use href="#wkey" x="722" y="48" color="#efb55a"/><use href="#wkey" x="776" y="48" color="#140b12"/>
+  <use href="#wkey" x="668" y="110" color="#140b12"/><use href="#wkey" x="722" y="110" color="#140b12"/><use href="#wkey" x="776" y="110" color="#8f633c"/>
+  <rect x="640" y="164" width="190" height="4" fill="#6b5a52"/>
+  <use href="#arch" x="710" y="176" color="#1c1016"/>
+  <use href="#wkey" x="664" y="190" color="#140b12"/><use href="#wkey" x="780" y="190" color="#a8723f"/>
+
+  <!-- 5. Gabled brick front with an oculus -->
+  <rect x="830" y="40" width="170" height="200" fill="url(#brick)"/>
+  <path d="M830 40 L915 6 L1000 40 Z" fill="url(#brick)"/>
+  <path d="M826 42 L915 4 L1004 42" fill="none" stroke="#6b5a52" stroke-width="3"/>
+  <circle cx="915" cy="30" r="10" fill="#6b5a52"/><circle cx="915" cy="30" r="7" fill="#efb55a"/>
+  <path d="M908 30H922M915 23V37" stroke="#1b1016" stroke-width="1.4"/>
+  <rect x="830" y="42" width="170" height="6" fill="url(#dent)"/>
+  <use href="#wround" x="852" y="60" color="#8f633c"/><use href="#wround" x="903" y="60" color="#140b12"/><use href="#wround" x="954" y="60" color="#140b12"/>
+  <rect x="830" y="114" width="170" height="4" fill="#6b5a52"/>
+  <use href="#wround" x="852" y="122" color="#140b12"/><use href="#wround" x="903" y="122" color="#efb55a"/><use href="#wround" x="954" y="122" color="#140b12"/>
+  <rect x="830" y="172" width="170" height="4" fill="#6b5a52"/>
+  <use href="#arch" x="850" y="176" color="#140b12"/><use href="#arch" x="930" y="176" color="#8f633c"/>
+
+  <!-- 6. Stone corner block with a domed oriel -->
+  <rect x="1000" y="24" width="200" height="216" fill="url(#ashlar)"/>
+  <rect x="998" y="14" width="204" height="6" fill="#241418"/>
+  <rect x="1000" y="20" width="200" height="6" fill="url(#dent)"/>
+  <use href="#wkey" x="1020" y="48" color="#140b12"/><use href="#wkey" x="1062" y="48" color="#8f633c"/>
+  <use href="#wkey" x="1020" y="110" color="#efb55a"/><use href="#wkey" x="1062" y="110" color="#140b12"/>
+  <path d="M1102 52 Q1136 24 1170 52 Z" fill="#2a1f1d"/>
+  <rect x="1102" y="52" width="68" height="102" fill="#3a2f2c"/>
+  <path d="M1102 154 H1170 L1150 172 H1122 Z" fill="#2a1f1d"/>
+  <rect x="1108" y="60" width="16" height="36" fill="#140b12"/><rect x="1128" y="60" width="16" height="36" fill="#efb55a"/><rect x="1148" y="60" width="16" height="36" fill="#140b12"/>
+  <rect x="1102" y="100" width="68" height="4" fill="#5e463f"/>
+  <rect x="1108" y="110" width="16" height="36" fill="#8f633c"/><rect x="1128" y="110" width="16" height="36" fill="#140b12"/><rect x="1148" y="110" width="16" height="36" fill="#140b12"/>
+  <rect x="1000" y="168" width="200" height="72" fill="url(#rustic)"/>
+  <use href="#arch" x="1024" y="176" color="#140b12"/><use href="#arch" x="1120" y="176" color="#a8723f"/>
+
+  <!-- Acorn streetlamps -->
+  <use href="#lamp" x="240"/><use href="#lamp" x="640"/><use href="#lamp" x="1000"/>
 </svg>
