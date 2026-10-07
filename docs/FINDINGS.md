@@ -754,6 +754,15 @@ from reading the source (file:line) and can't be checked at run time
   kT (mass 0 gives inf or NaN). *(probe: depopulation factor underflows)*
 - **docs** (2026-10-04): the `kramers_rate` counting convention is unclear
   vs `kramers_rate_turnover` (double_well.rs:180-192).
+- **works** (2026-10-06): at the game's settings (delta_v 5, gamma 1, M 1,
+  dt 0.01, `WellState` band 0.5), a lone strip's hops per unit time match
+  `kramers_rate_turnover` within 12% at kT 0.7-1.25 (delta_v/kT 4-7). The
+  measured rate is -6%, -6%, +12% and -1% at kT 0.7, 0.85, 1.0 and 1.25.
+  It drifts to +27% by kT 2.5, where the barrier is 2 kT and Kramers isn't
+  meant to hold. In practice that settles the convention above: both
+  functions give the one-way escape rate, which is the hop rate one strip
+  shows (double_well.rs:121-132, 180-192). Measured by
+  `examples/machine_figs.rs` (`freeze`); figure `docs/machine/freeze.svg`.
 
 #### Docs overall
 

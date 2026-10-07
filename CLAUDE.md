@@ -9,6 +9,8 @@ Read first:
 - `docs/DESIGN.md`: the game design (repo snapshot of the living Claude Doc
   linked at its top).
 - `docs/FINDINGS.md`: end-user findings about CortenForge. Add new friction here.
+- `docs/MACHINE.md`: how the trade machine works, for players, with figures from real runs
+  (`docs/machine/*.svg`, redrawn by `cargo run --release --example machine_figs [-- <figure>] [--night N]`).
 
 ## Rules of the role-play
 

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 190" width="980" height="190" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="980" height="190" fill="#ffffff"/>
+<rect x="12.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="12.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<text x="73.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">The street</text>
+<text x="73.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">haves, wants,</text>
+<text x="73.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">tonight's Goo</text>
+<line x1="135.0" y1="90.0" x2="148.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M148.0,90.0 L139.0,85.5 L139.0,94.5 Z" fill="#1d2026"/>
+<rect x="149.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="149.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<text x="210.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">Loops</text>
+<text x="210.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">every 2-4 way swap</text>
+<text x="210.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">where all gain</text>
+<line x1="272.0" y1="90.0" x2="285.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M285.0,90.0 L276.0,85.5 L276.0,94.5 Z" fill="#1d2026"/>
+<rect x="286.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#8a4fc2" stroke-width="1.5"/>
+<rect x="286.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#8a4fc2" stroke="#8a4fc2" stroke-width="1.5"/>
+<text x="347.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">Energy</text>
+<text x="347.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">reward each loop,</text>
+<text x="347.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">punish collisions</text>
+<line x1="409.0" y1="90.0" x2="422.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M422.0,90.0 L413.0,85.5 L413.0,94.5 Z" fill="#1d2026"/>
+<rect x="423.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#3d8fd6" stroke-width="1.5"/>
+<rect x="423.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#3d8fd6" stroke="#3d8fd6" stroke-width="1.5"/>
+<text x="484.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">Strips</text>
+<text x="484.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">one strip per loop,</text>
+<text x="484.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">springs between</text>
+<line x1="546.0" y1="90.0" x2="559.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M559.0,90.0 L550.0,85.5 L550.0,94.5 Z" fill="#1d2026"/>
+<rect x="560.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#d8392b" stroke-width="1.5"/>
+<rect x="560.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="621.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">Spin</text>
+<text x="621.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">shake hot, cool</text>
+<text x="621.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">slowly (Langevin)</text>
+<line x1="683.0" y1="90.0" x2="696.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M696.0,90.0 L687.0,85.5 L687.0,94.5 Z" fill="#1d2026"/>
+<rect x="697.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="697.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<text x="758.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">The i9</text>
+<text x="758.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">keeps the best set</text>
+<text x="758.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">it reads</text>
+<line x1="820.0" y1="90.0" x2="833.0" y2="90.0" stroke="#1d2026" stroke-width="2"/>
+<path d="M833.0,90.0 L824.0,85.5 L824.0,94.5 Z" fill="#1d2026"/>
+<rect x="834.0" y="40.0" width="122.0" height="100.0" rx="10" fill="#f6f7f9" stroke="#e8761a" stroke-width="1.5"/>
+<rect x="834.0" y="40.0" width="122.0" height="8.0" rx="4" fill="#e8761a" stroke="#e8761a" stroke-width="1.5"/>
+<text x="895.0" y="74.0" font-size="15" fill="#1d2026" text-anchor="middle" font-weight="bold">The counter</text>
+<text x="895.0" y="98.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">hands every trade</text>
+<text x="895.0" y="114.0" font-size="11.5" fill="#7a808c" text-anchor="middle" font-weight="normal">over at once</text>
+<text x="12.0" y="24.0" font-size="14" fill="#1d2026" text-anchor="start" font-weight="bold">From a laundromat full of stuff to a set of trades: what happens on every spin</text>
+<text x="12.0" y="170.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Gold: the trade problem.  Purple: math.  Blue and red: CortenForge's physics.  Green and orange: what the game does with the answer.</text>
+</svg>

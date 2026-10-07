@@ -687,6 +687,39 @@ find on the street.
     second camera draws over egui.
   - `UPD_GUIDE=all|2,6` shoots pages to `shots/guide_<k>.png`.
 
+### How the machine works: the doc (2026-10-06)
+
+The user: the solver is "the golden child of this game", and most players
+would enjoy reading into how it works. That's `docs/MACHINE.md`, written
+for players. It covers:
+- the puzzle: Goo, loops, collisions, near-ties;
+- the energy: QUBO to Ising;
+- the strips and the spin;
+- freeze-out and the i9 latch;
+- the wash programs;
+- everything the player does to the board;
+- "is this real?";
+- the math, last.
+
+The figures are SVGs drawn from real runs by
+`examples/machine_figs.rs`: the pipeline, one strip's wells, night 1's
+collision graph, every valid set, one real Normal spin lane by lane, the
+freeze-out, and the programs.
+
+Measured for the doc:
+- **Night 1:**
+  - 17 strips (11 trades, 6 gifts).
+  - Grabbing the biggest trade first gets 37; the best set is 43.
+  - Of 131,072 patterns, 1,134 are valid; 2 tie for the best and 6 are
+    within 2 of it.
+- **48 Normal spins on night 1:**
+  - the latch got a best set 48/48 (median t = 100);
+  - the strips came to rest on one 27/48.
+- **Lone strips vs the crate's `kramers_rate_turnover`:** within 12% at
+  kT 0.7-1.25 (FINDINGS, sim-thermostat, works).
+
+Next, maybe: a short version as a chapter of the in-game book.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
