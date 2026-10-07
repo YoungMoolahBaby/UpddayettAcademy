@@ -451,7 +451,7 @@ only help. The game shows it in corners, fine print and TV shrugs.
      - the old crew keeps its jobs, now making the faux product.
   5. From there they keep buying, farm by farm and plant by plant, until
      every relative is free.
-  6. *(Kept from the earlier version; cut it if it doesn't fit.)* The
+  6. *(Kept: the user, 2026-10-06.)* The
      faux-meat corps fund a space program, launched from the old plant's
      parking lot. It's the clash of yuck coming full circle: they become
      the billionaires with the rockets, and the Shrug Network shrugs ("a
