@@ -303,8 +303,10 @@ mod tests {
 
     #[test]
     fn an_ad_every_third_night_in_turn() {
-        let ads: Vec<_> = (1..=18).filter_map(ad_for).collect();
-        assert_eq!(ads, vec![1, 2, 3, 4, 5, 0]);
+        // Nights 3, 6, 9, ... take the ads in turn, then wrap around.
+        let n = ADS.len();
+        let ads: Vec<_> = (1..=3 * n as u64).filter_map(ad_for).collect();
+        assert_eq!(ads, (1..=n).map(|k| k % n).collect::<Vec<_>>());
         assert!((1..100).filter_map(ad_for).all(|k| k < ADS.len()));
     }
 }
