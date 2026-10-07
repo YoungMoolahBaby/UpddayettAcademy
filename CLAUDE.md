@@ -12,8 +12,8 @@ Read first:
 - `docs/MACHINE.md`: how the trade machine works, for players, with figures from real runs
   (`docs/machine/*.svg`, redrawn by `cargo run --release --example machine_figs [-- <figure>] [--night N]`).
 - `site/`: the companion site, live at https://youngmoolahbaby.github.io/UpddayettAcademy/ (upddayettacademy.com is reserved for later; `404.html` uses absolute `/UpddayettAcademy/` paths, change them if it moves to the domain) (static HTML, no build step): home, `machine/`,
-  `lessons/{transaction-costs,overfitting,settlement,rare-events}/`, shared `assets/site.css`. Figures in `site/figs/`
-  come from `machine_figs` (machine figures are copied there; `-- fees|noise|settle|waits|collapse` draw the lessons'). Deployed by
+  `lessons/{transaction-costs,overfitting,settlement,rare-events,optimization}/`, shared `assets/site.css`. Figures in `site/figs/`
+  come from `machine_figs` (machine figures are copied there; `-- fees|noise|settle|waits|collapse|ladder|blowup|penalties` draw the lessons'). Deployed by
   `.github/workflows/pages.yml` on every push that touches `site/` (it stamps `site.css?v=dev` with the commit, so keep that query on new pages). Every number on it must come from a real run
   or PLAN; models are labeled as models.
 

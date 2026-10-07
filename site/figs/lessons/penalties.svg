@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="1000" height="480" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1000" height="480" fill="#ffffff"/>
+<text x="80.0" y="28.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">How hard to punish a collision: too soft and the strips cheat, too stiff and they get stuck</text>
+<line x1="110.0" y1="90.0" x2="110.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="110.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">0.25</text>
+<line x1="170.0" y1="90.0" x2="170.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="170.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">0.5</text>
+<line x1="230.0" y1="90.0" x2="230.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="230.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">0.75</text>
+<line x1="290.0" y1="90.0" x2="290.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="290.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">1</text>
+<line x1="350.0" y1="90.0" x2="350.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="350.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">1.25</text>
+<line x1="410.0" y1="90.0" x2="410.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="410.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">1.6</text>
+<line x1="470.0" y1="90.0" x2="470.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="470.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">2</text>
+<line x1="530.0" y1="90.0" x2="530.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="530.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">2.5</text>
+<line x1="590.0" y1="90.0" x2="590.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="590.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">3</text>
+<line x1="650.0" y1="90.0" x2="650.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="650.0" y="386.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">4</text>
+<line x1="80.0" y1="370.0" x2="680.0" y2="370.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="374.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">0</text>
+<line x1="80.0" y1="300.0" x2="680.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="304.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">25%</text>
+<line x1="80.0" y1="230.0" x2="680.0" y2="230.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="234.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">50%</text>
+<line x1="80.0" y1="160.0" x2="680.0" y2="160.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="164.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">75%</text>
+<line x1="80.0" y1="90.0" x2="680.0" y2="90.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="94.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">100%</text>
+<rect x="80.0" y="90.0" width="600.0" height="280.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
+<text transform="translate(38.0,230.0) rotate(-90)" font-size="12" fill="#1d2026" text-anchor="middle">Normal spins</text>
+<text x="380.0" y="420.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">collision penalty (x the most valuable trade)</text>
+<rect x="89.0" y="370.0" width="42.0" height="0.0" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="89.0" y="370.0" width="42.0" height="0.0" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="89.0" y="90.0" width="42.0" height="280.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="110.0" y="365.0" font-size="11.5" fill="#1d2026" text-anchor="middle" font-weight="bold">0%</text>
+<text x="110.0" y="68.0" font-size="11.5" fill="#d8392b" text-anchor="middle" font-weight="bold">0/20</text>
+<rect x="149.0" y="369.1" width="42.0" height="0.9" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="149.0" y="369.1" width="42.0" height="0.0" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="149.0" y="90.0" width="42.0" height="279.1" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="170.0" y="364.1" font-size="11.5" fill="#1d2026" text-anchor="middle" font-weight="bold">0%</text>
+<text x="170.0" y="68.0" font-size="11.5" fill="#d8392b" text-anchor="middle" font-weight="bold">0/20</text>
+<rect x="209.0" y="316.6" width="42.0" height="53.4" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="209.0" y="295.6" width="42.0" height="21.0" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="209.0" y="90.0" width="42.0" height="205.6" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="230.0" y="332.6" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">19%</text>
+<text x="230.0" y="68.0" font-size="11.5" fill="#d8392b" text-anchor="middle" font-weight="bold">5/20</text>
+<rect x="269.0" y="176.6" width="42.0" height="193.4" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="269.0" y="100.5" width="42.0" height="76.1" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="269.0" y="90.0" width="42.0" height="10.5" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="290.0" y="192.6" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">69%</text>
+<text x="290.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="329.0" y="155.6" width="42.0" height="214.4" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="329.0" y="90.0" width="42.0" height="65.6" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="329.0" y="90.0" width="42.0" height="0.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="350.0" y="171.6" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">77%</text>
+<text x="350.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="389.0" y="145.1" width="42.0" height="224.9" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="389.0" y="90.0" width="42.0" height="55.1" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="389.0" y="90.0" width="42.0" height="0.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="410.0" y="161.1" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">80%</text>
+<text x="410.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="384.0" y="86.0" width="52.0" height="288.0" rx="4" fill="none" stroke="#1d2026" stroke-width="1.5"/>
+<text x="410.0" y="401.0" font-size="11" fill="#1d2026" text-anchor="middle" font-weight="bold">the game's</text>
+<rect x="449.0" y="149.5" width="42.0" height="220.5" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="449.0" y="90.0" width="42.0" height="59.5" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="449.0" y="90.0" width="42.0" height="0.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="470.0" y="165.5" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">79%</text>
+<text x="470.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="509.0" y="162.6" width="42.0" height="207.4" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="509.0" y="90.0" width="42.0" height="72.6" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="509.0" y="90.0" width="42.0" height="0.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="530.0" y="178.6" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">74%</text>
+<text x="530.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="569.0" y="172.2" width="42.0" height="197.8" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="569.0" y="90.0" width="42.0" height="82.2" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="569.0" y="90.0" width="42.0" height="0.0" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="590.0" y="188.2" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">71%</text>
+<text x="590.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<rect x="629.0" y="205.5" width="42.0" height="164.5" rx="0" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<rect x="629.0" y="90.9" width="42.0" height="114.6" rx="0" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<rect x="629.0" y="90.0" width="42.0" height="0.9" rx="0" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="650.0" y="221.5" font-size="11.5" fill="#ffffff" text-anchor="middle" font-weight="bold">59%</text>
+<text x="650.0" y="68.0" font-size="11.5" fill="#3f9a12" text-anchor="middle" font-weight="bold">20/20</text>
+<text x="80.0" y="48.0" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">Nights where the lowest energy is a best set (exact, every on/off pattern checked):</text>
+<rect x="720.0" y="99.0" width="16.0" height="16.0" rx="2" fill="#3f9a12" stroke="#3f9a12" stroke-width="1.5"/>
+<text x="746.0" y="112.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">The i9 latched a best set</text>
+<text x="746.0" y="129.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal">the right answer</text>
+<rect x="720.0" y="149.0" width="16.0" height="16.0" rx="2" fill="#d99a00" stroke="#d99a00" stroke-width="1.5"/>
+<text x="746.0" y="162.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">A valid set, but not the best</text>
+<text x="746.0" y="179.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal">stuck in a worse dip</text>
+<rect x="720.0" y="199.0" width="16.0" height="16.0" rx="2" fill="#d8392b" stroke="#d8392b" stroke-width="1.5"/>
+<text x="746.0" y="212.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">A set with a collision</text>
+<text x="746.0" y="229.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal">an item promised twice</text>
+<text x="720.0" y="280.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">Below 1, taking both of two colliding trades</text>
+<text x="720.0" y="298.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">can score more than taking one, so the energy</text>
+<text x="720.0" y="316.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">itself points at a cheat. Above about 1 the</text>
+<text x="720.0" y="334.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">lowest point is honest, but stiffer springs</text>
+<text x="720.0" y="352.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">make deeper walls between valid sets, and the</text>
+<text x="720.0" y="370.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">strips stop finding their way over them.</text>
+<text x="80.0" y="455.0" font-size="11" fill="#7a808c" text-anchor="start" font-weight="normal">Nights 1-20, 16 Normal spins each per penalty (320 spins a bar), in CortenForge's Langevin drum. Penalty in units of the night's most valuable candidate.</text>
+</svg>

@@ -3,7 +3,7 @@
 //! every curve and dot is a CortenForge run or the night's real board, not a
 //! drawing (the settlement figure is a labeled model).
 //!
-//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs|fees|noise|settle|waits|collapse] [--night N]`
+//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs|fees|noise|settle|waits|collapse|ladder|blowup|penalties] [--night N]`
 //! writes the machine figures to `docs/machine/*.svg` (and copies to
 //! `site/figs/machine/`), the lessons to `site/figs/lessons/`. Without `--night` it picks the first night
 //! (from 1) where grabbing the best trade first loses Goo, so the board figure
@@ -820,7 +820,7 @@ fn freeze(tc: &TradeComputer) {
         "start",
         "normal",
     );
-    s.text((80.0, 412.0), "wherever they happen to be (a quench). Cool slowly and they keep finding better dips on the way down (an anneal).", 11.5, DIM, "start", "normal");
+    s.text((80.0, 420.0), "wherever they happen to be (a quench). Cool slowly and they keep finding better dips on the way down (an anneal).", 11.5, DIM, "start", "normal");
     s.save("freeze");
     for (kt, r) in &measured {
         println!(
@@ -927,6 +927,15 @@ fn main() {
     }
     if all || what == "collapse" {
         collapse();
+    }
+    if all || what == "ladder" {
+        ladder();
+    }
+    if all || what == "blowup" {
+        blowup();
+    }
+    if all || what == "penalties" {
+        penalties();
     }
 }
 
@@ -1413,4 +1422,422 @@ fn collapse() {
     );
     s.text((80.0, 418.0), "its exponential, from the crate). Each step of 1 in hump / kT divides the hop rate by e = 2.7.", 11.5, DIM, "start", "normal");
     s.save_to(SITE_LESSONS, "collapse");
+}
+
+// ---- Lesson 5: optimization (greedy vs global) ----
+
+/// `f` over `items` on 12 threads, results in order.
+fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let out = Mutex::new(vec![]);
+    std::thread::scope(|sc| {
+        for (c, chunk) in items.chunks(items.len().div_ceil(12).max(1)).enumerate() {
+            let (out, f) = (&out, &f);
+            sc.spawn(move || {
+                for (k, it) in chunk.iter().enumerate() {
+                    let r = f(it);
+                    out.lock().unwrap().push((c, k, r));
+                }
+            });
+        }
+    });
+    let mut v = out.into_inner().unwrap();
+    v.sort_by_key(|x| (x.0, x.1));
+    v.into_iter().map(|x| x.2).collect()
+}
+
+/// Smarter greedy: take the trade worth the most per trade it knocks out
+/// (value / (1 + collisions left)), drop it and its neighbors, repeat.
+fn greedy_per_collision(cycles: &[Cycle], masks: &[u32]) -> u32 {
+    let (mut set, mut left) = (0u32, (1u32 << cycles.len()) - 1);
+    while left != 0 {
+        let pick = (0..cycles.len())
+            .filter(|&i| left >> i & 1 == 1)
+            .max_by(|&a, &b| {
+                let r = |i: usize| cycles[i].value() / (1.0 + (masks[i] & left).count_ones() as f64);
+                r(a).total_cmp(&r(b))
+            })
+            .unwrap();
+        set |= 1 << pick;
+        left &= !(masks[pick] | 1 << pick);
+    }
+    set
+}
+
+/// Hill climbing from greedy: try adding one trade not in the set (or, with
+/// `pairs`, two that don't collide with each other), dropping whatever they
+/// collide with; keep the best move that gains, until no move gains. Stops
+/// on the first hilltop.
+fn hill_climb(cycles: &[Cycle], masks: &[u32], start: u32, pairs: bool) -> u32 {
+    let n = cycles.len();
+    let mut set = start;
+    loop {
+        let now = set_value(cycles, set);
+        let outside: Vec<usize> = (0..n).filter(|&i| set >> i & 1 == 0).collect();
+        let mut moves: Vec<u32> = outside.iter().map(|&i| 1u32 << i).collect();
+        if pairs {
+            for (a, &i) in outside.iter().enumerate() {
+                moves.extend(outside[a + 1..].iter().filter(|&&k| masks[i] >> k & 1 == 0).map(|&k| 1u32 << i | 1 << k));
+            }
+        }
+        let best = moves
+            .into_iter()
+            .map(|add| {
+                let drop = qubo::chosen(add, n).iter().fold(0, |m, &i| m | masks[i]);
+                (set & !drop) | add
+            })
+            .max_by(|a, b| set_value(cycles, *a).total_cmp(&set_value(cycles, *b)));
+        match best {
+            Some(next) if set_value(cycles, next) > now + 1e-9 => set = next,
+            _ => return set,
+        }
+    }
+}
+
+const LADDER_NIGHTS: u64 = 200;
+const LADDER_SPINS: u64 = 4;
+
+/// Greedy, greedy per collision, hill climbing, the machine and the exact
+/// answer on nights 1-200.
+fn ladder() {
+    let nights: Vec<u64> = (1..=LADDER_NIGHTS).collect();
+    // Per night: (strips, best, greedy, per-collision, hill, [machine latch per seed]).
+    let rows = par_map(&nights, |&n| {
+        let tc = computer(n);
+        let c = &tc.cycles;
+        let masks = qubo::conflict_masks(c);
+        let best = set_value(c, tc.ground_state());
+        let g = greedy(c, &masks);
+        let spins: Vec<f64> = (1..=LADDER_SPINS)
+            .map(|seed| {
+                let mut m = tc.machine(Physics::default(), seed).expect("machine");
+                let l = tc.spin(&mut m, &Anneal::default(), 1.0, f64::INFINITY, |_, _| {}).expect("spin");
+                let (v, clash) = tc.evaluate(l.best_bits);
+                if clash { 0.0 } else { v }
+            })
+            .collect();
+        (c.len(), best, set_value(c, g), set_value(c, greedy_per_collision(c, &masks)), set_value(c, hill_climb(c, &masks, g, false)), set_value(c, hill_climb(c, &masks, g, true)), spins)
+    });
+    let k = rows.len() as f64;
+    type Row = (usize, f64, f64, f64, f64, f64, Vec<f64>);
+    // (share of tries at the best, Goo + Karma left on the table per try, worst)
+    let stats = |got: &dyn Fn(&Row) -> Vec<f64>| {
+        let (mut at, mut tries, mut short, mut worst) = (0usize, 0usize, 0.0, 0.0f64);
+        for r in &rows {
+            for v in got(r) {
+                tries += 1;
+                if v >= r.1 - 1e-9 {
+                    at += 1;
+                }
+                short += r.1 - v;
+                worst = worst.max(r.1 - v);
+            }
+        }
+        (at as f64 / tries as f64, short / tries as f64, worst)
+    };
+    println!("  {} nights, mean best {:.1}, mean strips {:.1}", rows.len(), rows.iter().map(|r| r.1).sum::<f64>() / k, rows.iter().map(|r| r.0 as f64).sum::<f64>() / k);
+    let ways: [(&str, String, &str, (f64, f64, f64)); 6] = [
+        ("Biggest trade first (greedy)", "what a person does by eye".into(), GOLD, stats(&|r| vec![r.2])),
+        ("Greedy, then hill-climb", "swap in 1 trade while it helps".into(), DIM, stats(&|r| vec![r.4])),
+        ("Greedy, then hill-climb", "swap in 2 trades while it helps".into(), DIM, stats(&|r| vec![r.5])),
+        ("Most value per collision first", "worth ÷ (1 + trades it knocks out)".into(), PURPLE, stats(&|r| vec![r.3])),
+        ("The machine (Normal)", format!("{} spins a night, the i9's latch", LADDER_SPINS), ICE, stats(&|r| r.6.clone())),
+        ("Check every valid set", "exact; about 0.1 ms a night here".into(), GOO, (1.0, 0.0, 0.0)),
+    ];
+    for w in &ways {
+        println!("  {:<32} best {:>5.1}%   left on the table {:.2} a night   worst {:.1}", format!("{} ({})", w.0, w.1), w.3.0 * 100.0, w.3.1, w.3.2);
+    }
+    let mut hist = std::collections::BTreeMap::new();
+    for r in &rows {
+        *hist.entry((r.1 - r.2).round() as i64).or_insert(0usize) += 1;
+    }
+    println!("  greedy gap histogram: {hist:?}");
+    // The exact search on each real board, timed one night at a time.
+    let boards: Vec<(Vec<f64>, Vec<u32>)> = nights
+        .iter()
+        .map(|&n| {
+            let tc = computer(n);
+            (tc.cycles.iter().map(Cycle::value).collect(), qubo::conflict_masks(&tc.cycles))
+        })
+        .collect();
+    let t = std::time::Instant::now();
+    for (weights, masks) in &boards {
+        std::hint::black_box(qubo::best_valid_set(weights, masks));
+    }
+    println!("  exact search: {:.0} us a night", t.elapsed().as_secs_f64() / k * 1e6);
+    let mut s = Svg::new(1000.0, 470.0);
+    s.text((20.0, 28.0), &format!("Six ways to pick the night's trades, tried on {} nights", rows.len()), 15.0, INK, "start", "bold");
+    let (bx, bw, top, rh) = (290.0, 300.0, 78.0, 54.0);
+    s.text((bx, top - 18.0), "nights it finds the best set", 12.0, INK, "start", "bold");
+    s.text((bx + bw + 140.0, top - 18.0), "left on the table", 12.0, INK, "end", "bold");
+    for (q, label) in [(0.0, "0"), (0.5, "50%"), (1.0, "100%")] {
+        let x = bx + bw * q;
+        s.line((x, top - 8.0), (x, top + rh * ways.len() as f64 - 14.0), GRID, 1.0, None);
+        s.text((x, top + rh * ways.len() as f64), label, 11.0, DIM, "middle", "normal");
+    }
+    for (k, (name, how, color, (share, left, _))) in ways.iter().enumerate() {
+        let y = top + k as f64 * rh;
+        s.text((20.0, y + 13.0), name, 13.0, INK, "start", "bold");
+        s.text((20.0, y + 30.0), how, 11.5, DIM, "start", "normal");
+        s.rect((bx, y), (bw * share, 24.0), 2.0, color, color);
+        s.text((bx + bw * share + 6.0, y + 17.0), &format!("{:.0}%", share * 100.0), 13.0, INK, "start", "bold");
+        s.text((bx + bw + 140.0, y + 17.0), &format!("{left:.1} a night"), 13.0, INK, "end", "normal");
+    }
+    // How much greedy leaves, night by night.
+    let hx = 800.0;
+    let ymax = *hist.values().max().unwrap() as f64;
+    let a = Axes::new((hx, 90.0, 180.0, 230.0), (-1.0, 7.0), (0.0, ymax * 1.15));
+    let yt: Vec<(f64, String)> = (0..=(ymax / 20.0) as usize).map(|k| ((k * 20) as f64, (k * 20).to_string())).collect();
+    let yt: Vec<(f64, &str)> = yt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    a.draw(&mut s, &[(0.0, "0"), (2.0, "2"), (4.0, "4"), (6.0, "6")], &yt, "Goo + Karma greedy misses", "nights");
+    for (&gap, &count) in &hist {
+        let (x, y) = a.p(gap as f64, count as f64);
+        let c = if gap == 0 { GOO } else { GOLD };
+        s.rect((x - 16.0, y), (32.0, a.fy(0.0) - y), 1.0, c, c);
+        s.text((x, y - 5.0), &count.to_string(), 11.0, INK, "middle", "normal");
+    }
+    s.text((hx - 46.0, 70.0), "What greedy misses, night by night", 12.5, INK, "start", "bold");
+    s.text(
+        (20.0, 430.0),
+        &format!(
+            "Each night's real board: {:.1} candidate trades and gift chains on average, best set worth {:.1} Goo + Karma. \"Left on the table\": the best set's",
+            rows.iter().map(|r| r.0 as f64).sum::<f64>() / k,
+            rows.iter().map(|r| r.1).sum::<f64>() / k
+        ),
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.text((20.0, 446.0), "worth minus what the method picked, averaged over nights (and spins, for the machine). Hill-climbing starts from greedy's answer.", 11.0, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "ladder");
+}
+
+/// Gift chains up to this many recipients (the `--chain` experiment) grow
+/// the board past the game's ~17 strips, so "check everything" can be timed
+/// on real boards up to 30.
+const BLOWUP_CHAIN: usize = 2;
+
+/// A night's candidates with longer gift chains, best first, at most 32.
+fn big_board(night: u64) -> Vec<Cycle> {
+    let w = trade::world::laundromat(night);
+    let mut c = trade::cycles::enumerate(&w, trade::MAX_LOOP);
+    c.extend(trade::cycles::enumerate_gifts(&w, BLOWUP_CHAIN));
+    c.sort_by(|a, b| b.value().total_cmp(&a.value()));
+    c.truncate(32);
+    c
+}
+
+fn count_valid(masks: &[u32]) -> u64 {
+    let mut valid = 0;
+    qubo::for_each_valid_set(masks, |_| valid += 1);
+    valid
+}
+
+/// How fast "check everything" grows: night 1's board cut to its best k
+/// candidates, every 2^k on/off pattern vs the valid sets among them, and
+/// both searches timed.
+fn blowup() {
+    let c = big_board(1);
+    let counts: Vec<(usize, u64)> = (1..=c.len()).map(|k| (k, count_valid(&qubo::conflict_masks(&c[..k])))).collect();
+    // Check every pattern for a collision, or search only valid sets (skip a
+    // trade once a colliding one is in). One size at a time, so the timings
+    // don't share the CPU.
+    let ks: Vec<usize> = (10..=c.len().min(28)).step_by(2).collect();
+    let timed: Vec<_> = ks.iter().map(|&k| {
+        let masks = qubo::conflict_masks(&c[..k]);
+        let t = std::time::Instant::now();
+        let all = (0..1u64 << k).filter(|&b| qubo::chosen(b as u32, k).iter().all(|&i| masks[i] & b as u32 == 0)).count() as u64;
+        let every = t.elapsed().as_secs_f64();
+        let reps = 200;
+        let t = std::time::Instant::now();
+        let mut valid = 0;
+        for _ in 0..reps {
+            valid = count_valid(&masks);
+        }
+        assert_eq!(all, valid, "both searches count the same valid sets");
+        (k, valid, every, t.elapsed().as_secs_f64() / reps as f64)
+    }).collect();
+    for t in &timed {
+        println!("  night 1, {} strips: every pattern {:.3} s, valid-only search {:.1} us ({} valid sets)", t.0, t.2, t.3 * 1e6, t.1);
+    }
+    // The same cut on 30 nights, for the text.
+    let nights: Vec<u64> = (1..=30).collect();
+    let at = par_map(&nights, |&n| {
+        let c = big_board(n);
+        (c.len() >= 28).then(|| count_valid(&qubo::conflict_masks(&c[..28])))
+    });
+    let at: Vec<u64> = at.into_iter().flatten().collect();
+    println!("  28 strips on {} of 30 nights: valid sets {}-{} (of {} patterns)", at.len(), at.iter().min().unwrap(), at.iter().max().unwrap(), 1u64 << 28);
+
+    let kmax = c.len() as f64;
+    let mut s = Svg::new(1000.0, 470.0);
+    s.text((80.0, 28.0), "Check everything? Night 1, with the board cut to its best 1, 2, 3, ... candidates", 15.0, INK, "start", "bold");
+    let pow = |e: i32| 10f64.powi(e);
+    // Left: how many.
+    let a = Axes::new((80.0, 60.0, 360.0, 300.0), (0.0, kmax + 1.0), (1.0, 1e10)).logs(false, true);
+    let yt: Vec<(f64, String)> = [(0, "1"), (2, "100"), (4, "10⁴"), (6, "10⁶"), (8, "10⁸"), (10, "10¹⁰")].iter().map(|&(e, l)| (pow(e), l.to_string())).collect();
+    let yt: Vec<(f64, &str)> = yt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    let xt: Vec<(f64, String)> = (0..=c.len()).step_by(5).map(|k| (k as f64, k.to_string())).collect();
+    let xt: Vec<(f64, &str)> = xt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    a.draw(&mut s, &xt, &yt, "candidate trades on the board", "how many sets to look at");
+    let all: Vec<_> = (1..=c.len()).map(|k| a.p(k as f64, 2f64.powi(k as i32))).collect();
+    s.path(&all, RED, 2.5, 1.0, None);
+    let valid: Vec<_> = counts.iter().map(|&(k, v)| a.p(k as f64, v as f64)).collect();
+    s.path(&valid, GOO, 2.5, 1.0, None);
+    for q in &valid {
+        s.circle(*q, 3.0, GOO, "#ffffff", 1.0);
+    }
+    let end = *all.last().unwrap();
+    s.text((end.0 - 6.0, end.1 - 10.0), "every on/off pattern: doubles per trade", 12.0, RED, "end", "bold");
+    s.text((a.x + a.w - 8.0, a.fy(6.0)), &format!("valid sets only: {} at {}", counts.last().unwrap().1, c.len()), 12.0, GOO, "end", "bold");
+    // The game's own board for night 1 (gift chains of 1, ~17 candidates).
+    let tc = computer(1);
+    let gm = qubo::conflict_masks(&tc.cycles);
+    let game: Vec<_> = (1..=tc.cycles.len()).map(|k| (k, count_valid(&qubo::conflict_masks(&tc.cycles[..k])))).collect();
+    let reps = 2000;
+    let t = std::time::Instant::now();
+    for _ in 0..reps {
+        std::hint::black_box(count_valid(&gm));
+    }
+    println!("  the game's night 1 board: {} candidates, {} valid sets, valid-only search {:.1} us", tc.cycles.len(), game.last().unwrap().1, t.elapsed().as_secs_f64() / reps as f64 * 1e6);
+    let gp: Vec<_> = game.iter().map(|&(k, v)| a.p(k as f64, v as f64)).collect();
+    s.path(&gp, GOO, 1.5, 0.6, Some("5 3"));
+    let gl = *gp.last().unwrap();
+    s.circle(gl, 4.0, "#ffffff", GOO, 2.0);
+    s.text((gl.0 + 8.0, gl.1 - 10.0), &format!("the game's board: {}", game.last().unwrap().1), 11.5, GOO, "start", "normal");
+    // Right: how long.
+    let b = Axes::new((560.0, 60.0, 380.0, 300.0), (8.0, 29.0), (1e-7, 1e3)).logs(false, true);
+    let yt = [(1e-6, "1 µs"), (1e-3, "1 ms"), (1.0, "1 s"), (60.0, "1 min")];
+    b.draw(&mut s, &[(10.0, "10"), (15.0, "15"), (20.0, "20"), (25.0, "25")], &yt, "candidate trades on the board", "time to find the best set");
+    let every: Vec<_> = timed.iter().map(|t| b.p(t.0 as f64, t.2.max(1e-7))).collect();
+    let fast: Vec<_> = timed.iter().map(|t| b.p(t.0 as f64, t.3)).collect();
+    s.path(&every, RED, 2.0, 1.0, None);
+    s.path(&fast, GOO, 2.0, 1.0, None);
+    for q in &every {
+        s.circle(*q, 4.5, RED, "#ffffff", 1.3);
+    }
+    for q in &fast {
+        s.circle(*q, 4.5, GOO, "#ffffff", 1.3);
+    }
+    let last = timed.last().unwrap();
+    let le = *every.last().unwrap();
+    s.text((le.0 - 8.0, le.1 - 10.0), &format!("check every pattern: {:.0} s at {}", last.2, last.0), 12.0, RED, "end", "bold");
+    let lf = *fast.last().unwrap();
+    s.text((lf.0 - 8.0, lf.1 - 12.0), &format!("skip what collides: {:.0} µs", last.3 * 1e6), 12.0, GOO, "end", "bold");
+    s.text(
+        (80.0, 420.0),
+        &format!(
+            "Night 1's trades plus gift chains of up to {BLOWUP_CHAIN} people (the --chain {BLOWUP_CHAIN} experiment), so the board grows past the game's 17. Both searches find the same valid sets;"
+        ),
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.text((80.0, 436.0), "the fast one never looks at a set with a collision in it. Times on one core of a Ryzen 5 5600. The street's trades collide a lot, so valid sets are rare:", 11.0, DIM, "start", "normal");
+    s.text((80.0, 452.0), "on a board where nothing collides, every pattern is valid and the green line would climb as steeply as the red.", 11.0, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "blowup");
+}
+
+/// The collision penalty: too soft and cheating sets win; too stiff and the
+/// strips get stuck. Exact QUBO ground state and Normal's latch per penalty.
+fn penalties() {
+    let ps = [0.25, 0.5, 0.75, 1.0, 1.25, 1.6, 2.0, 2.5, 3.0, 4.0];
+    let nights: Vec<u64> = (1..=20).collect();
+    let spins = 16u64;
+    let jobs: Vec<(f64, u64)> = ps.iter().flat_map(|&p| nights.iter().map(move |&n| (p, n))).collect();
+    // (penalty, ground state is a best set, ground clashes, [latch: 0 best, 1 valid worse, 2 clash])
+    let rows = par_map(&jobs, |&(p, n)| {
+        let tc = TradeComputer::new(trade::world::laundromat(n), BETA, p);
+        let gs = tc.qubo_ground_state();
+        let ground_best = tc.is_optimal(gs);
+        let ground_clash = tc.evaluate(gs).1;
+        let outcomes: Vec<u8> = (1..=spins)
+            .map(|seed| {
+                let mut m = tc.machine(Physics::default(), seed).expect("machine");
+                let l = tc.spin(&mut m, &Anneal::default(), 1.0, f64::INFINITY, |_, _| {}).expect("spin");
+                if tc.is_optimal(l.best_bits) {
+                    0
+                } else if tc.evaluate(l.best_bits).1 {
+                    2
+                } else {
+                    1
+                }
+            })
+            .collect();
+        (p, ground_best, ground_clash, outcomes)
+    });
+    // Per penalty: (penalty, nights whose lowest energy is a best set, nights, [best, worse, clash] shares).
+    let summary: Vec<(f64, usize, usize, [f64; 3])> = ps
+        .iter()
+        .map(|&p| {
+            let r: Vec<_> = rows.iter().filter(|r| r.0 == p).collect();
+            let gb = r.iter().filter(|r| r.1).count();
+            let gc = r.iter().filter(|r| r.2).count();
+            let all: Vec<u8> = r.iter().flat_map(|r| r.3.iter().copied()).collect();
+            let share = |o: u8| all.iter().filter(|&&x| x == o).count() as f64 / all.len() as f64;
+            let sh = [share(0), share(1), share(2)];
+            println!(
+                "  penalty {p:.2}: ground best {gb}/{} (clash {gc}); latch best {:.1}%, worse {:.1}%, clash {:.1}% of {}",
+                r.len(),
+                sh[0] * 100.0,
+                sh[1] * 100.0,
+                sh[2] * 100.0,
+                all.len()
+            );
+            (p, gb, r.len(), sh)
+        })
+        .collect();
+    let mut s = Svg::new(1000.0, 480.0);
+    s.text((80.0, 28.0), "How hard to punish a collision: too soft and the strips cheat, too stiff and they get stuck", 15.0, INK, "start", "bold");
+    let a = Axes::new((80.0, 90.0, 600.0, 280.0), (-0.5, ps.len() as f64 - 0.5), (0.0, 1.0));
+    let labels: Vec<String> = ps.iter().map(|p| format!("{p}")).collect();
+    let xt: Vec<(f64, &str)> = labels.iter().enumerate().map(|(k, l)| (k as f64, l.as_str())).collect();
+    a.draw(&mut s, &xt, &[(0.0, "0"), (0.25, "25%"), (0.5, "50%"), (0.75, "75%"), (1.0, "100%")], "", "Normal spins");
+    s.text((a.x + a.w / 2.0, a.y + a.h + 50.0), "collision penalty (x the most valuable trade)", 12.0, INK, "middle", "normal");
+    let colors = [GOO, GOLD, RED];
+    let bw = a.w / ps.len() as f64 * 0.7;
+    for (k, (p, gb, nights, sh)) in summary.iter().enumerate() {
+        let mut lo = 0.0;
+        for (q, c) in sh.iter().zip(colors) {
+            let (x, y) = a.p(k as f64, lo + q);
+            s.rect((x - bw / 2.0, y), (bw, a.fy(lo) - y), 0.0, c, c);
+            lo += q;
+        }
+        let x = a.fx(k as f64);
+        s.text((x, a.fy(sh[0]) + if sh[0] > 0.08 { 16.0 } else { -5.0 }), &format!("{:.0}%", sh[0] * 100.0), 11.5, if sh[0] > 0.08 { "#ffffff" } else { INK }, "middle", "bold");
+        // Whether the energy's lowest point is a best set at all.
+        let ok = gb == nights;
+        s.text((x, a.y - 22.0), &format!("{gb}/{nights}"), 11.5, if ok { GOO } else { RED }, "middle", "bold");
+        if (*p - PENALTY).abs() < 1e-9 {
+            s.rect((x - bw / 2.0 - 5.0, a.y - 4.0), (bw + 10.0, a.h + 8.0), 4.0, "none", INK);
+            s.text((x, a.y + a.h + 31.0), "the game's", 11.0, INK, "middle", "bold");
+        }
+    }
+    s.text((a.x, a.y - 42.0), "Nights where the lowest energy is a best set (exact, every on/off pattern checked):", 11.5, INK, "start", "normal");
+    let lx = 720.0;
+    let legend = [
+        (GOO, "The i9 latched a best set", "the right answer"),
+        (GOLD, "A valid set, but not the best", "stuck in a worse dip"),
+        (RED, "A set with a collision", "an item promised twice"),
+    ];
+    for (k, (c, t, d)) in legend.iter().enumerate() {
+        let y = 110.0 + k as f64 * 50.0;
+        s.rect((lx, y - 11.0), (16.0, 16.0), 2.0, c, c);
+        s.text((lx + 26.0, y + 2.0), t, 12.5, INK, "start", "bold");
+        s.text((lx + 26.0, y + 19.0), d, 12.0, DIM, "start", "normal");
+    }
+    let notes = [
+        "Below 1, taking both of two colliding trades",
+        "can score more than taking one, so the energy",
+        "itself points at a cheat. Above about 1 the",
+        "lowest point is honest, but stiffer springs",
+        "make deeper walls between valid sets, and the",
+        "strips stop finding their way over them.",
+    ];
+    for (k, l) in notes.iter().enumerate() {
+        s.text((lx, 280.0 + k as f64 * 18.0), l, 12.0, INK, "start", "normal");
+    }
+    s.text((80.0, 455.0), &format!("Nights 1-{}, {} Normal spins each per penalty ({} spins a bar), in CortenForge's Langevin drum. Penalty in units of the night's most valuable candidate.", nights.len(), spins, nights.len() as u64 * spins), 11.0, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "penalties");
 }

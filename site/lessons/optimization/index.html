@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Greedy Is Not a Strategy · Upddayett Academy</title>
+<meta name="description" content="Lesson 5: optimization under constraints. Grabbing the biggest trade first misses the best set on 6 nights in 10. Six methods measured on 200 real boards, why checking everything blows up (and when it doesn't), and how hard to punish a broken rule.">
+<meta property="og:title" content="Greedy Is Not a Strategy">
+<meta property="og:description" content="Picking the best set of trades under constraints: greedy, hill-climbing, annealing and exact search, measured on 200 real boards.">
+<meta property="og:image" content="https://youngmoolahbaby.github.io/UpddayettAcademy/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&family=Grenze+Gotisch:wght@600&family=Yellowtail&display=swap">
+<link rel="stylesheet" href="../../assets/site.css?v=dev">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="street" aria-hidden="true"><span class="downtown"></span><span class="lowrider"><span class="body"></span><span class="wheel rear"></span><span class="wheel front"></span></span></div>
+  <div class="eyebrow">Lesson 5 · Optimization · In the game: the board</div>
+  <h1>Greedy is not a strategy</h1>
+  <p class="lede">Every night the street offers about 17 possible trades, and many of them want the same item. Pick the set worth the most. Grabbing the biggest trade first sounds sensible, and on 200 real nights it missed the best set on 6 nights in 10. Here's why, what does better, and the price of checking everything.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>The puzzle</h2></div>
+  <div class="col flow">
+    <p>Each candidate trade is a loop of 2 to 4 people where everyone gains (or a gift chain, scored in Karma). Two trades <em>collide</em> when they need the same item: the hub motor can't go to two people. So the job is to choose a set of trades with no collisions that's worth as much as possible.</p>
+    <p>Draw every trade as a dot and every collision as a line, and the job is to pick dots, no two joined by a line, with the biggest total. Mathematicians call it the <strong>maximum-weight independent set</strong> problem. Here's night 1:</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/machine/board.svg" alt="Night 1's 17 candidate trades on a circle, with lines joining trades that collide. The best set, worth 43, is filled green; the set greedy picks, worth 37, is ringed gold." width="1010" height="590"></div>
+    <figcaption>Night 1. Green: the best set, 43. Gold rings: grab the biggest first, 37. The biggest trade knocks out two neighbors that were worth more together.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>The trap is that a trade's worth depends on what else you take. The biggest dot is a good pick only if the dots it rules out are worth less. To know that, you have to weigh combinations, not items.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>Six ways to pick, measured</h2></div>
+  <div class="col flow">
+    <p>We took the real boards from nights 1 to 200 and tried six methods on each, scoring every pick against the exact best.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/ladder.svg" alt="Bar chart: biggest-first finds the best set on 38% of nights and leaves 3.0 a night on the table; hill-climbing from greedy with one-trade swaps also 38% and 3.0; with two-trade swaps 38% and 2.6; most value per collision 74% and 0.7; the machine 79% and 0.4; checking every valid set 100%. A histogram shows greedy misses by 0 on 77 nights, 2 on 10, 4 on 52 and 6 on 61." width="1000" height="470"></div>
+    <figcaption>200 nights. Bars: how often each method lands on the best set. Right: how much greedy misses by, night by night.</figcaption>
+  </figure>
+  <div class="col flow">
+    <h3>Greedy: 38%</h3>
+    <p>Sort the trades by worth, take each one that doesn't collide with what you already have. It's right on 77 nights of 200. When it's wrong it's usually wrong by a lot: on 61 nights it left 6 Goo or Karma behind, out of a best set worth about 41.</p>
+
+    <h3>Fixing greedy by hill-climbing: still 38%</h3>
+    <p>The obvious repair: start from greedy's answer and look for a better one nearby. Swap in one trade you don't have (dropping whatever it collides with), keep the swap if it gains, and repeat until nothing helps. On all 200 nights this found <strong>nothing</strong>. Greedy's answer was already a hilltop: no single swap improves it. Allowing two-trade swaps helped a little on average (2.6 left behind instead of 3.0) but found the best set on no extra nights.</p>
+    <p>This is a <strong>local optimum</strong>: a place where every small step goes down, though a higher peak exists somewhere else. To get from greedy's 37 to the best 43 on night 1 you have to give up the biggest trade first and lose value before you gain it. A method that only ever steps uphill can't do that.</p>
+
+    <h3>A smarter rule: 74%</h3>
+    <p>Rank each trade by its worth divided by one plus how many trades it would knock out, take the best, drop it and its neighbors, re-rank, repeat. A trade that blocks a lot has to be worth a lot. Same speed as greedy, right twice as often. It's still a rule of thumb, though, and you can build boards that fool it (exercise 2).</p>
+
+    <h3>The machine: 79%</h3>
+    <p>The game's washer does something no hill-climber can: it goes downhill on purpose. Hot strips hop between answers freely, uphill and down, and as the drum cools they settle into a deep dip. That's <strong>simulated annealing</strong>, and it lands on the best set in 79% of spins and leaves 0.4 behind on average. It's not perfect either. That's why the i9 keeps the best set it sees during the spin and why the game has several wash programs (<a href="../overfitting/">Lesson 2</a> measures them).</p>
+
+    <h3>Checking every valid set: 100%</h3>
+    <p>List every collision-free set and keep the best. On this street that takes about a tenth of a millisecond a night. Which raises a fair question.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>Why not always check everything?</h2></div>
+  <div class="col flow">
+    <p>With <em>n</em> candidate trades, each one on or off, there are 2<sup><em>n</em></sup> patterns. That doubles with every trade added: about a million at 20, a billion at 30, a trillion at 40. To see this on real boards we grew night 1's board past the game's 17 (by allowing longer gift chains) and timed two ways of searching it.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/blowup.svg" alt="Left: on a log scale, the number of on/off patterns doubles with each candidate trade, reaching about 2 billion at 31, while the number of valid sets climbs much more slowly, to about 2,000. Right: the time to check every pattern grows from under a millisecond to about 50 seconds at 28 trades, while a search that skips collisions stays around microseconds." width="1000" height="470"></div>
+    <figcaption><b>Left:</b> patterns vs the valid sets among them. <b>Right:</b> checking every pattern vs a search that never looks at a set with a collision in it. Same answer, measured on one core.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>Checking every pattern doubles in time with every trade: under a fifth of a second at 20, about 50 seconds at 28. Keep doubling and 40 trades would take about 2 days and 60 trades thousands of years (that's arithmetic, not a measurement). But the smarter search, which skips any trade that collides with one already chosen, takes <strong>8 microseconds</strong> at 28. It only visits valid sets, and on this street there are few of them, because the trades collide so much: 1,101 valid sets out of 268 million patterns at 28. (The game's own board has more, 1,134 at 17, and the search still takes 8 microseconds.)</p>
+    <p>That's the honest lesson about hard problems. Maximum-weight independent set is <strong>NP-hard</strong>: nobody knows a method that's fast on <em>every</em> board, and most experts believe none exists. But "hard in the worst case" is not "hard on your problem". Real problems have structure, and good exact solvers exploit it: they cut off whole branches that can't win. Remove the collisions and the structure goes away. With no collisions at all every pattern is valid, and the smart search is as slow as checking everything.</p>
+    <div class="aside">
+      <span class="label">So why does the game use a machine?</span>
+      <p>On a 17-trade street a laptop's exact search is faster than the drum: one spin is about 0.4 seconds of physics. The game keeps the board at 20 or fewer so it can always check the machine's answer exactly. The drum is there because annealing is how you attack the boards you <em>can't</em> check, and because watching steel strips find the answer is the fun part. <a href="../../machine/">The Machine</a> has the whole story.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>Rules as penalties</h2></div>
+  <div class="col flow">
+    <p>The drum can't <em>forbid</em> a collision. Strips are just bent steel. Instead the machine <em>charges</em> for one: each colliding pair is joined by a spring that pushes them apart, so taking both costs energy. This is how every annealer, quantum or classical, handles rules: the problem is written as one energy (a QUBO, in the jargon), reward for each trade minus a penalty for each broken rule.</p>
+    <p>How big should the penalty be? We tried ten sizes on nights 1 to 20, 16 spins each:</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/penalties.svg" alt="Stacked bars for ten penalty sizes. At 0.25 and 0.5, nearly every spin latches a set with a collision. At 0.75, 19% find the best. From 1.0 up, collisions vanish; the best-set share peaks at 80% at the game's 1.6, then falls to 59% at 4." width="1000" height="480"></div>
+    <figcaption>Green: the best set. Gold: a valid but worse set. Red: a set with a collision. Above the bars: on how many nights the energy's lowest point is the best set at all.</figcaption>
+  </figure>
+  <div class="col flow">
+    <ul>
+      <li><strong>Too soft, and the rules are for sale.</strong> Below about 1 (in units of the most valuable trade), taking two colliding trades can score more than taking one, so the lowest energy is a cheat: an item promised twice. At 0.5 the energy points at a cheat on all 20 nights, and 99.7% of spins latch one.</li>
+      <li><strong>Firm enough, and the answer is honest.</strong> From 1 up, the lowest energy is the best set on every night. Exercise 4 shows why the line falls there.</li>
+      <li><strong>Too stiff, and the search gets stuck.</strong> Bigger penalties don't change the answer but they make the walls between valid sets taller, and the strips stop climbing over them. Best-set spins fall from 80% at 1.6 to 59% at 4.</li>
+    </ul>
+    <p>The game uses 1.6, near the top of the curve. There's no penalty that's right for every problem. You tune it, and tuning it is part of the job.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>In the game</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>The board is the puzzle.</strong> TRADES lists every candidate. When a spin finishes, compare the i9's call with what you'd have picked by eye.</li>
+      <li><strong>The board cam shows annealing.</strong> Early in a spin strips flip constantly, even into worse sets. That's the "go downhill on purpose" that greedy and hill-climbing can't do.</li>
+      <li><strong>A want is a constraint you add.</strong> Ask the machine to deliver one item and it gets a bonus on the trades that do. The game prices that want against the best set without it, the cost of the constraint.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">06</span><h2>On a trading desk</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>Building a portfolio is not ranking stocks.</strong> Taking the ten stocks with the best expected return is greedy. Some of them are the same bet twice. Others crowd a limit (sector, country, how much of one company you may own). Harry Markowitz's point in 1952 was that a holding's worth depends on everything else you hold: weigh combinations, not items.</li>
+      <li><strong>Whole numbers make it hard.</strong> Lot sizes, "at most 30 names", minimum position sizes and on/off choices turn a smooth problem into a mixed-integer one, the same kind as our board. Desks hand these to commercial solvers like Gurobi and CPLEX, which use <em>branch and bound</em>: the "skip what can't win" search from section 03, made much cleverer.</li>
+      <li><strong>Matching is an optimization.</strong> An exchange's opening and closing auctions pick the one price that matches the most volume. Crossing networks match buyers with sellers inside a batch. Kidney exchanges pick the set of swap loops that helps the most patients, which is our board exactly (<a href="../settlement/">Lesson 3</a>).</li>
+      <li><strong>Penalties everywhere.</strong> Portfolio optimizers trade expected return against penalties for risk, turnover and trading costs (<a href="../transaction-costs/">Lesson 1</a>). Set the risk penalty too low and the optimizer takes absurd bets; too high and it barely moves. Same curve, different units.</li>
+      <li><strong>Annealers on Wall Street.</strong> Quantum annealers and "digital annealers" take problems in exactly this QUBO form, and choosing a portfolio is one of their standard demos. Whether they beat a good classical solver on real problems is still argued over. Simulated annealing itself (Kirkpatrick, Gelatt and Vecchi, 1983) is a plain-computer method and is used everywhere.</li>
+    </ul>
+    <div class="aside">
+      <span class="label">When greedy is fine</span>
+      <p>Greedy is exactly right when choices don't interact: if nothing collides, take everything worth taking. It's also right for some special structures (mathematicians call them matroids). And a fast rule of thumb you can run now can beat a perfect method you can't: an order router deciding in microseconds has no time for branch and bound. Use greedy as a baseline you have to beat, not as the answer.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">07</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+<pre><code># six methods on 200 nights (~4 min: the machine spins 800 times)
+cargo run --release --example machine_figs -- ladder
+
+# patterns vs valid sets, both searches timed (~1 min)
+cargo run --release --example machine_figs -- blowup
+
+# the penalty sweep (~5 min: 3,200 spins)
+cargo run --release --example machine_figs -- penalties
+
+# one night's board: candidates, the machine's call, the exact best
+cargo run --release --example trade_cli -- run --night 1</code></pre>
+    <p>The methods are <code>greedy</code>, <code>hill_climb</code> and <code>greedy_per_collision</code> in <code>examples/machine_figs.rs</code>. The exact search is <code>qubo::for_each_valid_set</code> and the penalty is <code>qubo::build</code>, both in <code>src/trade/qubo.rs</code>. The drum is CortenForge's Langevin thermostat.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">08</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>Three trades: A is worth 5, B is worth 6, C is worth 5. B collides with A and with C; A and C don't collide. What does greedy pick, and what's the best set?</p>
+        <details><summary>Answer</summary><p>Greedy takes B (6), which knocks out both others: 6. The best is A + C = 10. The biggest item was the worst pick.</p></details></div></li>
+      <li><div><p>Find a board that fools the "most value per collision" rule.</p>
+        <details><summary>Answer</summary><p>One way: A is worth 10 and collides with B and C, each worth 6; B and C don't collide. A scores 10 ÷ 3 ≈ 3.3, B and C score 6 ÷ 2 = 3, so the rule takes A for 10. The best is B + C = 12. Any rule that looks at one trade at a time can be fooled by some board.</p></details></div></li>
+      <li><div><p>A computer checks a billion on/off patterns a second. How long does checking every pattern take with 40 candidate trades? With 60?</p>
+        <details><summary>Answer</summary><p>2<sup>40</sup> ≈ 1.1 trillion patterns, about 18 minutes. 2<sup>60</sup> ≈ 1.15 × 10<sup>18</sup>, about 36 years. Twenty more trades multiply the time by a million.</p></details></div></li>
+      <li><div><p>Two colliding trades are worth 4 and 7. The energy rewards each trade you take by its worth and charges a penalty <em>P</em> if you take both. How big must <em>P</em> be so that taking both never beats taking the better one alone?</p>
+        <details><summary>Answer</summary><p>Both: 4 + 7 − <em>P</em>. The better one alone: 7. Taking both stops paying when 11 − <em>P</em> &lt; 7, so <em>P</em> &gt; 4, the <em>smaller</em> worth. A penalty above the most valuable trade beats every pair, which is why the figure turns honest at about 1.</p></details></div></li>
+      <li><div><p>You need to buy exactly 100 lots. Three sellers offer 60, 50 and 40 lots at the same price, all or nothing. What does "biggest first" fill, and what's best?</p>
+        <details><summary>Answer</summary><p>Biggest first takes 60, then neither 50 nor 40 fits under 100: 60 lots. The best is 60 + 40 = 100. This is the knapsack problem, another member of the hard family, and it's why all-or-nothing orders make matching hard.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../rare-events/">← Lesson 4: rare events and the hump</a>
+    <a href="../../#lessons">All lessons →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Measured on the game's real boards and in CortenForge's Langevin simulation (<a href="https://crates.io/crates/cortenforge">CortenForge</a>), for <em>Upddayett's School of Biddness</em>. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>
