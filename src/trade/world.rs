@@ -4,7 +4,7 @@
 use super::salties::Sabotage;
 
 /// Why someone wants (or holds) a thing. The tag goes on the want, not the
-/// item: Pigeon Lady wants kale to feed her pigeons, Tamara wants it to eat.
+/// item: Wafflina wants kale to feed her pigeons, Zestina wants it to eat.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Use {
     Eat,
@@ -325,7 +325,7 @@ impl World {
 }
 
 /// The regulars who face the TV from where they stand (Upddayett heckles it).
-pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Shopping-Cart Guy", "Librarian Tamara"];
+pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Gravo", "Zestina"];
 
 /// The regulars at the Tumble & Trade on Market Street, on night `seed`. Values
 /// are in Goo: what a can of Mtn Goo (the neon-green parody soda) is worth
@@ -333,15 +333,15 @@ pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Shopping-Cart Guy", "Librarian
 pub fn laundromat(seed: u64) -> World {
     let mut w = World::empty();
     // sleeps out, has animals, has a phone (many unhoused people carry one,
-    // e.g. through the federal Lifeline program; Vape Lady doesn't, so her
+    // e.g. through the federal Lifeline program; Ranchelle doesn't, so her
     // phone is a real need the drum can meet)
     let upd = w.npc("Upddayett", true, false, true);
-    let cart = w.npc("Shopping-Cart Guy", true, false, true);
-    let vape = w.npc("Vape Lady", true, false, false);
-    let dave = w.npc("Bike Kitchen Dave", false, false, true);
-    let pigeon = w.npc("Pigeon Lady", true, true, true);
-    let ray = w.npc("Sound Guy Ray", false, false, true);
-    let tamara = w.npc("Librarian Tamara", false, true, true);
+    let cart = w.npc("Gravo", true, false, true);
+    let vape = w.npc("Ranchelle", true, false, false);
+    let dave = w.npc("Brisko", false, false, true);
+    let pigeon = w.npc("Wafflina", true, true, true);
+    let ray = w.npc("Crunchton", false, false, true);
+    let tamara = w.npc("Zestina", false, true, true);
     let amir = w.npc("Amir's Persian Kitchen", false, false, true);
     w.npcs[amir].business = true;
 

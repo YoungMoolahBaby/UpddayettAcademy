@@ -155,13 +155,13 @@ fn clean_world(night: u64, give: Option<usize>, battery: bool, printed: Option<u
         w.set_gift(item, true);
     }
     if battery {
-        w.set_held(w.find_item(salties::BATTERY_CELLS).expect("Vape Lady's cells"), true);
+        w.set_held(w.find_item(salties::BATTERY_CELLS).expect("Ranchelle's cells"), true);
     }
     w
 }
 
 /// Night `night`'s yuck (DESIGN "Yuck: the one enemy"): rolled from the
-/// night, or `UPD_YUCK=clean|hungry|cold|tv|upd,vape` for checking.
+/// night, or `UPD_YUCK=clean|hungry|cold|tv|upd,ranchelle` for checking.
 fn roll_yuck(night: u64) -> yuck::Yuck {
     let w = world::laundromat(night);
     std::env::var("UPD_YUCK").ok().and_then(|s| yuck::Yuck::parse(&s, &w)).unwrap_or_else(|| yuck::Yuck::roll(&w))

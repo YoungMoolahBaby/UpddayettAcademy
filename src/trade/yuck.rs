@@ -100,7 +100,7 @@ impl Yuck {
         Self { source, ..Self::clean() }
     }
 
-    /// Parse `UPD_YUCK`: `clean`, `hungry`, `cold`, `tv`, or names (`upd,vape`).
+    /// Parse `UPD_YUCK`: `clean`, `hungry`, `cold`, `tv`, or names (`upd,ranchelle`).
     pub fn parse(s: &str, w: &World) -> Option<Self> {
         let source = match s {
             "clean" => Source::Clean,
@@ -287,7 +287,7 @@ mod tests {
     #[test]
     fn the_call_and_the_cures() {
         let w = world::laundromat(1);
-        let (upd, vape, cart) = (w.find_npc("Upddayett").unwrap(), w.find_npc("Vape").unwrap(), w.find_npc("Cart").unwrap());
+        let (upd, vape, cart) = (w.find_npc("Upddayett").unwrap(), w.find_npc("Ranchelle").unwrap(), w.find_npc("Gravo").unwrap());
         let mut people = Yuck { source: Source::People(vec![upd, vape]), ..Yuck::clean() };
         assert!(people.check(Call::Person(vape)));
         assert!(!people.check(Call::Person(cart)));

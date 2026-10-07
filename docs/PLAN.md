@@ -318,10 +318,10 @@ Each part is someone's want, so a print opens new trades and gift chains:
 
 | Part | Wanted by | Why |
 |---|---|---|
-| 6x18650 battery sled with a hinged lid | Upddayett (balance bot), Bike Kitchen Dave | the Mechanism + MJCF hinge |
-| Pigeon feeder with a roof | Pigeon Lady, Librarian Tamara (courtyard) | the overhang: orientation matters |
-| Shopping-cart caster bracket | Shopping-Cart Guy | `templates::bracket` |
-| Headphone hook | Sound Guy Ray | a small, quick print |
+| 6x18650 battery sled with a hinged lid | Upddayett (balance bot), Brisko | the Mechanism + MJCF hinge |
+| Pigeon feeder with a roof | Wafflina, Zestina (courtyard) | the overhang: orientation matters |
+| Shopping-cart caster bracket | Gravo | `templates::bracket` |
+| Headphone hook | Crunchton | a small, quick print |
 
 Every part has a v1 with a real flaw (thin wall, roof without supports)
 that the check catches with numbers ("wall 0.5 mm, the printer needs 0.8").
@@ -357,10 +357,10 @@ bad print before it wastes the night.
 
 | Part | v1 (flaw) | v2 | Night 1's best set with it |
 |---|---|---|---|
-| Battery sled (Dave 7, Vape Lady 5) | 0.03 mm knife edges, 0.5 mm lid (4.6 s) | tray 130x71x22 + lid 130x73x2 (3.6 s) | 43 -> **48 Goo** (Upddayett -> Dave) |
-| Pigeon feeder (Pigeon Lady 6, Tamara 4) | flat roof: 90 deg overhang, 139 mm bridge (14 s) | base + cone roof (29 s) | 43 -> 45 (Upd -> Pigeon Lady -> Tamara) |
-| Caster bracket (Cart Guy 6, Dave 3) | 300 mm long, the bed is 200 (2 s) | 60x40x5 (0.3 s) | 43 -> 45 (Upd -> Cart Guy -> Dave) |
-| Headphone hook (Ray 4, Tamara 2) | 0.08 mm arm (0.6 s) | 40x60x10 (0.3 s) | 43 (2 trades, not in the best set) |
+| Battery sled (Brisko 7, Ranchelle 5) | 0.03 mm knife edges, 0.5 mm lid (4.6 s) | tray 130x71x22 + lid 130x73x2 (3.6 s) | 43 -> **48 Goo** (Upddayett -> Brisko) |
+| Pigeon feeder (Wafflina 6, Zestina 4) | flat roof: 90 deg overhang, 139 mm bridge (14 s) | base + cone roof (29 s) | 43 -> 45 (Upd -> Wafflina -> Zestina) |
+| Caster bracket (Gravo 6, Brisko 3) | 300 mm long, the bed is 200 (2 s) | 60x40x5 (0.3 s) | 43 -> 45 (Upd -> Gravo -> Brisko) |
+| Headphone hook (Crunchton 4, Zestina 2) | 0.08 mm arm (0.6 s) | 40x60x10 (0.3 s) | 43 (2 trades, not in the best set) |
 
 The bracket's v1 flaw is now "too long for the bed": nothing checks hole
 size. Thin parts that mesh to nothing at the 0.5 mm tolerance also fail
@@ -402,8 +402,8 @@ panel. `UPD_SHOT=1 UPD_PRINT=sled|feeder|bracket|hook` shoots the flow.
     it, the bubble covered the porthole.
 - **The board**: `board_for` adds the print before a give-away, so
   Upddayett can give his print away too. On night 1 with the feeder, the i9's
-  call was "Upddayett gives the printed pigeon feeder to Pigeon Lady,
-  Pigeon Lady gives the birdseed to Librarian Tamara, Tamara gives the
+  call was "Upddayett gives the printed pigeon feeder to Wafflina,
+  Wafflina gives the birdseed to Zestina, Zestina gives the
   Wi-Fi password to Upddayett".
 - **The counter** has a spare crate for the print, Upddayett's color,
   hidden until a print joins. The crate count is asserted per item.
@@ -522,7 +522,7 @@ with `trade_cli bench`, and a pump.
     tonight.
   - The test `yuck_taxes_trades_not_gifts` covers it.
 - **The tools:**
-  - `trade_cli bench --yuck upd,vape` (or `--pump hungry|cold`,
+  - `trade_cli bench --yuck upd,ranchelle` (or `--pump hungry|cold`,
     `--tax T`) runs one board.
   - `trade_cli yuck --nights 1..30 --runs 48 [--tax T] [--pump P]` runs,
     per night, clean vs two yucky people (picked by the night) vs the
@@ -576,8 +576,8 @@ The user asked for the ghost strips in the game.
   - the 3D board gets pale dashed arcs between the customers, with the
     dashes drifting;
   - nobody is labeled. The log names the source, for us.
-- **For checking:** `UPD_YUCK=clean|hungry|cold|upd,vape` overrides the
-  roll. Night 1 with `upd,vape` has 2 ghosts and cost 17 Goo; with
+- **For checking:** `UPD_YUCK=clean|hungry|cold|upd,ranchelle` overrides the
+  roll. Night 1 with `upd,ranchelle` has 2 ghosts and cost 17 Goo; with
   `hungry` it has 3 ghosts and cost 24 Goo.
 - **Tests:** `about_a_third_each_and_never_a_business`, and
   `ghosts_are_killed_best_set_trades_and_cost_what_they_cost` (every ghost
@@ -610,7 +610,7 @@ the TV switch. The game keeps it in `Laundromat::yuck`.
   restored 24 Goo and the TV cure 22.
 - **The TV pump:** the TV is now a pump (one pump night in three). It
   touches whoever faces the screen, `world::TV_WATCHERS`: Upddayett,
-  Shopping-Cart Guy and Librarian Tamara.
+  Gravo and Zestina.
   - The night banner has a "TV on / TV off" switch.
   - Off, the screen goes black, PromiseTV's heckles stop, and the TV
     pumps nothing. You lose the true numbers and the checkable promises.
@@ -629,7 +629,7 @@ the TV switch. The game keeps it in `Laundromat::yuck`.
     `yuck_1_call`, then cures and shoots `yuck_2_cured`, then runs the
     cycle.
   - Night 1 shots: the hunger pump called right, then cured; the hunger
-    pump blamed on Vape Lady (wrong); the TV pump called right (dark
+    pump blamed on Ranchelle (wrong); the TV pump called right (dark
     screen, 11 trades back).
   - Tests: `the_call_and_the_cures`, `it_spreads_along_trades_not_gifts`,
     and the roll (a third each, the TV about a third of pumps).
@@ -651,7 +651,7 @@ the TV switch. The game keeps it in `Laundromat::yuck`.
    gta/skyrim a bit where we do missions and its like 3rd person").
    - You walk Upddayett around Market St in third person instead of
      watching from a fixed camera.
-   - Missions are the work the game already has: Pigeon Lady's letters
+   - Missions are the work the game already has: Wafflina's letters
      and the cores' requests (Lesson 4), prints, deliveries, curing
      yuck, defending against the Salties.
    - The laundromat becomes one location among several (the library,
@@ -892,8 +892,8 @@ Run it: `cargo run --release --example trade_cli -- [run|bench|cycles] [--want u
 
 Backward mode (96 runs each): the want is delivered in 100% of runs, and the
 i9 latch reaches the best set 89% (cells), 93% (hub motor), 98% (soldering
-iron) and 91% (Tamara wants the vinyl). Asking for the hub motor makes the
-machine drop the 3-way that sent it to Dave and do a direct Goo-for-hub swap.
+iron) and 91% (Zestina wants the vinyl). Asking for the hub motor makes the
+machine drop the 3-way that sent it to Brisko and do a direct Goo-for-hub swap.
 
 What tuning taught us (good in-game material):
 - **Soft spins.** A strip pushed by strong springs sits well past |x| = 1
@@ -923,7 +923,7 @@ crate's exact solver.
 
 ### Encoding (maximum-weight independent set)
 
-1. **World:** 6 to 8 NPCs (Upddayett, Shopping-Cart Guy, Vape Lady, ...), each
+1. **World:** 6 to 8 NPCs (Upddayett, Gravo, Ranchelle, ...), each
    with a few items they *have* and a few they *want*, plus a per-NPC value for
    each item.
 2. **Candidate trades:** build the want graph (edge i -> j when j has an item i
@@ -988,7 +988,7 @@ is also the lesson the player learns.
       least 80% of seeded runs. *Via the i9 latch, 95%; at rest, 54%.*
 - [x] One anneal finishes in under ~1-2 s wall time, single thread. *0.38 s.*
 - [x] Terminal output: per-tick list of which trades are "on", then the final
-      chain in words ("Vape Lady gives battery to Shopping-Cart Guy ...").
+      chain in words ("Ranchelle gives battery to Gravo ...").
 - [x] Backward mode finds a chain delivering the wanted item. *100% delivered.*
 
 Put it in `src/trade/` as a library module (no Bevy) so Step 2 reuses it, plus
@@ -1106,13 +1106,13 @@ on short programs before).
   bisected to the smallest value whose exact ground state delivers, plus
   a margin of 1.0 x the smallest cycle value (swept 0.5/1/2/3: 1.0 is the
   best before fields reach the limit). Max field now 7.1, no clamps.
-- **Optimal by value, not bits.** Several trade sets can tie (Tamara
+- **Optimal by value, not bits.** Several trade sets can tie (Zestina
   wanting the kale: ~70% of runs found an equally good set that wasn't the
   brute-force one). `TradeComputer::is_optimal` judges by value + clash-free
   + delivered; the CLI, the logs and the AI line all use it (the game would
   otherwise have roasted perfect runs).
 - Result over all 20 wants, 96 Normal runs each: delivered mean 100%, min
-  99%; i9 optimal mean 93%, min 75% (Dave wants the cells / Ray wants the
+  99%; i9 optimal mean 93%, min 75% (Brisko wants the cells / Crunchton wants the
   derailleur, both cost 5 Goo and compete for the same chain). Forward mode
   unchanged at 95%.
 - In-game: picker (customer, then item; undeliverable items greyed out with
@@ -1125,7 +1125,7 @@ on short programs before).
   problem's energy scale, so the i9 sometimes latches the best set within
   the first ~10 time units. Not a bug; worth remembering if we tune.
 - Layout note for 3.5: the Spin Cycle panel is now tall enough to cover
-  Sound Guy Ray's portrait card.
+  Crunchton's portrait card.
 
 ### 3.2 The AI's voice (DEFERRED: later)
 
@@ -1186,11 +1186,11 @@ Decisions (user, 2026-10-05):
   short HOW IT WORKS card in the game and the same rules in DESIGN.md.
 
 **Dynamic needs (user, 2026-10-05): level 1 now, level 2 later.** Wants
-and needs aren't fixed: Ray isn't always full. Tags come from rules over
+and needs aren't fixed: Crunchton isn't always full. Tags come from rules over
 tonight's conditions, not a hand-made table.
 - Each want (and each owned item) has a *use*: eat, warm up, feed
   animals, lifeline (a phone), build (tools and parts), enjoy (treats).
-  Tags go on the want: Pigeon Lady wants kale to feed her pigeons; Tamara
+  Tags go on the want: Wafflina wants kale to feed her pigeons; Zestina
   wants it to eat.
 - Each night rolls conditions from a seed: weather (cold or mild), who's
   hungry (more likely if sleeping out), whose animals need feeding.
@@ -1240,10 +1240,10 @@ Delicates 99%. Along the way:
   (36.6 vs 36.7) the drum can't separate; values are rounded to whole Goo,
   so those become exact ties (which count as optimal). A night went from
   71% to 100%.
-- **Phones.** Shopping-Cart Guy and Pigeon Lady carry phones now (many
+- **Phones.** Gravo and Wafflina carry phones now (many
   unhoused people do, e.g. the federal Lifeline program); otherwise "no
-  phone" locked them out of the flourishing bonus forever, since only Vape
-  Lady's phone want can be met. Her phone stays a need.
+  phone" locked them out of the flourishing bonus forever, since only
+  Ranchelle's phone want can be met. Her phone stays a need.
 - The board caps at 20 trades (`MAX_BITS`, best kept); no night hits it yet.
 - `trade_cli night --night N` prints tonight's conditions and every want's
   value and tag; `trade_cli nights` summarizes 200 nights.
@@ -1268,8 +1268,8 @@ adas polo (hungry)").
   and never to a fed person while a hungry one wanted it.
 - Program odds re-measured with gift strips (480 runs each): Quick Wash
   26%, Permanent Press 46%, Normal 81%, Delicates 95%.
-- Costly wants (cost 4-10 Goo: Dave/cells, Ray/derailleur, Tamara/kale,
-  Pigeon Lady/charger, Vape Lady/Goo) delivered only 58-85% on the bigger
+- Costly wants (cost 4-10 Goo: Brisko/cells, Crunchton/derailleur, Zestina/kale,
+  Wafflina/charger, Ranchelle/Goo) delivered only 58-85% on the bigger
   boards; fixed by the want clamp below.
 - Found a CortenForge bug: `ising::exact_distribution` overflows to NaN on
   big boards at low temperature (FINDINGS).
@@ -1306,7 +1306,7 @@ Upddayett's thumb on the strip again, as in Step 1.
 - **Known limitation: hard nights.** "Best set" is now limited by how jagged
   a night is, not by the want. Night 4 finds its best set only 39% of the
   time even with no want (mean 36.3 of 37 Goo: near misses). Its night mean
-  rose 47% -> 60% with the clamp, but two free wants dipped (Vape Lady/RTX
+  rose 47% -> 60% with the clamp, but two free wants dipped (Ranchelle/RTX
   3090 40% -> 15%, Upddayett/cells 50% -> 31%, 48 runs): a pinned strip can
   block a way out of a near miss. Candidates: a slower Normal on hard nights,
   or latch-and-reheat.
@@ -1367,22 +1367,22 @@ Upddayett's thumb on the strip again, as in Step 1.
 - **What it does:** the gift costs Upddayett his own value for it (4-6
   Goo) but the block barely loses Goo: the trades that used the item are
   replaced by others, and the recipient's gain counts. Night 1, phone:
-  +44 Goo + 15 Karma (vs +43 + 8 keeping it), since Vape Lady has no phone
+  +44 Goo + 15 Karma (vs +43 + 8 keeping it), since Ranchelle has no phone
   and his phone meets a need (relief 7, 1x). The Goo goes to a treat
   (1.5x once needs are covered); the kale to whoever is hungry, or to
-  Pigeon Lady's pigeons.
+  Wafflina's pigeons.
 - **Reliability** (Normal, 48 runs x nights 1-10, `trade_cli bench --give`):
   keeping it all 81%, giving the Goo 78%, the phone 81%, the kale 65%
   (min 31% on night 5). Night 4 stays hard (38-69%).
 - **Known limit: the kale.** Its gift strips are the weakest on the board
-  (night 5: 4 Karma to Pigeon Lady vs 3 to Tamara, against trades up to
+  (night 5: 4 Karma to Wafflina vs 3 to Zestina, against trades up to
   10), so the drum often settles on the wrong one of a 1-point choice
   (mean 42.7 of 44). Delicates gets night 5 to 77% (mean 43.8). Same
   family as the hard nights: small near-ties between weak strips. Fix
   candidates there apply here too (latch-and-reheat, a slower program on
   hard boards).
 - **Fixed:** a gift's reason came from the recipient's first condition, so
-  the phone read "Vape Lady (hungry)"; `World::why` now names the condition
+  the phone read "Ranchelle (hungry)"; `World::why` now names the condition
   the want answers ("no phone"). Gift lines show each gift's own Karma
   (they all showed the night's total once there were two).
 - `UPD_GIVE=phone` gives an item away in screenshot mode; `trade_cli
@@ -1639,7 +1639,7 @@ went home.
     has one of: the hub motor, the Wi-Fi password, the soldering iron, the
     sleeping bag. There are no parties. While an ad is on:
     - Upddayett heckles from his name card: "Who's giving it up, Glorb?
-      There's one, and it's Shopping-Cart Guy's."
+      There's one, and it's Gravo's."
     - I WANT checks the promise against the picker's real price ("Market St
       has 1. Checked: for Upddayett it costs the block 2 Goo"), and a
       "Want it" button puts it in the picker.
@@ -1773,7 +1773,7 @@ since become smart coil nights (see "Smart Salties" below).
   tonight. Science, baby." / "We're calling down a solar flare." / "EMP
   tonight."). DEFENSES in SPIN CYCLE: Idle check ("strip 9 feels 0.47x the
   flattening field nobody installed"), a steel shield over a chosen strip,
-  and the battery (Vape Lady's 18650s, priced every night: 7 Goo on
+  and the battery (Ranchelle's 18650s, priced every night: 7 Goo on
   night 1, 9 on night 17). On a breaker night the tubes flicker before the
   spin, the room goes dark when it trips, and the progress bar says POWER
   CUT. After the spin the magnet appears taped to the washer and the AI
@@ -1827,7 +1827,7 @@ nights among the first 40: smart coils 1, 10, 16, 20, 27; a smart quiet cut
   every strip, both ways, at 0.8x (just under flattening, so it never pins
   a strip). Each spot is scored by how much worse the best set gets once
   the tilt is counted in Goo (a field `h` is worth `2h / (beta * scale)`).
-  Their favorite: pushing the Upddayett ⇄ Vape Lady swap *on*, into the
+  Their favorite: pushing the Upddayett ⇄ Ranchelle swap *on*, into the
   trades it clashes with. It's an electromagnet keyed to the drum's
   shaking: `salties::Coil`, our own `PassiveComponent` that only pushes
   while `ctrl[0] > 0`. So the idle check reads 0.000.
@@ -1853,8 +1853,8 @@ nights among the first 40: smart coils 1, 10, 16, 20, 27; a smart quiet cut
     rate (98/98, 81/81, 85/85, 92/81, 77/65).
 - **Roasts:** "No brag tonight: the smart kind. Strip 12 felt 0.78x the
   flattening field while the drum spun and nothing at idle: a coil keyed
-  to the shaking, aimed at Vape Lady -> Bike Kitchen Dave -> Sound Guy Ray
-  -> Vape Lady. ... Shield strip 12 and spin again." After the shield:
+  to the shaking, aimed at Ranchelle -> Brisko -> Crunchton
+  -> Ranchelle. ... Shield strip 12 and spin again." After the shield:
   "Your shield took it from 0.80x to 0.08x. Steel: 1, Salt: 0." Quiet cut:
   "No brag, no flicker: they knew where the panel was, and when," plus
   what the battery would cost. On night 4 that's 7 Goo of trades against

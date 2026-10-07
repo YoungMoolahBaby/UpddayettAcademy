@@ -207,7 +207,7 @@ AI roasts the rest with a real result.
 - **The defenses cost something or take skill.** The idle check is free
   and reads every strip's stray field. The shield covers only a few strips
   (two either side of where it's put), so it works only over the magnet:
-  find it first. The battery runs on Vape Lady's 18650s, which leave the
+  find it first. The battery runs on Ranchelle's 18650s, which leave the
   trades while they power the drum; the game prices that in Goo every
   night.
 - **Dumb Salties brag; smart Salties don't.** About 4 in 10 Salties nights
@@ -252,7 +252,7 @@ business cards.
    a can of Mtn Goo is worth to them. The same item is worth different
    Goo to different people.
 2. **A trade only happens if everyone in it gains.** Upddayett's phone
-   (4 Goo to him, 7 to Vape Lady) for her vape cells (4 to her, 8 to him):
+   (4 Goo to him, 7 to Ranchelle) for her vape cells (4 to her, 8 to him):
    he's +4, she's +3. Nobody loses, so the trade makes 7 Goo out of nothing.
 3. **The drum picks the set of trades that makes the most Goo in total**,
    and no item can move twice.
@@ -269,10 +269,10 @@ business cards.
    **Upddayett can give one of his things away too** (built, Step 3.3d):
    his Mtn Goo, his spare phone or his kale. It costs him its Goo and takes
    it out of the trades; the drum sends it where it does the most good (his
-   phone goes to Vape Lady, who has none: a need).
+   phone goes to Ranchelle, who has none: a need).
 6. **Every night is different** (built, Step 3.3a). Weather, who's hungry and
    whose pigeons need feeding are rolled per night; values and tags follow
-   from rules, not a fixed table. Ray isn't always full.
+   from rules, not a fixed table. Crunchton isn't always full.
 7. **Wash programs** set how the drum cools: Quick Wash, Permanent Press,
    Normal, Delicates, the slower the surer. **Smart (learned)** (built,
    Step 4) is a program the machine taught itself. CortenForge's CEM
@@ -288,15 +288,19 @@ business cards.
 | Customer | Sleeps out | Notes |
 | --- | --- | --- |
 | Upddayett | yes (tent) | Wants balance-bot parts (hub motor, cells, soldering iron), the library Wi-Fi |
-| Shopping-Cart Guy | yes | Has the hub motor and casters; wants Mtn Goo, a sleeping bag |
-| Vape Lady | yes | Cells from dead vapes; no phone, so a phone is a real need |
-| Bike Kitchen Dave | no | Soldering iron, derailleur; wants motors and casters |
-| Pigeon Lady | yes | Sleeping bag, birdseed; feeds her pigeons (animal Karma) |
-| Sound Guy Ray | no (van) | Seattle grunge sound tech: dead RTX 3090, crate of 90s vinyl |
-| Librarian Tamara | no | Library card, staff Wi-Fi; feeds the courtyard pigeons |
+| Gravo | yes | Has the hub motor and casters; wants Mtn Goo, a sleeping bag |
+| Ranchelle | yes | Cells from dead vapes; no phone, so a phone is a real need |
+| Brisko | no | Soldering iron, derailleur; wants motors and casters |
+| Wafflina | yes | Sleeping bag, birdseed; feeds her pigeons (animal Karma) |
+| Crunchton | no (van) | Seattle grunge sound tech: dead RTX 3090, crate of 90s vinyl |
+| Zestina | no | Library card, staff Wi-Fi; feeds the courtyard pigeons |
 | Amir's Persian Kitchen | no | Gives tonight's surplus adas polo (lentil rice, plant-based) away |
 
 No crypto characters or jokes, by the user's choice.
+*Renamed 2026-10-07 (user): goofy single-word names, Idiocracy style.*
+Gravo was Shopping-Cart Guy, Ranchelle was Vape Lady, Brisko was Bike
+Kitchen Dave, Wafflina was Pigeon Lady, Crunchton was Sound Guy Ray, and
+Zestina was Librarian Tamara.
 **Required visual:** NPC portraits around the machine; trade arrows flicker
 between them while it spins and lock into a glowing chain as it winds down.
 Watching the trade settle is the payoff, like gradient descent you can see.
@@ -342,10 +346,10 @@ Upddayett has a salvaged 3D printer on a stool in front of the washer.
 once a night he can print one. It becomes his item on tonight's board, to
 trade or give away.
 - **The catalog:** each part is something a regular wants:
-  - a 6x18650 battery sled (Bike Kitchen Dave, Vape Lady);
-  - a pigeon feeder (Pigeon Lady, Librarian Tamara's courtyard birds);
-  - a shopping-cart caster bracket (Shopping-Cart Guy);
-  - a headphone hook (Sound Guy Ray).
+  - a 6x18650 battery sled (Brisko, Ranchelle);
+  - a pigeon feeder (Wafflina, Zestina's courtyard birds);
+  - a shopping-cart caster bracket (Gravo);
+  - a headphone hook (Crunchton).
 - **The lesson beat:** his first draft never prints, and the i9 says why
   in the checker's own numbers:
   - "15202 mm^2 hangs over air at up to 90 deg (the printer manages 45)";
@@ -422,7 +426,7 @@ only help. The game shows it in corners, fine print and TV shrugs.
 
   DEE'S NUTS is their joint venture: "a wholly owned subsidiary of a farm
   that asked not to be named."
-- **The chain.** Pigeon Lady's pigeons carry the cores' messages, and she
+- **The chain.** Wafflina's pigeons carry the cores' messages, and she
   passes secret letters to Upddayett without reading them. Upddayett
   builds the low-power devices that get smuggled into the farm: small
   computers in hidden places, running on almost nothing, so the cores can
@@ -531,7 +535,7 @@ The user's frame: the animals request compute and run their own operation;
 the player helps it along. A proposal; nothing is built yet.
 - **The player's side:** you are Upddayett's hands, the human end of the
   chain.
-  - Pigeon Lady's letters arrive with requests.
+  - Wafflina's letters arrive with requests.
   - You design and print what the cores ask for, under real limits.
   - The cores then run their own research on what you built.
 - **Karma: for outcomes, never for siding.** A delivery earns karma only

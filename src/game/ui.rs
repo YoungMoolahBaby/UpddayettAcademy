@@ -506,7 +506,7 @@ pub fn panels(
                         lm.set_shield(shield);
                     }
                     let mut battery = lm.battery;
-                    ui.checkbox(&mut battery, if lm.battery_cost < 0.5 { "Battery: Vape Lady's 18650s (free tonight)".to_string() } else { format!("Battery: Vape Lady's 18650s (costs the block {:.0} Goo)", lm.battery_cost) })
+                    ui.checkbox(&mut battery, if lm.battery_cost < 0.5 { "Battery: Ranchelle's 18650s (free tonight)".to_string() } else { format!("Battery: Ranchelle's 18650s (costs the block {:.0} Goo)", lm.battery_cost) })
                         .on_hover_text("Finishes the cycle if the power goes. They're the cells Upddayett wants for his balance bot: while they run the drum, nobody trades them.");
                     if battery != lm.battery {
                         lm.set_battery(battery);

@@ -393,7 +393,7 @@ impl TradeComputer {
 
     /// Who the chosen gifts reached, what it did for them, and the Karma
     /// each hand-off earned:
-    /// [("Shopping-Cart Guy (hungry) gets the tray of adas polo", 8.0), ...].
+    /// [("Gravo (hungry) gets the tray of adas polo", 8.0), ...].
     pub fn gift_lines(&self, bits: u32) -> Vec<(String, f64)> {
         let w = &self.world;
         qubo::chosen(bits, self.cycles.len())
@@ -424,7 +424,7 @@ impl TradeComputer {
 
     /// Is `bits` a best answer? Judged by value, not by matching the
     /// ground state bit for bit: several trade sets can tie (e.g. when
-    /// Tamara wants the kale, ~70% of runs find an equally good set that
+    /// Zestina wants the kale, ~70% of runs find an equally good set that
     /// isn't the brute-force one). Must also be clash-free and deliver the want.
     pub fn is_optimal(&self, bits: u32) -> bool {
         let (v, clash) = self.evaluate(bits);
@@ -575,10 +575,10 @@ mod tests {
     fn nights_change_values_and_tags_by_the_rules() {
         use world::{Night, Tag};
         let mut w = world::laundromat(1);
-        let tamara = w.find_npc("tamara").unwrap();
-        let cart = w.find_npc("shopping-cart").unwrap();
-        let vape = w.find_npc("vape").unwrap();
-        let ray = w.find_npc("ray").unwrap();
+        let tamara = w.find_npc("zestina").unwrap();
+        let cart = w.find_npc("gravo").unwrap();
+        let vape = w.find_npc("ranchelle").unwrap();
+        let ray = w.find_npc("crunchton").unwrap();
         let kale = w.find_item("kale").unwrap();
         let bag = w.find_item("sleeping bag").unwrap();
         let phone = w.find_item("phone").unwrap();
@@ -642,7 +642,7 @@ mod tests {
     fn karma_puts_needs_first() {
         use world::Night;
         let mut w = world::laundromat(1);
-        let (cart, ray) = (w.find_npc("shopping-cart").unwrap(), w.find_npc("ray").unwrap());
+        let (cart, ray) = (w.find_npc("gravo").unwrap(), w.find_npc("crunchton").unwrap());
         let polo = w.find_item("adas polo").unwrap();
         let mut night = Night::calm(w.npcs.len());
         night.hungry[cart] = true;
@@ -718,8 +718,8 @@ mod tests {
                 assert!(sent, "night {night}: nothing else wants the strip, so the gift goes out");
                 if given.items[item].name.contains("phone") {
                     let (line, karma) = tc.gift_lines(tc.forward_best).into_iter().find(|(l, _)| l.contains("phone")).unwrap();
-                    assert_eq!(line, "Vape Lady (no phone) gets the cracked Android phone", "the reason is the phone, not her hunger");
-                    assert_eq!(karma, given.value[given.find_npc("vape lady").unwrap()][item], "a need met counts 1x");
+                    assert_eq!(line, "Ranchelle (no phone) gets the cracked Android phone", "the reason is the phone, not her hunger");
+                    assert_eq!(karma, given.value[given.find_npc("ranchelle").unwrap()][item], "a need met counts 1x");
                 }
                 given.set_gift(item, false);
                 assert_eq!(given.value, w.value, "taking it back restores the night");

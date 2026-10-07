@@ -27,8 +27,8 @@ arcs the user named, then smaller items.
   - [ ] maybe: a short "how the machine works" chapter from `docs/MACHINE.md`
   - Still unasked: what confuses the user most.
 - [ ] **Third person, with missions** (PLAN "Next arcs" 2). Walk Upddayett
-  around Market St; missions are the work the game already has (Pigeon
-  Lady's letters, the cores' requests, prints, deliveries, yuck cures,
+  around Market St; missions are the work the game already has (Wafflina's
+  letters, the cores' requests, prints, deliveries, yuck cures,
   Salties defense); the laundromat becomes one location of several. To
   settle first: controls, camera follow, street size, how missions are
   given and tracked.

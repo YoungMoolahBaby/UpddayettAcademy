@@ -409,8 +409,8 @@ fn board(tc: &TradeComputer) -> (f64, f64) {
         "together. The machine has to weigh every trade",
         "against all the others at once.",
         "",
-        "Labels: who hands to whom (U = Upddayett, VL = Vape",
-        "Lady, AP = Amir's Persian Kitchen, ...).",
+        "Labels: who hands to whom (U = Upddayett, R =",
+        "Ranchelle, AP = Amir's Persian Kitchen, ...).",
     ];
     for (k, l) in lines.iter().enumerate() {
         s.text((lx, 225.0 + k as f64 * 19.0), l, 12.5, if k >= 10 { DIM } else { INK }, "start", "normal");

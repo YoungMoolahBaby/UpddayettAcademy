@@ -38,7 +38,7 @@
 <section>
   <div class="sec-head col"><span class="sec-num">01</span><h2>The problem: someone has to go first</h2></div>
   <div class="col flow">
-    <p>Take a 3-way loop from night 1. Upddayett gives Shopping-Cart Guy a 12-pack of Mtn Goo, Shopping-Cart Guy gives Bike Kitchen Dave a 350 W scooter hub motor, and Dave gives Upddayett a soldering iron. Everyone comes out ahead, if everyone delivers.</p>
+    <p>Take a 3-way loop from night 1. Upddayett gives Gravo a 12-pack of Mtn Goo, Gravo gives Brisko a 350 W scooter hub motor, and Dave gives Upddayett a soldering iron. Everyone comes out ahead, if everyone delivers.</p>
     <p>Now do it without a counter, one hand-off at a time. Somebody has to go first. Upddayett hands over the Mtn Goo, then waits. If anyone down the line changes their mind, walks off or just doesn't show, Upddayett has given something and got nothing. Everyone who goes later is protected, because they receive before they give. All the risk lands on whoever goes first, and it grows with every person they're waiting on.</p>
   </div>
   <figure>
@@ -62,7 +62,7 @@
     <p>Step 4 is <strong>reconciliation</strong>: the books must balance before anything is final. It's <code>settle</code> in <code>src/trade/escrow.rs</code>, about a hundred lines. In the game you'll see it as a line after every spin: "The counter held all 17 items through the spin, then 8 changed hands in 3 trades and 1 gift."</p>
     <div class="aside">
       <span class="label">The price of safety</span>
-      <p>While the drum spins, nothing on the counter can be used for anything else. In markets this is real money: collateral and margin sit idle so that trades can settle safely. In the game, when Upddayett runs the drum on Vape Lady's battery cells to survive a power cut, those cells can't be traded that night. Safety is never free.</p>
+      <p>While the drum spins, nothing on the counter can be used for anything else. In markets this is real money: collateral and margin sit idle so that trades can settle safely. In the game, when Upddayett runs the drum on Ranchelle's battery cells to survive a power cut, those cells can't be traded that night. Safety is never free.</p>
     </div>
   </div>
 </section>
@@ -112,7 +112,7 @@ cargo test --release --lib -- the_counter a_clash</code></pre>
         <details><summary>Answer</summary><p>Completes: 0.95<sup>4</sup> ≈ 81.5%. The first person loses if they deliver (95%) and any of the other three doesn't (1 − 0.95<sup>3</sup> ≈ 14.3%): 0.95 × 0.143 ≈ 13.5%.</p></details></div></li>
       <li><div><p>Without a counter, who should go first in a loop, and why does a kidney chain start with an altruistic donor?</p>
         <details><summary>Answer</summary><p>Whoever has the least to lose by not being paid back. An altruistic donor wants nothing in return, so they lose nothing if the chain breaks after them. Every later donor gives only after their own patient has received.</p></details></div></li>
-      <li><div><p>Two trades the i9 called both need Vape Lady's battery cells. One is worth 7 Goo, the other 5. What does the counter do?</p>
+      <li><div><p>Two trades the i9 called both need Ranchelle's battery cells. One is worth 7 Goo, the other 5. What does the counter do?</p>
         <details><summary>Answer</summary><p>The 7-Goo trade claims the cells first and is carried out. The 5-Goo trade is called off whole: everyone in it keeps their own things, and nobody is left half-traded.</p></details></div></li>
       <li><div><p>A clearing house protects traders from each other. What new risk does it create?</p>
         <details><summary>Answer</summary><p>It concentrates risk: if the clearing house itself fails, everyone is exposed at once. That's why clearing houses are tightly regulated and hold large pools of collateral, and why the counter in the game checks its own books after every spin.</p></details></div></li>

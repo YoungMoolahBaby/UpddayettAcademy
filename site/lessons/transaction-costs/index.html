@@ -95,7 +95,7 @@
 cargo run --release --example machine_figs -- fees
 
 # yuck in the trade computer: two yucky people, or a pump
-cargo run --release --example trade_cli -- run --yuck upd,vape --tax 2
+cargo run --release --example trade_cli -- run --yuck upd,ranchelle --tax 2
 cargo run --release --example trade_cli -- yuck --nights 1..30 --runs 48</code></pre>
     <p>The fee model is <code>best_trades</code> in <code>examples/machine_figs.rs</code>. Each person's gain is computed in <code>src/trade/cycles.rs</code> as the value of what they get, minus the value of what they give, minus their fee.</p>
   </div>

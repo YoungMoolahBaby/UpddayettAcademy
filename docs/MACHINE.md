@@ -24,7 +24,7 @@ Nobody on Market St has money. What they have is stuff, and stuff is worth
 different amounts to different people. The game measures that in **Goo**:
 what a thing is worth *to one person, tonight* (1 Goo is about a can of
 Mtn Goo to them). A bag of aeroponic kale might be worth 2 Goo to
-Upddayett and 7 to Librarian Tamara. That gap is where every trade comes
+Upddayett and 7 to Zestina. That gap is where every trade comes
 from: the same thing is worth more in somebody else's hands.
 
 A **trade** only happens if everyone in it comes out ahead. Two-way swaps
@@ -315,7 +315,7 @@ Everything you do in the game changes the board, and so the physics:
       there, so anything left over is a field it didn't put there. A
       magnet shows up as a strip sitting slightly off its usual spot.
     - A *steel shield* blocks a magnet if it covers it.
-    - *The battery* (Vape Lady's cells) keeps the drum running through a
+    - *The battery* (Ranchelle's cells) keeps the drum running through a
       cut, but then those cells can't be traded tonight.
 
 ---

@@ -35,59 +35,59 @@
 <circle cx="340.0" cy="97.0" r="27.0" fill="none" stroke="#d99a00" stroke-width="4"/>
 <circle cx="340.0" cy="97.0" r="20.0" fill="#ffffff" stroke="#1d2026" stroke-width="1.5"/>
 <text x="340.0" y="102.0" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">9</text>
-<text x="340.0" y="61.0" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">U&gt;VL&gt;SG&gt;LT&gt;U</text>
+<text x="340.0" y="61.0" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">U&gt;R&gt;C&gt;Z&gt;U</text>
 <circle cx="417.7" cy="111.5" r="27.0" fill="none" stroke="#d99a00" stroke-width="4"/>
 <circle cx="417.7" cy="111.5" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="417.7" y="116.5" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">8</text>
-<text x="434.6" y="78.2" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;SC&gt;BK&gt;U</text>
+<text x="434.6" y="78.2" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;G&gt;B&gt;U</text>
 <circle cx="484.8" cy="153.1" r="27.0" fill="none" stroke="#d99a00" stroke-width="4"/>
 <circle cx="484.8" cy="153.1" r="20.0" fill="#ffffff" stroke="#e8761a" stroke-width="3"/>
 <text x="484.8" y="158.1" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">8K</text>
 <text x="516.5" y="127.6" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">AP&gt;U</text>
 <circle cx="532.5" cy="216.2" r="20.0" fill="#3f9a12" stroke="#e8761a" stroke-width="3"/>
 <text x="532.5" y="221.2" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">8K</text>
-<text x="574.5" y="202.3" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">AP&gt;SC</text>
+<text x="574.5" y="202.3" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">AP&gt;G</text>
 <circle cx="554.1" cy="292.2" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="554.1" y="297.2" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">7</text>
-<text x="600.9" y="292.5" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;VL&gt;U</text>
+<text x="600.9" y="292.5" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;R&gt;U</text>
 <circle cx="546.8" cy="370.8" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="546.8" y="375.8" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">7</text>
-<text x="592.0" y="385.8" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;PL&gt;LT&gt;U</text>
+<text x="592.0" y="385.8" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;W&gt;Z&gt;U</text>
 <circle cx="511.6" cy="441.6" r="27.0" fill="none" stroke="#d99a00" stroke-width="4"/>
 <circle cx="511.6" cy="441.6" r="20.0" fill="#ffffff" stroke="#1d2026" stroke-width="1.5"/>
 <text x="511.6" y="446.6" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">7</text>
-<text x="549.1" y="469.7" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;LT&gt;SG&gt;VL&gt;U</text>
+<text x="549.1" y="469.7" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">U&gt;Z&gt;C&gt;R&gt;U</text>
 <circle cx="453.2" cy="494.8" r="20.0" fill="#ffffff" stroke="#e8761a" stroke-width="3"/>
 <text x="453.2" y="499.8" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">7K</text>
-<text x="477.9" y="532.8" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">AP&gt;VL</text>
+<text x="477.9" y="532.8" font-size="10.5" fill="#7a808c" text-anchor="start" font-weight="normal">AP&gt;R</text>
 <circle cx="379.5" cy="523.3" r="20.0" fill="#ffffff" stroke="#e8761a" stroke-width="3"/>
 <text x="379.5" y="528.3" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">7K</text>
-<text x="388.1" y="566.7" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">AP&gt;PL</text>
+<text x="388.1" y="566.7" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">AP&gt;W</text>
 <circle cx="300.5" cy="523.3" r="20.0" fill="#ffffff" stroke="#1d2026" stroke-width="1.5"/>
 <text x="300.5" y="528.3" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">6</text>
-<text x="291.9" y="566.7" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">U&gt;SC&gt;U</text>
+<text x="291.9" y="566.7" font-size="10.5" fill="#7a808c" text-anchor="middle" font-weight="normal">U&gt;G&gt;U</text>
 <circle cx="226.8" cy="494.8" r="20.0" fill="#ffffff" stroke="#1d2026" stroke-width="1.5"/>
 <text x="226.8" y="499.8" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">5</text>
-<text x="202.1" y="532.8" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">U&gt;VL&gt;U</text>
+<text x="202.1" y="532.8" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">U&gt;R&gt;U</text>
 <circle cx="168.4" cy="441.6" r="27.0" fill="none" stroke="#d99a00" stroke-width="4"/>
 <circle cx="168.4" cy="441.6" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="168.4" y="446.6" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">5</text>
-<text x="130.9" y="469.7" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">SC&gt;BK&gt;SC</text>
+<text x="130.9" y="469.7" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">G&gt;B&gt;G</text>
 <circle cx="133.2" cy="370.8" r="20.0" fill="#ffffff" stroke="#1d2026" stroke-width="1.5"/>
 <text x="133.2" y="375.8" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">5</text>
-<text x="88.0" y="385.8" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">VL&gt;BK&gt;SG&gt;VL</text>
+<text x="88.0" y="385.8" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">R&gt;B&gt;C&gt;R</text>
 <circle cx="125.9" cy="292.2" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="125.9" y="297.2" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">4</text>
-<text x="79.1" y="292.5" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">VL&gt;SG&gt;VL</text>
+<text x="79.1" y="292.5" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">R&gt;C&gt;R</text>
 <circle cx="147.5" cy="216.2" r="20.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="147.5" y="221.2" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">4</text>
-<text x="105.5" y="202.3" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">SG&gt;LT&gt;SG</text>
+<text x="105.5" y="202.3" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">C&gt;Z&gt;C</text>
 <circle cx="195.2" cy="153.1" r="20.0" fill="#ffffff" stroke="#e8761a" stroke-width="3"/>
 <text x="195.2" y="158.1" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">3K</text>
-<text x="163.5" y="127.6" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">AP&gt;SG</text>
+<text x="163.5" y="127.6" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">AP&gt;C</text>
 <circle cx="262.3" cy="111.5" r="20.0" fill="#ffffff" stroke="#e8761a" stroke-width="3"/>
 <text x="262.3" y="116.5" font-size="14" fill="#1d2026" text-anchor="middle" font-weight="bold">2K</text>
-<text x="245.4" y="78.2" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">AP&gt;LT</text>
+<text x="245.4" y="78.2" font-size="10.5" fill="#7a808c" text-anchor="end" font-weight="normal">AP&gt;Z</text>
 <text x="20.0" y="30.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">Night 1: 17 strips, and every line is a collision</text>
 <circle cx="660.0" cy="90.0" r="12.0" fill="#3f9a12" stroke="#1d2026" stroke-width="1.5"/>
 <text x="682.0" y="95.0" font-size="13" fill="#1d2026" text-anchor="start" font-weight="bold">the best set: 43</text>
@@ -105,6 +105,6 @@
 <text x="650.0" y="358.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="normal">together. The machine has to weigh every trade</text>
 <text x="650.0" y="377.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="normal">against all the others at once.</text>
 <text x="650.0" y="396.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="normal"></text>
-<text x="650.0" y="415.0" font-size="12.5" fill="#7a808c" text-anchor="start" font-weight="normal">Labels: who hands to whom (U = Upddayett, VL = Vape</text>
-<text x="650.0" y="434.0" font-size="12.5" fill="#7a808c" text-anchor="start" font-weight="normal">Lady, AP = Amir's Persian Kitchen, ...).</text>
+<text x="650.0" y="415.0" font-size="12.5" fill="#7a808c" text-anchor="start" font-weight="normal">Labels: who hands to whom (U = Upddayett, R =</text>
+<text x="650.0" y="434.0" font-size="12.5" fill="#7a808c" text-anchor="start" font-weight="normal">Ranchelle, AP = Amir's Persian Kitchen, ...).</text>
 </svg>

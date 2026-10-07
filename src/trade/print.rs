@@ -85,7 +85,7 @@ pub const CATALOG: [Print; 4] = [
         item: "printed 6x18650 battery sled",
         base: 3.0,
         owner_use: Use::Build,
-        wants: &[("Dave", 7.0, Use::Build), ("Vape Lady", 5.0, Use::Build)],
+        wants: &[("Brisko", 7.0, Use::Build), ("Ranchelle", 5.0, Use::Build)],
         color: [1.0, 0.45, 0.1],
         flaw: "0.5 mm walls: the nozzle lays 0.4 mm lines, so they come out as two-line slivers that crack",
         fix: "2 mm walls and floor, square dividers between the cells, and a flat lid that pins on",
@@ -96,7 +96,7 @@ pub const CATALOG: [Print; 4] = [
         item: "printed pigeon feeder",
         base: 2.0,
         owner_use: Use::Build,
-        wants: &[("Pigeon Lady", 6.0, Use::FeedAnimals), ("Tamara", 4.0, Use::FeedAnimals)],
+        wants: &[("Wafflina", 6.0, Use::FeedAnimals), ("Zestina", 4.0, Use::FeedAnimals)],
         color: [0.1, 0.7, 0.62],
         flaw: "a flat roof in one piece: 140 mm of plastic over thin air, which the printer can't bridge",
         fix: "the roof is its own print: a steep cone standing on its rim, dropped onto the posts",
@@ -107,7 +107,7 @@ pub const CATALOG: [Print; 4] = [
         item: "printed shopping-cart caster bracket",
         base: 2.0,
         owner_use: Use::Build,
-        wants: &[("Shopping-Cart", 6.0, Use::Build), ("Dave", 3.0, Use::Build)],
+        wants: &[("Gravo", 6.0, Use::Build), ("Brisko", 3.0, Use::Build)],
         color: [0.22, 0.22, 0.25],
         flaw: "drawn 300 mm long: the bed is 200 mm, and even corner to corner it's 283",
         fix: "60 x 40 x 5 mm with four 4.2 mm bolt holes",
@@ -118,7 +118,7 @@ pub const CATALOG: [Print; 4] = [
         item: "printed headphone hook",
         base: 1.0,
         owner_use: Use::Build,
-        wants: &[("Sound Guy Ray", 4.0, Use::Enjoy), ("Tamara", 2.0, Use::Enjoy)],
+        wants: &[("Crunchton", 4.0, Use::Enjoy), ("Zestina", 2.0, Use::Enjoy)],
         color: [0.85, 0.15, 0.2],
         flaw: "a 0.6 mm arm: thinner than the 1 mm the printer can make, and it would snap under headphones anyway",
         fix: "a 6 mm arm, the J extruded 10 mm and printed lying on its side",
@@ -512,7 +512,7 @@ mod tests {
         let n = w.items.len();
         let item = w.add_print(find("hook").unwrap());
         assert_eq!(item, n);
-        let ray = w.find_npc("Ray").unwrap();
+        let ray = w.find_npc("Crunchton").unwrap();
         assert!(w.value[ray][item] > 0.0);
         let tc = TradeComputer::new(w, 5.0, 1.6);
         assert!(tc.cycles.iter().any(|c| c.legs.iter().any(|l| l.item == item)), "no trade moves the hook");
