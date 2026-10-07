@@ -1,7 +1,7 @@
 /* Upddayett Academy: the West Coast as a Midwesterner pictures it with the
-   whistle on and the lyrics off. A hazy dusk over a county road: a grain
-   elevator, a water tower, power lines swaying in the wind, a lowered sedan
-   on the shoulder, film grain over everything.
+   whistle on and the lyrics off. Dusk on a historic downtown Main St: brick
+   and stone storefronts, acorn streetlamps, a lowered
+   sedan at the curb, film grain over everything.
    Layout: one reading column of ~66ch under a full-width dusk band; figures
    break out wider as white plates in steel frames. The whistle (a gliding
    sine, the G-funk lead and the strips' own motion) divides the sections.
@@ -20,6 +20,7 @@
   --plate: #ffffff;      /* figures are drawn on white */
   --goo: #8fd65a;
   --sil: #140c14;        /* everything against the sky */
+  --row: clamp(118px, 17vw, 180px); /* the storefronts' height */
   --rust: var(--pink);   /* older markup's accent hook */
   --display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --gothic: "UnifrakturMaguntia", "Old English Text MT", "Big Shoulders Display", serif;
@@ -28,14 +29,6 @@
   --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   --whistle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='14' viewBox='0 0 160 14'%3E%3Cpath d='M0 7 C10 0 20 0 30 7 S50 14 60 7 S76 0 84 7 S96 14 102 7 S110 0 114 7 S120 14 124 7 S130 0 134 7 S146 14 160 7' fill='none' stroke='%23e9b94e' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  /* A country elevator: four silos, the gallery across their tops, the head house, a spout. */
-  --elevator: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'%3E%3Cg fill='%23140c14'%3E%3Crect x='10' y='60' width='34' height='140'/%3E%3Crect x='46' y='60' width='34' height='140'/%3E%3Crect x='82' y='60' width='34' height='140'/%3E%3Crect x='118' y='60' width='34' height='140'/%3E%3Crect x='10' y='48' width='146' height='12'/%3E%3Crect x='156' y='10' width='44' height='190'/%3E%3Crect x='152' y='4' width='52' height='8'/%3E%3Crect x='200' y='148' width='38' height='52'/%3E%3C/g%3E%3Cpath d='M200 34 L236 128' stroke='%23140c14' stroke-width='3'/%3E%3Crect x='169' y='40' width='6' height='8' fill='%23e9b94e' opacity='.75'/%3E%3Crect x='183' y='96' width='6' height='8' fill='%23e9b94e' opacity='.5'/%3E%3C/svg%3E");
-  /* A water tower: cone roof, tank, bowl, four legs, braces, the riser. */
-  --tower: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 220'%3E%3Cg fill='%23140c14'%3E%3Cpath d='M12 44 L60 14 L108 44 Z'/%3E%3Crect x='18' y='42' width='84' height='40' rx='4'/%3E%3Cpath d='M18 80 Q60 104 102 80 Z'/%3E%3Crect x='58' y='4' width='4' height='12'/%3E%3C/g%3E%3Cg stroke='%23140c14' fill='none'%3E%3Cpath d='M26 86 L10 220 M46 92 L38 220 M74 92 L82 220 M94 86 L110 220' stroke-width='3.5'/%3E%3Cpath d='M60 98 L60 220' stroke-width='5'/%3E%3Cpath d='M16 170 L42 128 L78 128 L104 170 M22 128 L40 170 L80 170 L98 128' stroke-width='1.6'/%3E%3C/g%3E%3C/svg%3E");
-  /* One wooden pole with its crossarm, every 300 units along the road. */
-  --pole: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200'%3E%3Cg fill='%23140c14'%3E%3Crect x='38' y='40' width='4' height='160'/%3E%3Crect x='20' y='46' width='40' height='3'/%3E%3Crect x='23' y='42' width='2' height='5'/%3E%3Crect x='39' y='42' width='2' height='5'/%3E%3Crect x='55' y='42' width='2' height='5'/%3E%3C/g%3E%3C/svg%3E");
-  /* Three wires from pole to pole, sagging (the part of the last span that shows, too). */
-  --wires: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60' preserveAspectRatio='none'%3E%3Cpath d='M24 2 Q174 40 324 2 M-276 2 Q-126 40 24 2 M40 2 Q190 44 340 2 M-260 2 Q-110 44 40 2 M56 2 Q206 38 356 2 M-244 2 Q-94 38 56 2' fill='none' stroke='%23140c14' stroke-width='1.2'/%3E%3C/svg%3E");
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -106,12 +99,12 @@ section {
 .hero {
   position: relative; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; gap: 1.1rem;
-  margin-block: 1.4rem 2.2rem; padding: clamp(1.6rem, 4vw, 2.8rem) clamp(1.1rem, 4vw, 3rem) clamp(150px, 20vw, 210px);
+  margin-block: 1.4rem 2.2rem; padding: clamp(1.6rem, 4vw, 2.8rem) clamp(1.1rem, 4vw, 3rem) calc(var(--row) + 64px);
   border-radius: 10px; border: 1px solid var(--rule);
   background:
     linear-gradient(180deg, transparent calc(100% - 12px), var(--sil) calc(100% - 12px)),
     linear-gradient(180deg, transparent 72%, rgba(232, 172, 110, 0.22) 94%, transparent 100%),
-    radial-gradient(circle at 60% 100%, #f6d08a 0, #eebb6a 56px, #e0863f 60px, rgba(224, 134, 63, 0.45) 120px, rgba(169, 80, 62, 0) 250px),
+    radial-gradient(circle at 62% calc(100% - var(--row) + 20px), #f6d08a 0, #eebb6a 56px, #e0863f 60px, rgba(224, 134, 63, 0.45) 120px, rgba(169, 80, 62, 0) 250px),
     linear-gradient(180deg, #1e1620 0%, #3a2533 36%, #6d3540 60%, #a9503e 78%, #d4843f 92%, #e3a25a 100%);
 }
 /* Grain on the band, a little heavier than the page. */
@@ -121,36 +114,21 @@ section {
 }
 /* The whistle across the sky, gliding slowly */
 .hero::before {
-  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: clamp(118px, 16vw, 168px); height: 14px;
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: calc(var(--row) + 34px); height: 14px;
   background: var(--whistle) 0 0 / 160px 14px repeat-x; opacity: 0.5;
   animation: whistle 14s linear infinite;
 }
 @keyframes whistle { to { background-position: 160px 0; } }
 
-/* The county road: a grain elevator, a water tower, power lines swaying in
-   the wind, and a lowered sedan in front of the sun that works its
-   hydraulics every few seconds and hops while you hover the band (a strip
-   jumping its hump). */
+/* Market St, downtown: a row of historic storefronts (img/downtown.svg, just
+   the architecture), and a lowered sedan at the curb in
+   front of the sun that works its hydraulics every few seconds and hops
+   while you hover the band (a strip jumping its hump). */
 .hero > .street { position: absolute; inset: 0; z-index: -1; max-width: none; pointer-events: none; }
-.elevator {
-  position: absolute; left: 2%; bottom: 10px; width: clamp(150px, 24vw, 250px); aspect-ratio: 240 / 200;
-  background: var(--elevator) bottom left / contain no-repeat;
+.downtown {
+  position: absolute; left: 0; right: 0; bottom: 10px; height: var(--row);
+  background: url("../img/downtown.svg") center bottom / auto 100% repeat-x;
 }
-.tower {
-  position: absolute; right: 7%; bottom: 10px; width: clamp(58px, 9vw, 100px); aspect-ratio: 120 / 220;
-  background: var(--tower) bottom center / contain no-repeat;
-}
-.poles {
-  --ph: clamp(110px, 15vw, 160px);
-  position: absolute; left: 0; right: 0; bottom: 10px; height: var(--ph);
-  background: var(--pole) 0 0 / calc(var(--ph) * 1.5) var(--ph) repeat-x;
-}
-.wires {
-  position: absolute; left: 0; right: 0; top: calc(var(--ph) * 0.235); height: calc(var(--ph) * 0.3);
-  background: var(--wires) 0 0 / calc(var(--ph) * 1.5) 100% repeat-x;
-  transform-origin: 50% 0; animation: wind 4.5s ease-in-out infinite alternate;
-}
-@keyframes wind { from { transform: scaleY(0.85); } to { transform: scaleY(1.2); } }
 
 .lowrider {
   --car: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 70'%3E%3Cpath d='M6 44 Q6 36 16 35 L58 33 Q74 31 86 20 Q96 13 112 13 L150 13 Q164 13 174 22 Q182 29 194 31 L226 34 Q236 35 236 44 L236 50 Q236 54 232 54 L208 54 A16 16 0 0 0 176 54 L68 54 A16 16 0 0 0 36 54 L10 54 Q6 54 6 50 Z' fill='%23140c14'/%3E%3Cpath d='M92 29 Q100 18 113 17 L148 17 Q160 17 168 29 Z' fill='%235a3340'/%3E%3Cpath d='M16 41 L230 41' stroke='%23ffc94a' stroke-width='1.3'/%3E%3Cpath d='M226 47 L239 47 M2 47 L12 47' stroke='%23d9d3e4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -307,7 +285,7 @@ footer a { color: var(--muted); }
   .wordmark b { font-size: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero::before, .wires, .lowrider .body, .hero:hover .lowrider, .hero:hover .street::after { animation: none; }
+  .hero::before, .lowrider .body, .hero:hover .lowrider, .hero:hover .street::after { animation: none; }
   .lesson { transition: none; }
   a.lesson:hover { transform: none; }
 }
