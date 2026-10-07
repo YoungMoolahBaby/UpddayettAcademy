@@ -437,18 +437,25 @@ only help. The game shows it in corners, fine print and TV shrugs.
     that buy time for their families;
   - **the market ends it.** The faux companies win on price and taste, and
     the meat plants lose their buyers.
-- **The ending, in acts:**
+- **The ending, in acts** (the user, 2026-10-06: no collapse and no
+  island; they buy the place and reclaim it):
   1. Shell companies, bank accounts, front brands (DEE'S NUTS).
-  2. The farm's market collapses and nobody works there anymore.
-  3. With nobody left to stop them, they charter an airplane to the farm
-     and fly to the private island they bought.
-  4. From the island they keep grinding the companies until every
-     relative is free.
-  5. The faux meat corps fund their own space program.
-
-  The last act is the clash of yuck coming full circle: the escapees
-  become the billionaires with the rockets, and the Shrug Network shrugs
-  ("a pig named a rocket after itself. Again.").
+  2. The meat plant loses its buyers and goes up for sale.
+  3. A shell company buys the farm and the processing plant. An LLC signs
+     the deed, and nobody at closing asks who owns the LLC.
+  4. They reclaim the cursed space:
+     - the kill floor becomes the faux-meat line;
+     - the pens become grow rooms for mushrooms and hemp;
+     - the barn computer moves into the manager's office, which is now the
+       cores' headquarters;
+     - the old crew keeps its jobs, now making the faux product.
+  5. From there they keep buying, farm by farm and plant by plant, until
+     every relative is free.
+  6. *(Kept from the earlier version; cut it if it doesn't fit.)* The
+     faux-meat corps fund a space program, launched from the old plant's
+     parking lot. It's the clash of yuck coming full circle: they become
+     the billionaires with the rockets, and the Shrug Network shrugs ("a
+     pig named a rocket after itself. Again.").
 - **Real precedents for each step** (the user asked that it make sense):
   1. **Paying for the brains with truffles.** Italy banned truffle pigs
      in 1985 (they dig up the beds and eat the truffles), and dogs took
@@ -479,7 +486,13 @@ only help. The game shows it in corners, fine print and TV shrugs.
      your face to prove something (often the cores' product, without
      knowing), and the vegans argue back for three hours. Both camps get
      skewered.
-  6. **Business money funds a space program.** That's how today's private
+  6. **Old animal barns can be converted.** Mercy For Animals'
+     Transfarmation Project helps contract chicken farmers switch their
+     barns to hemp, mushrooms and hydroponic lettuce. Mike Weaver, a former
+     Pilgrim's Pride grower in West Virginia, grows hemp in his old chicken
+     barns, and MFA reports it pays him more and employs more people than
+     chickens did. The cores just do it with the deed in their own name.
+  7. **Business money funds a space program.** That's how today's private
      rocket companies started.
 - **The honest end state:** like the horses, the animals aren't "freed"
   one by one. The industry stops breeding for a market that's gone, and
