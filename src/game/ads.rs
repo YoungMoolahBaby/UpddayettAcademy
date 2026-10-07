@@ -77,14 +77,15 @@ impl Ad {
 }
 
 /// The reel, in order: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack
-/// ads back to back (each side on the other), CARTPASS, SITSTILLA.
-pub const ADS: [Ad; 6] = [
+/// ads back to back (each side on the other), CARTPASS, SITSTILLA, DEE'S NUTS.
+pub const ADS: [Ad; 7] = [
     Ad { beats: &GOO_BEATS },
     Ad { beats: &DOG_BEATS },
     Ad { beats: &ATTACK_PLINKO },
     Ad { beats: &ATTACK_GLORBMAN },
     Ad { beats: &CART_BEATS },
     Ad { beats: &SITSTILLA_BEATS },
+    Ad { beats: &DEE_BEATS },
 ];
 
 // ── The style kit ──
@@ -925,6 +926,153 @@ const SITSTILLA_BEATS: [Beat; 6] = [
                 t,
                 "*There always is. Sitstilla is fictional. Real ADHD is real, and for some kids the real medicine really helps, \
                  so talk to a real doctor. Some kids just need recess, a tree, and a grown-up who waits for the end of the question.",
+            );
+        },
+    },
+];
+
+// ── DEE'S NUTS: the karma-neutral snack (a front brand; DESIGN "The farm is waking up") ──
+
+const NUT_BROWN: Color32 = Color32::from_rgb(160, 100, 45);
+const NUT_DARK: Color32 = Color32::from_rgb(90, 50, 20);
+const DEE_GREEN: Color32 = Color32::from_rgb(70, 150, 70);
+const DEE_CREAM: Color32 = Color32::from_rgb(250, 238, 205);
+
+/// One nut: an almond (`round` false) or a walnut.
+fn nut(st: &Stage, at: Pos2, s: f32, round: bool) {
+    if round {
+        st.p.circle_filled(at, s * 0.5, NUT_BROWN);
+        st.p.line_segment([at + vec2(0.0, -s * 0.48), at + vec2(0.0, s * 0.48)], Stroke::new(s * 0.08, NUT_DARK));
+        for dy in [-0.2, 0.2] {
+            st.p.line_segment([at + vec2(-s * 0.3, dy * s), at + vec2(s * 0.3, dy * s)], Stroke::new(s * 0.05, NUT_DARK));
+        }
+    } else {
+        st.p.add(Shape::ellipse_filled(at, vec2(s * 0.32, s * 0.5), NUT_BROWN));
+        st.p.add(Shape::ellipse_stroke(at, vec2(s * 0.32, s * 0.5), Stroke::new(s * 0.05, NUT_DARK)));
+    }
+}
+
+/// A jar of Dee's Nuts with its label.
+fn nut_jar(st: &Stage, at: Pos2, s: f32) {
+    let glass = Rect::from_center_size(at, vec2(s * 0.7, s * 0.9));
+    st.p.rect_filled(glass, s * 0.08, Color32::from_rgba_unmultiplied(220, 240, 255, 90));
+    // Rows of 4 and 3, staggered, all inside the glass.
+    let mut k = 0;
+    for row in 0..4 {
+        let n = if row % 2 == 0 { 4 } else { 3 };
+        for col in 0..n {
+            let x = glass.left() + s * (0.12 + 0.155 * col as f32 + if n == 3 { 0.078 } else { 0.0 });
+            let y = glass.bottom() - s * (0.1 + 0.15 * row as f32);
+            nut(st, pos2(x, y), s * 0.16, k % 3 == 0);
+            k += 1;
+        }
+    }
+    st.p.rect_stroke(glass, s * 0.08, Stroke::new(s * 0.02, Color32::from_white_alpha(200)), egui::StrokeKind::Middle);
+    st.p.rect_filled(Rect::from_center_size(glass.center_top() + vec2(0.0, -s * 0.05), vec2(s * 0.76, s * 0.12)), s * 0.03, DEE_GREEN);
+    let label = Rect::from_center_size(glass.center() + vec2(0.0, -s * 0.12), vec2(s * 0.62, s * 0.22));
+    st.p.rect_filled(label, s * 0.03, DEE_CREAM);
+    let size = fit(st.p, &st.family, "DEE'S NUTS", label.width() * 0.9, s * 0.12);
+    chunky(st.p, &st.family, label.center(), "DEE'S NUTS", size, DEE_GREEN, NUT_DARK);
+}
+
+/// A plate of kebab and rice from Amir's. The toothpick flag says "lamb (ish)".
+fn kebab_plate(st: &Stage, at: Pos2, s: f32) {
+    st.p.add(Shape::ellipse_filled(at, vec2(s * 0.6, s * 0.18), Color32::WHITE));
+    st.p.add(Shape::ellipse_filled(at + vec2(-s * 0.2, -s * 0.04), vec2(s * 0.22, s * 0.1), Color32::from_rgb(250, 240, 200)));
+    st.p.line_segment([at + vec2(-s * 0.15, -s * 0.06), at + vec2(s * 0.5, -s * 0.06)], Stroke::new(s * 0.015, Color32::from_gray(160)));
+    for k in 0..4 {
+        st.p.circle_filled(at + vec2(s * (0.0 + 0.12 * k as f32), -s * 0.07), s * 0.055, Color32::from_rgb(130, 70, 35));
+    }
+    let pick = at + vec2(s * 0.36, -s * 0.07);
+    st.p.line_segment([pick, pick + vec2(0.0, -s * 0.22)], Stroke::new(s * 0.012, Color32::from_rgb(200, 170, 120)));
+    let flag = Rect::from_min_size(pick + vec2(0.0, -s * 0.22), vec2(s * 0.2, s * 0.08));
+    st.p.rect_filled(flag, 1.0, Color32::WHITE);
+    st.p.text(flag.center(), Align2::CENTER_CENTER, "lamb (ish)", FontId::proportional(s * 0.035), Color32::from_gray(60));
+}
+
+/// A nut tree letting go of its nuts, on purpose.
+fn nut_tree(st: &Stage, at: Pos2, s: f32, t: f32) {
+    st.p.rect_filled(Rect::from_center_size(at + vec2(0.0, s * 0.25), vec2(s * 0.14, s * 0.6)), 4.0, Color32::from_rgb(110, 75, 45));
+    for (dx, dy, r) in [(-0.22, -0.12, 0.28), (0.22, -0.12, 0.28), (0.0, -0.3, 0.32), (0.0, -0.05, 0.3)] {
+        st.p.circle_filled(at + vec2(dx * s, dy * s), r * s, DEE_GREEN);
+    }
+    for k in 0..5 {
+        let x = (k as f32 - 2.0) * s * 0.17;
+        let fall = ((t * 0.8 + k as f32 * 0.37) % 1.0).powi(2) * s * 0.75;
+        nut(st, at + vec2(x, s * 0.05 + fall), s * 0.07, k % 2 == 0);
+    }
+}
+
+const DEE_BEATS: [Beat; 6] = [
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            // Dinner at Amir's, and something is off.
+            st.fill(Color32::from_rgb(90, 35, 30));
+            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.12), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(150, 110, 70));
+            person(st, st.at(-0.45, 0.05), st.h() * 0.5, Color32::from_rgb(70, 110, 160), false);
+            kebab_plate(st, st.at(0.15, 0.18), st.h() * 0.6);
+            if t > 0.8 {
+                st.p.text(st.at(-0.3, -0.3), Align2::CENTER_CENTER, "?", FontId::proportional(st.h() * 0.12), Color32::WHITE);
+            }
+            slam(st, t, 0.3, st.at(0.0, -0.4), "TASTING A LITTLE OFF?", st.h() * 0.1, Color32::WHITE, NUT_DARK);
+            caption(st, "ANNOUNCER:", "When Amir's Persian Kitchen is tasting a little off...");
+        },
+    },
+    Beat {
+        secs: 1.6,
+        paint: |st, t| {
+            st.fill(DEE_GREEN);
+            rays(st, st.at(0.0, 0.1), Color32::from_rgba_unmultiplied(255, 240, 200, 40), t * 3.0);
+            slam(st, t, 0.0, st.at(0.0, -0.05), "TRY DEE'S NUTS.", st.h() * 0.15, DEE_CREAM, NUT_DARK);
+        },
+    },
+    Beat {
+        secs: 2.8,
+        paint: |st, t| {
+            st.fill(DEE_CREAM);
+            person(st, st.at(-0.4, 0.1), st.h() * 0.55, DEE_GREEN, true);
+            nut_jar(st, st.at(0.25, 0.05), st.h() * 0.55);
+            if t > 0.5 {
+                starburst(st, st.at(-0.02, -0.3), "GUILT FREE!", Color32::from_rgb(255, 230, 0), t);
+            }
+            caption(st, "DEE:", "Nobody died for these. Not even the tree.");
+        },
+    },
+    Beat {
+        secs: 2.6,
+        paint: |st, t| {
+            st.fill(Color32::from_rgb(170, 215, 240));
+            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.3), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(110, 170, 80));
+            nut_tree(st, st.at(-0.1, 0.0), st.h() * 0.6, t);
+            slam(st, t, 0.0, st.at(0.0, -0.4), "THE TREE DROPS THEM ON PURPOSE.", st.h() * 0.07, Color32::WHITE, NUT_DARK);
+            stamp(st, t - 1.0, st.at(0.5, 0.0), "KARMA NEUTRAL*");
+            if t > 1.4 {
+                st.p.text(st.at(0.5, 0.11), Align2::CENTER_CENTER, "*squirrels disagree", FontId::proportional(st.h() * 0.03), Color32::from_gray(40));
+            }
+        },
+    },
+    Beat {
+        secs: 2.2,
+        paint: |st, t| {
+            st.fill(NUT_DARK);
+            rays(st, st.at(0.0, 0.0), Color32::from_rgba_unmultiplied(255, 220, 120, 25), t);
+            jingle(st, t, st.at(0.0, -0.1), &["DEE'S", "NUTS!"], DEE_CREAM, DEE_GREEN);
+            stamp(st, t - 1.2, st.at(0.0, 0.18), "GOT 'EM.");
+        },
+    },
+    Beat {
+        secs: 3.0,
+        paint: |st, t| {
+            st.fill(DEE_CREAM);
+            nut_jar(st, st.at(-0.55, 0.0), st.h() * 0.45);
+            slam(st, t, 0.0, st.at(0.2, -0.08), "DEE'S NUTS", st.h() * 0.14, DEE_GREEN, NUT_DARK);
+            st.p.text(st.at(0.2, 0.06), Align2::CENTER_CENTER, "Karma neutral since the first tree.", FontId::proportional(st.h() * 0.045), NUT_DARK);
+            fine_print(
+                st,
+                t,
+                "Dee's Nuts is a product of Dee's Nuts Holdings, a wholly owned subsidiary of a farm that asked not to be named. \
+                 Amir's Persian Kitchen is delicious and has not changed suppliers. Its supplier has changed. May contain nuts.",
             );
         },
     },

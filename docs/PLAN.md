@@ -1235,6 +1235,22 @@ went home.
         a chicken" (the user's line), and the results are plant-based.
       - The second frame and the fine print also carry the hidden farm
         uprising (DESIGN "The farm is waking up").
+    - **DEE'S NUTS** (the user's idea, 2026-10-06; seventh in the reel):
+      nuts as the ultimate karma-neutral food.
+      - The cold open is a sad diner with a kebab whose toothpick flag reads
+        "lamb (ish)". The slam is TASTING A LITTLE OFF?, with the announcer:
+        "When Amir's Persian Kitchen is tasting a little off..." (the user's
+        line).
+      - Then TRY DEE'S NUTS., and Dee with her jar under a GUILT FREE!
+        sticker: "Nobody died for these. Not even the tree."
+      - THE TREE DROPS THEM ON PURPOSE., stamped KARMA NEUTRAL*, with
+        "*squirrels disagree".
+      - The jingle "DEE'S NUTS!", stamped GOT 'EM.
+      - The end slate reads "Karma neutral since the first tree."
+      - The fine print gives it away as a farm front brand: "a wholly owned
+        subsidiary of a farm that asked not to be named. Amir's Persian
+        Kitchen is delicious and has not changed suppliers. Its supplier has
+        changed."
     - **CARTPASS:** golden-hour cart, "You love your shopping cart."; OWNING
       THINGS? stamped SO 2003; CARTPASS with a $9.99/MO sticker; the wheels
       drop off under a WHEELS SOLD SEPARATELY stamp; end slate with the

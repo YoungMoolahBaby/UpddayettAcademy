@@ -432,6 +432,10 @@ systematic oppression, and "oppression" is an understatement.
      cheaper *and* better, and sell them through human front brands. Demand
      for the real thing collapses on price alone, so no law is needed.
      That's why the ham was soy and nobody checked the bacon.
+     - *On screen:* DEE'S NUTS (the seventh ad) is one of their front brands.
+       Nuts are the ultimate karma-neutral food (the user): nobody dies for
+       them, not even the tree. Its fine print admits Amir's supplier has
+       changed, which is why his kebab tastes "a little off".
      - *Proof:* BASF's synthetic indigo (1897) was cheaper and purer.
        India's indigo plantations were nearly gone by 1913.
      - *Proof:* the tractor. The US had 26.5 million horses in 1915 and
