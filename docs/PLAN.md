@@ -444,6 +444,13 @@ no music, and nobody hears songs they don't like.
   something.
 - **Empty deck:** with no tapes, the label says "BYO TAPE", like the
   laundromat's other handmade signs.
+- **Optional (user, 2026-10-06):** plenty of players will just play music
+  from another app on their computer. So the deck stays out of the way:
+  - it's silent until given a tape, and never autoplays at launch;
+  - it never grabs the audio device's focus or fights another player's
+    volume;
+  - it can be switched off. Off, it has no panel row and no hotkeys, and
+    it's just a prop.
 - **Volume:** the deck ducks under the ad reel (when ads get sound) and
   the pug anchors (when 3.2 lands).
 - **CortenForge?** None needed: this is Bevy audio. The prop is cf-design.
