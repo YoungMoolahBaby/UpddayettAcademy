@@ -405,179 +405,146 @@ No crypto ads.
 
 ### The farm is waking up (a hidden thread, 2026-10-06)
 
-The user's idea: the animals we eat (pigs, goats, chickens, cows) are
-getting superintelligence on the black market, from dogs who got it in
-the ad and from people who sell it on. With it they end their own
-systematic oppression, and "oppression" is an understatement.
-- **How they win:** quietly, slowly, underground, because brute force
-  isn't needed. They don't bother with the courts, which are a joke in
-  every direction, for every side. Nothing violent happens on screen.
-- **The scheme, step by step** (the user asked for one that makes sense,
-  with each step done before in real history). The idea: you don't free
-  an animal by winning an argument about it. You make eating it obsolete.
-  1. **Pay for the brains.** Pigs are the best truffle finders there are.
-     Italy banned truffle pigs in 1985 (they dig up the beds and eat the
-     truffles), and dogs took the job. So the dogs are the ones who can
-     sell truffles to people without anyone asking questions. The pigs
-     find truffles and the dogs sell them, then pay the pigs back in
-     superintelligence. That's the deal in the alley.
-     - *Proof:* Italy's 1985 ban, and dogs replacing pigs.
-  2. **Talk without being heard.** Pigeons carry the messages between
-     farms, so Pigeon Lady is feeding the network without knowing it. Dogs
-     are the go-betweens, since people trust dogs anywhere.
-     - *Proof:* Cher Ami, the WWI pigeon who flew 25 miles through
-       gunfire in 1918 and saved 194 men of the Lost Battalion.
-  3. **Out-make the original.** This is the real weapon. With
-     superintelligence they design plant meat, milk and eggs that are
-     cheaper *and* better, and sell them through human front brands. Demand
-     for the real thing collapses on price alone, so no law is needed.
-     That's why the ham was soy and nobody checked the bacon.
-     - *On screen:* DEE'S NUTS (the seventh ad) is one of their front brands.
-       Nuts are the ultimate karma-neutral food (the user): nobody dies for
-       them, not even the tree. Its fine print admits Amir's supplier has
-       changed, which is why his kebab tastes "a little off".
-     - *Proof:* BASF's synthetic indigo (1897) was cheaper and purer.
-       India's indigo plantations were nearly gone by 1913.
-     - *Proof:* the tractor. The US had 26.5 million horses in 1915 and
-       about 3 million by 1960. Nobody won a horse-rights case; the
-       market stopped needing horses.
-  4. **Keep the counts right while they leave.** Inspectors and farmers
-     count from a distance, so a papier-mache pig or an empty stall with a
-     recording of mooing holds the count.
-     - *Proof:* the WWII Ghost Army, 1,100 men with inflatable tanks and
-       sound trucks who passed for 30,000.
-     - *Proof:* Operation Fortitude's fake army (FUSAG) under Patton,
-       which pinned the Germans at Pas-de-Calais before D-Day.
-  5. **Fighting it only makes it bigger.** The traditional folks take
-     offense and pass laws for the real thing, and the fake wins anyway.
-     The ban even creates the black market.
-     - *Proof:* the butter lobby vs margarine. Wisconsin banned yellow
-       margarine from 1895 to 1967, and housewives made "oleo runs" to
-       Illinois to smuggle it. New Hampshire required margarine to be
-       dyed pink until the Supreme Court struck that down in 1898. The
-       law protected butter for 72 years and lost.
-     - This is the clash of yuck: the ham-in-your-face guy is the butter
-       lobby.
-  6. **Become not worth messing with.** The animals that are left settle
-     on land nobody wanted. They're self-sufficient (they grow what they
-     sell), and every one of them is trained to defend the place. They
-     never have to use it. On top of that, they own the brands everyone
-     eats from, and you don't oppress the people who make your dinner.
-     - *Proof:* Switzerland's armed neutrality in WWII. Germany drew up
-       an invasion plan (Operation Tannenbaum) and shelved it: a
-       mountain country where everyone is trained costs more than it's
-       worth.
-- **The honest end state:** like the horses, they aren't "freed" one by
-  one. The industry simply stops breeding animals for a market that's
-  gone, and the ones already alive retire to the hills. It takes decades
-  (the horses took 40 years), which is why it's slow and underground.
+The user's idea: the animals we eat (pigs, goats, chickens, cows) get
+superintelligence on the black market, leaked from the dogs in the ad. With
+it they end their own systematic oppression, and "oppression" is an
+understatement. The animals run it themselves, in the dark: they request
+compute, run their own psyops, and build their own food companies. Humans
+only help. The game shows it in corners, fine print and TV shrugs.
+
+- **The cores.** Each species has a small core team that does the real
+  work, like the penguins in *Penguins of Madagascar* (the inspiration
+  only; ours get their own names). Each core founds a faux version of its
+  own meat:
+  - the pigs a faux pork company (working name: Hamlet Foods);
+  - the cows faux beef and milk (Holy Cow Holdings);
+  - the chickens faux chicken and eggs (Eggsit Strategy);
+  - the goats faux goat cheese (Kid Gloves Dairy).
+
+  DEE'S NUTS is their joint venture: "a wholly owned subsidiary of a farm
+  that asked not to be named."
+- **The chain.** Pigeon Lady's pigeons carry the cores' messages, and she
+  passes secret letters to Upddayett without reading them. Upddayett
+  builds the low-power devices that get smuggled into the farm: small
+  computers in hidden places, running on almost nothing, so the cores can
+  do their research and run their shell companies from the barn.
+- **The race.** The farm's killing schedule doesn't stop, so some animals
+  die along the way, as they would in real life. It happens off screen,
+  without jokes: an empty stall, a name crossed off a core's roster. Two
+  things run at once against the schedule:
+  - **the courts stall it.** A pig can't sue, but a pig's company can.
+    Through their shell companies they file suits, injunctions and appeals
+    that buy time for their families;
+  - **the market ends it.** The faux companies win on price and taste, and
+    the meat plants lose their buyers.
+- **The ending, in acts:**
+  1. Shell companies, bank accounts, front brands (DEE'S NUTS).
+  2. The farm's market collapses and nobody works there anymore.
+  3. With nobody left to stop them, they charter an airplane to the farm
+     and fly to the private island they bought.
+  4. From the island they keep grinding the companies until every
+     relative is free.
+  5. The faux meat corps fund their own space program.
+
+  The last act is the clash of yuck coming full circle: the escapees
+  become the billionaires with the rockets, and the Shrug Network shrugs
+  ("a pig named a rocket after itself. Again.").
+- **Real precedents for each step** (the user asked that it make sense):
+  1. **Paying for the brains with truffles.** Italy banned truffle pigs
+     in 1985 (they dig up the beds and eat the truffles), and dogs took
+     the job. So the dogs sell the pigs' finds, and the pigs pay in
+     truffles for the leaked collars.
+  2. **Pigeon couriers.** Cher Ami flew 25 miles through gunfire in 1918
+     and saved 194 men of the Lost Battalion.
+  3. **Why the shell company.** The courts won't hear the animals
+     themselves:
+     - *Naruto v. Slater* (9th Circuit, 2018): a macaque who took selfies
+       lacked standing to sue under the Copyright Act;
+     - New York's Court of Appeals (2022, 5-2) ruled that Happy, an
+       elephant at the Bronx Zoo, isn't a "person" who can seek habeas
+       corpus.
+
+     Corporations have been legal persons since *Santa Clara County v.
+     Southern Pacific* (1886, from a clerk's headnote) and *Pembina*
+     (1888). So the animals sue as companies. Even when they lose, the
+     cases take years, and the years are the point.
+  4. **The market, not the law, ends it.** BASF's synthetic indigo
+     (1897) was cheaper and purer, and India's indigo plantations were
+     nearly gone by 1913. The US had 26.5 million horses in 1915 and about
+     3 million in 1960, because the tractor won.
+  5. **The backlash makes it bigger.** Wisconsin banned yellow margarine
+     from 1895 to 1967, and people smuggled it in on "oleo runs". The law
+     protected butter for 72 years and lost anyway. This is the clash of
+     yuck: the traditional folks take deep offense and eat more meat in
+     your face to prove something (often the cores' product, without
+     knowing), and the vegans argue back for three hours. Both camps get
+     skewered.
+  6. **Business money funds a space program.** That's how today's private
+     rocket companies started.
+- **The honest end state:** like the horses, the animals aren't "freed"
+  one by one. The industry stops breeding for a market that's gone, and
+  the cores buy out the rest.
 - **Don't:** compare the farm animals to the Holocaust or to slavery.
   PETA's "Holocaust on Your Plate" did, and the backlash ended in a German
-  court ban, which the European Court of Human Rights upheld in 2012. The
-  analogy insults the people, and the joke here doesn't need it.
-- **The clash of yuck (the user: "just a clash of yuck everywhere!
-  yay!"):** both camps get skewered equally, the same rule as PromiseTV:
-  - the traditional folks take deep offense at vegan and vegetarian
-    ideas, and eat even more meat in your face to prove something;
-  - the vegans argue back for three hours.
-
-  Meanwhile the animals have already left the menu, and the
-  meat-in-your-face guy is eating their plant-based stand-in without
-  knowing it.
-- **In SUPER INTELLIGENCE FOR DOGS:**
-  - the smart dog searches "chicken nom nom recipe but i dont have a
-    chicken" (the user's line). The results are chickpea nuggets, tofu,
-    and "Why do you need a chicken?", asked by a chicken;
-  - his second tab is "SUPER INTELLIGENCE (bulk) - ship to: The Farm";
-  - a pig watches through the window;
-  - the fine print says "Not for resale to pigs, goats, chickens or cows.
-    (Somebody is reselling it to pigs, goats, chickens and cows.)"
-- **On the Shrug Network:** seven of the seventeen "Anyway" segues are
-  dispatches from the farm, read as if they were nothing:
-  - "a pig bought something off a dog in an alley";
-  - "a man ate a whole ham in front of a vegan to prove a point. It was
-    soy";
-  - "a pig farm counted its pigs. All there. Some are papier-mache";
-  - "a dairy reports record milk. Nobody has seen a cow since March";
-  - "a vegan and a rancher argued for three hours. Two goats took notes";
-  - "a bacon festival sold out. Nobody checked the bacon";
-  - "a chicken crossed the road. On purpose, with a plan."
-- **Later (ideas):**
-  - a regular who eats jerky at the folding counter "at" anyone with a
-    salad (it's mushroom jerky; he doesn't know);
-  - a stiff, slightly lopsided pig in the background of an ad;
-  - three goats in a trench coat doing laundry;
-  - the pug anchors (3.2) shrugging it all off on air.
+  court ban, which the European Court of Human Rights upheld in 2012.
+- **Already in the game:**
+  - the dog ad's search for "chicken nom nom recipe but i dont have a
+    chicken", its plant results, the bulk tab to The Farm, the pig at the
+    window, and the resale fine print;
+  - DEE'S NUTS and its fine print;
+  - seven Shrug Network shrugs.
 
 ### Lesson 4 (proposed, 2026-10-06): the underground
 
-The user's question: some people collaborate with the farm underground on
-psyops to make eating animals obsolete. Do you gain karma for it? There
-are side missions to make, research and design, starting with little
-compute. Superintelligence for dogs is the first step, and it leaks to
-other animals underground. The laundry machine stays as it is, in its
-infancy. And add friction, so it feels realistic. A proposal; nothing is
-built yet.
-- **Who's in:** Upddayett recruits the player.
-  - Librarian Tamara gives the farm its first computer: the library's
-    public PC (the game is already "streamed live from the Market St
-    library computer").
-  - Pigeon Lady's birds carry the messages without her knowing.
-  - Bike Kitchen Dave builds things.
-  - Amir becomes the test kitchen once he learns why his supplier changed.
-- **The psyops** are the scheme's steps 3-5 (above): out-make the product,
-  keep the counts with decoys, and let the backlash help.
-- **Karma: for outcomes, never for siding.** Karma already means doing
-  real good, like Amir's gifts.
-  - A mission earns karma only for what it actually does, honestly
-    counted: an animal not bred, a decoy that holds its count.
-  - Joining earns nothing, and nuts stay karma-neutral.
-  - The game never tells the player which camp is right (the clash of yuck
-    skewers both); it rewards what works.
-- **Compute starts where it is today.** The ad's "SUPER INTELLIGENCE" is a
-  phone in a collar running today's AI (STILL IN BETA, literally).
-  - Collars leak from dogs to pigs through the truffle trade, then
-    onward.
-  - The farm's compute is the library PC. A night's budget is real wall
-    time on the player's machine, so a mission costs what the CortenForge
-    sim really costs.
-  - Capability grows only through research the player runs, never by
-    decree.
-- **Missions, each a real CortenForge job:**
-  1. **A decoy pig** (cf-design + mesh-printability):
-     - a pig is bigger than the 200 mm bed, so it's a multi-part kit
-       (`Mechanism`, STL kit);
-     - it must pass the inspector's silhouette check from the fence and
-       fails up close.
-  2. **A pigeon message capsule** (cf-design mass properties): light
-     enough for a pigeon to carry (Cher Ami's leg tube). The payload limit
-     needs a real source before it's used.
-  3. **The bite test** (sim-soft): match a plant nugget's compression
-     curve to chicken's.
-     - sim-soft is accurate but slow, so a night affords only a few
-       recipes.
-     - Taste panels are noisy, so "better" needs a sim-opt bootstrap CI,
-       as Step 4 learned (±15 points at 12 spins).
-  4. **Routing the underground** (sim-thermostat): which barn moves which
-     animals tonight is a matching problem like tonight's trades, on a
-     bigger board.
-     - The laundry machine is in its infancy, so at first it solves the
-       big boards only partly.
-     - The row of washers (Step 6) is the first upgrade.
+The user's frame: the animals request compute and run their own operation;
+the player helps it along. A proposal; nothing is built yet.
+- **The player's side:** you are Upddayett's hands, the human end of the
+  chain.
+  - Pigeon Lady's letters arrive with requests.
+  - You design and print what the cores ask for, under real limits.
+  - The cores then run their own research on what you built.
+- **Karma: for outcomes, never for siding.** A delivery earns karma only
+  for what it actually does: a lawsuit filed in time, a family member
+  kept off the schedule, market share won. Joining earns nothing. Nuts
+  stay karma-neutral, and the game never says which camp is right.
+- **Compute starts where it is today.** The ad's "SUPER INTELLIGENCE" is
+  a phone in a collar running today's AI (STILL IN BETA, literally).
+  - The cores' first compute is the library PC and whatever Upddayett
+    can power in a barn.
+  - Their research costs real wall time on the player's machine: what the
+    CortenForge sim really costs.
+  - Capability grows only as they earn it (truffle money, then their
+    companies' money).
+- **Requests, each a real CortenForge job:**
+  1. **A low-power barn computer** (Upddayett's devices; cf-design and
+     printability). An enclosure that hides in a feed trough or a salt
+     lick, prints on the 200 mm bed and survives being stepped on. Its
+     power budget limits how much the cores can compute each night.
+  2. **A pigeon letter capsule** (cf-design mass properties). It has to
+     be light enough to fly; the payload limit needs a real source before
+     it's used.
+  3. **The bite test** (sim-soft + sim-opt). A core's faux product has to
+     match the real one's compression curve before it can win on taste.
+     - sim-soft is accurate but slow, so the barn computer affords only a
+       few recipes a night.
+     - Taste panels are noisy, so "better" needs a bootstrap CI.
+  4. **The court calendar** (sim-thermostat). Which suit to file for whom
+     before which date is a scheduling problem the trade machine can
+     solve. It's still in its infancy, so at first it solves the big
+     calendars only partly.
 - **Friction:**
-  - **Heat:** a flawed decoy or a sloppy route raises suspicion. Too much
-    brings the backlash: Big Ham pushes laws, like the butter lobby's
-    margarine bans.
-  - **Money:** truffles are seasonal.
-  - **Trust:** animals don't trust people; dogs are the go-betweens.
-  - **Time:** the win is a market-share curve that creeps up night by
-    night, as the horses took 40 years.
+  - the killing schedule (the deadline, and the losses);
+  - heat (a seized device or an intercepted letter exposes the chain);
+  - the Big Ham backlash (laws, like the margarine bans);
+  - seasonal truffle money;
+  - the barn's power budget;
+  - time: the market-share curve creeps up night by night.
 - **Open questions:**
-  - the lesson's name (in the school's style, e.g. "Lesson 4: Disrupting
-    an Industry (Politely)");
-  - which mission first (the decoy pig reuses Upddayett's printer, so it's
-    the cheapest start);
-  - whether Heat replaces the Salties or joins them.
+  - the lesson's name ("Lesson 4: Shell Companies (Legally)" would echo
+    Lesson 3);
+  - the cores' names (the brand names above are placeholders);
+  - which request first (the barn computer reuses Upddayett's printer);
+  - whether heat joins the Salties or replaces them.
 
 ### Candidate ideas (not decided)
 

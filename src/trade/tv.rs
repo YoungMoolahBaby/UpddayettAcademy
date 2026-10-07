@@ -21,7 +21,7 @@ const ANYWAY: [&str; 17] = [
     "a man grew a slightly bigger potato.",
     "a pig bought something off a dog in an alley.",
     "a man ate a whole ham in front of a vegan to prove a point. It was soy.",
-    "a pig farm counted its pigs. All there. Some are papier-mache.",
+    "a dairy was sued by an LLC. The LLC is a cow.",
     "a dairy reports record milk. Nobody has seen a cow since March.",
     "a vegan and a rancher argued for three hours. Two goats took notes.",
     "a bacon festival sold out. Nobody checked the bacon.",
