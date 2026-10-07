@@ -49,8 +49,7 @@ late-night meets Idiocracy humor.
 - **Format:** each chapter is a lesson in *Upddayett's School of Biddness*, a
   scrappy how-to show streamed from the library computer. Cold opens, title
   cards, sketch interstitials, fake commercials for our own parody products
-  (electrolyte energy vape, subscription shopping cart, Superintelligence for
-  Dogs). Idiocracy in spirit, never lifting its jokes.
+  (electrolyte energy vape, Superintelligence for Dogs). Idiocracy in spirit, never lifting its jokes.
 - **Soda:** a parody neon-green mountain soda (our own brand, not the real
   trademark). Hyperfocus buff, barter currency, cans are aluminum scrap.
 - **Glass half full:** scraps are plentiful because the rich throw away

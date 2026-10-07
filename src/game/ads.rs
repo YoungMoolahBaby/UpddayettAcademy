@@ -77,13 +77,12 @@ impl Ad {
 }
 
 /// The reel, in order: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack
-/// ads back to back (each side on the other), CARTPASS, SITSTILLA, DEE'S NUTS.
-pub const ADS: [Ad; 7] = [
+/// ads back to back (each side on the other), SITSTILLA, DEE'S NUTS.
+pub const ADS: [Ad; 6] = [
     Ad { beats: &GOO_BEATS },
     Ad { beats: &DOG_BEATS },
     Ad { beats: &ATTACK_PLINKO },
     Ad { beats: &ATTACK_GLORBMAN },
-    Ad { beats: &CART_BEATS },
     Ad { beats: &SITSTILLA_BEATS },
     Ad { beats: &DEE_BEATS },
 ];
@@ -94,8 +93,7 @@ const GOO: Color32 = Color32::from_rgb(150, 255, 90);
 const GOO_DARK: Color32 = Color32::from_rgb(20, 70, 25);
 const DOG_BLUE: Color32 = Color32::from_rgb(120, 200, 255);
 const DOG_DARK: Color32 = Color32::from_rgb(20, 40, 90);
-const CART_GOLD: Color32 = Color32::from_rgb(255, 210, 60);
-const CART_DARK: Color32 = Color32::from_rgb(110, 50, 10);
+const GOLD: Color32 = Color32::from_rgb(255, 210, 60);
 const RED: Color32 = Color32::from_rgb(235, 40, 40);
 
 fn flash(st: &Stage, t: f32) {
@@ -233,7 +231,7 @@ fn dj(st: &Stage, at: Pos2, s: f32, t: f32) {
         let a = std::f32::consts::PI * (0.15 + 0.7 * k as f32 / 12.0);
         at + vec2(a.cos() * s * 0.18, s * 0.12 + a.sin() * s * 0.2)
     }).collect();
-    st.p.add(Shape::line(chain, Stroke::new(s * 0.03, CART_GOLD)));
+    st.p.add(Shape::line(chain, Stroke::new(s * 0.03, GOLD)));
     // The arm, pumping the can.
     let pump = (t * 6.0).sin() * s * 0.05;
     let hand = at + vec2(s * 0.5, -s * 0.45 + pump);
@@ -264,7 +262,7 @@ fn dog(st: &Stage, at: Pos2, s: f32, smart: bool, t: f32) {
         let top = head + vec2(0.0, -s * 0.2);
         let board = vec![top + vec2(-s * 0.24, 0.0), top + vec2(0.0, -s * 0.08), top + vec2(s * 0.24, 0.0), top + vec2(0.0, s * 0.08)];
         st.p.add(Shape::convex_polygon(board, Color32::from_rgb(20, 20, 30), Stroke::NONE));
-        st.p.line_segment([top, top + vec2(s * 0.2, s * 0.18)], Stroke::new(s * 0.02, CART_GOLD));
+        st.p.line_segment([top, top + vec2(s * 0.2, s * 0.18)], Stroke::new(s * 0.02, GOLD));
     }
 }
 
@@ -352,26 +350,6 @@ fn laptop(st: &Stage, t: f32, at: Pos2, typed: &str, done: bool) {
         let x = bar.left() + h * 0.03;
         st.p.text(pos2(x, y), Align2::LEFT_CENTER, *title, FontId::proportional(h * 0.032), Color32::from_rgb(30, 60, 200));
         st.p.text(pos2(x, y + h * 0.038), Align2::LEFT_CENTER, *sub, FontId::proportional(h * 0.02), Color32::from_rgb(20, 120, 40));
-    }
-}
-
-fn cart(st: &Stage, at: Pos2, s: f32, wheels_drop: f32) {
-    let wire = Stroke::new(s * 0.02, Color32::from_gray(200));
-    let (tl, tr, br, bl) = (at + vec2(-s * 0.5, -s * 0.3), at + vec2(s * 0.5, -s * 0.3), at + vec2(s * 0.38, s * 0.15), at + vec2(-s * 0.4, s * 0.15));
-    for k in 0..=6 {
-        let f = k as f32 / 6.0;
-        st.p.line_segment([tl.lerp(tr, f), bl.lerp(br, f)], wire);
-    }
-    for k in 0..=3 {
-        let f = k as f32 / 3.0;
-        st.p.line_segment([tl.lerp(bl, f), tr.lerp(br, f)], wire);
-    }
-    st.p.line_segment([tl, tl + vec2(-s * 0.18, -s * 0.12)], Stroke::new(s * 0.04, RED));
-    st.p.line_segment([bl, bl + vec2(0.0, s * 0.2)], wire);
-    st.p.line_segment([br, br + vec2(0.0, s * 0.2)], wire);
-    for x in [bl.x, br.x] {
-        let fall = wheels_drop * wheels_drop * st.h() * 2.0;
-        st.p.circle_filled(pos2(x, bl.y + s * 0.26 + fall), s * 0.06, Color32::from_gray(40));
     }
 }
 
@@ -518,65 +496,6 @@ const DOG_BEATS: [Beat; 7] = [
             slam(st, t, 0.0, st.at(0.0, -0.12), "SUPER INTELLIGENCE FOR DOGS", st.h() * 0.12, DOG_BLUE, DOG_DARK);
             st.p.text(st.at(0.0, 0.04), Align2::CENTER_CENTER, "So they will stop defecating on the floor.", FontId::proportional(st.h() * 0.045), Color32::WHITE);
             fine_print(st, t, "Intelligence is free now. Not available for cats (they declined). Not for resale to pigs, goats, chickens or cows. (Somebody is reselling it to pigs, goats, chickens and cows.)");
-        },
-    },
-];
-
-// ── CARTPASS: the subscription pitch ──
-
-const CART_BEATS: [Beat; 5] = [
-    Beat {
-        secs: 2.4,
-        paint: |st, t| {
-            // Golden-hour lifestyle footage.
-            st.fill(Color32::from_rgb(240, 150, 70));
-            st.p.circle_filled(st.at(0.45, -0.1), st.h() * 0.18, Color32::from_rgb(255, 220, 120));
-            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.2), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(90, 60, 50));
-            cart(st, st.at(-0.15 + t * 0.03, 0.02), st.h() * 0.45, 0.0);
-            caption(st, "ANNOUNCER:", "You love your shopping cart.");
-        },
-    },
-    Beat {
-        secs: 2.0,
-        paint: |st, t| {
-            st.fill(Color32::from_rgb(40, 40, 44));
-            slam(st, t, 0.0, st.at(0.0, -0.06), "OWNING THINGS?", st.h() * 0.13, Color32::WHITE, Color32::BLACK);
-            stamp(st, t - 0.6, st.at(0.0, 0.12), "SO 2003");
-            caption(st, "ANNOUNCER:", "But owning things? Ugh.");
-        },
-    },
-    Beat {
-        secs: 2.4,
-        paint: |st, t| {
-            st.fill(Color32::from_rgb(30, 14, 6));
-            rays(st, st.at(0.0, 0.1), Color32::from_rgba_unmultiplied(255, 210, 60, 30), t * 2.0);
-            slam(st, t, 0.0, st.at(0.0, -0.28), "CARTPASS", st.h() * 0.2, CART_GOLD, CART_DARK);
-            cart(st, st.at(0.0, 0.12), st.h() * 0.4, 0.0);
-            if t > 0.5 {
-                starburst(st, st.at(0.45, 0.1), "$9.99/MO", Color32::from_rgb(255, 80, 160), t);
-            }
-        },
-    },
-    Beat {
-        secs: 2.0,
-        paint: |st, t| {
-            st.fill(Color32::from_rgb(30, 14, 6));
-            cart(st, st.at(0.0, 0.02), st.h() * 0.45, (t - 0.3).max(0.0));
-            stamp(st, t - 0.6, st.at(0.0, -0.3), "WHEELS SOLD SEPARATELY");
-        },
-    },
-    Beat {
-        secs: 3.0,
-        paint: |st, t| {
-            st.fill(Color32::from_rgb(30, 14, 6));
-            slam(st, t, 0.0, st.at(0.0, -0.12), "CARTPASS", st.h() * 0.18, CART_GOLD, CART_DARK);
-            st.p.text(st.at(0.0, 0.04), Align2::CENTER_CENTER, "The shopping cart. Now a subscription.", FontId::proportional(st.h() * 0.045), Color32::WHITE);
-            fine_print(
-                st,
-                t,
-                "$9.99/mo. Wheels sold separately. Cancel anytime by mail, in person, at a location to be announced. \
-                 The cart remains the property of CartPass Holdings. So do you.",
-            );
         },
     },
 ];

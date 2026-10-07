@@ -1548,7 +1548,7 @@ went home.
         a chicken" (the user's line), and the results are plant-based.
       - The second frame and the fine print also carry the hidden farm
         uprising (DESIGN "The farm is waking up").
-    - **DEE'S NUTS** (the user's idea, 2026-10-06; seventh in the reel):
+    - **DEE'S NUTS** (the user's idea, 2026-10-06; sixth in the reel):
       nuts as the ultimate karma-neutral food.
       - The cold open is a sad diner with a kebab whose toothpick flag reads
         "lamb (ish)". The slam is TASTING A LITTLE OFF?, with the announcer:
@@ -1564,10 +1564,8 @@ went home.
         subsidiary of a farm that asked not to be named. Amir's Persian
         Kitchen is delicious and has not changed suppliers. Its supplier has
         changed."
-    - **CARTPASS:** golden-hour cart, "You love your shopping cart."; OWNING
-      THINGS? stamped SO 2003; CARTPASS with a $9.99/MO sticker; the wheels
-      drop off under a WHEELS SOLD SEPARATELY stamp; end slate with the
-      cancel-by-mail crawl.
+    - **CARTPASS** (the subscription shopping cart) was removed from the reel
+      (user, 2026-10-07).
     - **Two attack ads** (user: "a political ad for each side where they're
       shitting on the other for a reasonable take"). The PromiseTV candidates
       attack each other for something perfectly reasonable:
