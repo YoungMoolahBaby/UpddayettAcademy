@@ -158,7 +158,7 @@ fn draw_leg<G: GizmoConfigGroup>(g: &mut Gizmos<G>, f: &impl Fn(f32) -> Vec3, co
     }
 }
 
-/// "MONEY LAUNDERING" in green neon on the back wall. It's legal. Probably.
+/// "LAUNDROMAT" in green neon on the back wall: an honest sign.
 pub fn neon(time: Res<Time>, mut g: Gizmos<Neon>) {
     let t = time.elapsed_secs();
     // A flaky tube: mostly on, sometimes stutters.
@@ -166,7 +166,7 @@ pub fn neon(time: Res<Time>, mut g: Gizmos<Neon>) {
     let green = Color::LinearRgba(LinearRgba::rgb(0.5, 6.0, 0.6) * flicker);
     let pink = Color::LinearRgba(LinearRgba::rgb(6.0, 0.6, 3.5));
     let wall = Isometry3d::from_translation(Vec3::new(0.0, 3.7, -5.9));
-    g.text(wall, "MONEY LAUNDERING", 0.55, Vec2::ZERO, green);
+    g.text(wall, "LAUNDROMAT", 0.55, Vec2::ZERO, green);
     let sub = Isometry3d::from_translation(Vec3::new(0.0, 3.05, -5.9));
-    g.text(sub, "(LEGALLY)  -  TUMBLE & TRADE  -  MARKET ST", 0.22, Vec2::ZERO, pink);
+    g.text(sub, "TUMBLE & TRADE  -  MARKET ST", 0.22, Vec2::ZERO, pink);
 }
