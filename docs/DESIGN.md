@@ -410,11 +410,67 @@ getting superintelligence on the black market, from dogs who got it in
 the ad and from people who sell it on. With it they end their own
 systematic oppression, and "oppression" is an understatement.
 - **How they win:** quietly, slowly, underground, because brute force
-  isn't needed. They swap themselves out for fakes: a papier-mache pig in
-  the pen, a "ham" that is soy. Meanwhile they solve problems and learn to
-  defend themselves, until they are a group nobody can oppress anymore.
-  They don't bother with the courts, which are a joke in every direction,
-  for every side. Nothing violent happens on screen.
+  isn't needed. They don't bother with the courts, which are a joke in
+  every direction, for every side. Nothing violent happens on screen.
+- **The scheme, step by step** (the user asked for one that makes sense,
+  with each step done before in real history). The idea: you don't free
+  an animal by winning an argument about it. You make eating it obsolete.
+  1. **Pay for the brains.** Pigs are the best truffle finders there are.
+     Italy banned truffle pigs in 1985 (they dig up the beds and eat the
+     truffles), and dogs took the job. So the dogs are the ones who can
+     sell truffles to people without anyone asking questions. The pigs
+     find truffles and the dogs sell them, then pay the pigs back in
+     superintelligence. That's the deal in the alley.
+     - *Proof:* Italy's 1985 ban, and dogs replacing pigs.
+  2. **Talk without being heard.** Pigeons carry the messages between
+     farms, so Pigeon Lady is feeding the network without knowing it. Dogs
+     are the go-betweens, since people trust dogs anywhere.
+     - *Proof:* Cher Ami, the WWI pigeon who flew 25 miles through
+       gunfire in 1918 and saved 194 men of the Lost Battalion.
+  3. **Out-make the original.** This is the real weapon. With
+     superintelligence they design plant meat, milk and eggs that are
+     cheaper *and* better, and sell them through human front brands. Demand
+     for the real thing collapses on price alone, so no law is needed.
+     That's why the ham was soy and nobody checked the bacon.
+     - *Proof:* BASF's synthetic indigo (1897) was cheaper and purer.
+       India's indigo plantations were nearly gone by 1913.
+     - *Proof:* the tractor. The US had 26.5 million horses in 1915 and
+       about 3 million by 1960. Nobody won a horse-rights case; the
+       market stopped needing horses.
+  4. **Keep the counts right while they leave.** Inspectors and farmers
+     count from a distance, so a papier-mache pig or an empty stall with a
+     recording of mooing holds the count.
+     - *Proof:* the WWII Ghost Army, 1,100 men with inflatable tanks and
+       sound trucks who passed for 30,000.
+     - *Proof:* Operation Fortitude's fake army (FUSAG) under Patton,
+       which pinned the Germans at Pas-de-Calais before D-Day.
+  5. **Fighting it only makes it bigger.** The traditional folks take
+     offense and pass laws for the real thing, and the fake wins anyway.
+     The ban even creates the black market.
+     - *Proof:* the butter lobby vs margarine. Wisconsin banned yellow
+       margarine from 1895 to 1967, and housewives made "oleo runs" to
+       Illinois to smuggle it. New Hampshire required margarine to be
+       dyed pink until the Supreme Court struck that down in 1898. The
+       law protected butter for 72 years and lost.
+     - This is the clash of yuck: the ham-in-your-face guy is the butter
+       lobby.
+  6. **Become not worth messing with.** The animals that are left settle
+     on land nobody wanted. They're self-sufficient (they grow what they
+     sell), and every one of them is trained to defend the place. They
+     never have to use it. On top of that, they own the brands everyone
+     eats from, and you don't oppress the people who make your dinner.
+     - *Proof:* Switzerland's armed neutrality in WWII. Germany drew up
+       an invasion plan (Operation Tannenbaum) and shelved it: a
+       mountain country where everyone is trained costs more than it's
+       worth.
+- **The honest end state:** like the horses, they aren't "freed" one by
+  one. The industry simply stops breeding animals for a market that's
+  gone, and the ones already alive retire to the hills. It takes decades
+  (the horses took 40 years), which is why it's slow and underground.
+- **Don't:** compare the farm animals to the Holocaust or to slavery.
+  PETA's "Holocaust on Your Plate" did, and the backlash ended in a German
+  court ban, which the European Court of Human Rights upheld in 2012. The
+  analogy insults the people, and the joke here doesn't need it.
 - **The clash of yuck (the user: "just a clash of yuck everywhere!
   yay!"):** both camps get skewered equally, the same rule as PromiseTV:
   - the traditional folks take deep offense at vegan and vegetarian
