@@ -226,6 +226,8 @@ figcaption b { color: var(--ink); font-weight: 600; }
 /* Asides, lists, tables, code */
 .aside { background: var(--surface); border-radius: 8px; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 1rem; border-left: 3px solid var(--gold); }
 .aside .label { font: 400 1.3rem/1 var(--script); letter-spacing: 0; text-transform: none; color: var(--pink); }
+.eq { text-align: center; font-style: italic; color: var(--gold); background: var(--surface); border-radius: 8px; padding: 0.7rem 1rem; }
+.eq em { color: var(--pink); font-weight: 600; }
 ul, ol { margin: 0; padding-left: 1.3rem; display: flex; flex-direction: column; gap: 0.45rem; }
 ul ul { margin-top: 0.4rem; }
 li::marker { color: var(--pink); }

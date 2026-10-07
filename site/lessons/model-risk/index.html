@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Magnet Under the Counter · Upddayett Academy</title>
+<meta name="description" content="Lesson 6: model risk and reconciliation. A machine can compute flawlessly and still answer the wrong question if the world isn't the one its model describes. How the game finds a force nobody installed using nothing but force balance, and why a check people know about gets dodged.">
+<meta property="og:title" content="Somebody Put a Magnet Under the Counter">
+<meta property="og:description" content="Model risk and reconciliation, measured: a hidden magnet, the idle check that finds it, and the smart saboteurs' coil that only runs when nobody's checking.">
+<meta property="og:image" content="https://youngmoolahbaby.github.io/UpddayettAcademy/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&family=Grenze+Gotisch:wght@600&family=Yellowtail&display=swap">
+<link rel="stylesheet" href="../../assets/site.css?v=dev">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="street" aria-hidden="true"><span class="downtown"></span><span class="lowrider"><span class="body"></span><span class="wheel rear"></span><span class="wheel front"></span></span></div>
+  <div class="eyebrow">Lesson 6 · Risk · In the game: the Salties</div>
+  <h1>Somebody put a magnet under the counter</h1>
+  <p class="lede">The washer can run perfectly and still hand you the wrong trades, because it solves the problem the world gives it, not the one its model describes. Here's what a hidden magnet costs, how the i9 finds a force nobody installed using nothing but force balance, and what happens when the saboteurs learn when it checks.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>The model and the world</h2></div>
+  <div class="col flow">
+    <p>The i9 works from a model. It believes each steel strip feels exactly three things: its springs, the push it installed for each trade's value, and the push for a want, if there is one. It turns tonight's trades into those pushes, shakes the drum, and reads off where the strips settle (<a href="../../machine/">The Machine</a> has the details).</p>
+    <p>The drum doesn't know about the model. It just obeys physics. Tape a magnet under the counter and the strips feel a fourth push. The drum then settles into the lowest energy of a <em>different</em> problem, and it does that flawlessly. Nothing is broken. The computation is right, and the answer is wrong for the street.</p>
+    <p>That's <strong>model risk</strong>: losing money not to a bug or a typo but to the gap between what your model assumes and what's really going on. The Salties, a gang of local saboteurs, are a living reminder. The dumb ones brag about it first ("Magnet stuff tonight. Science, baby."). The smart ones say nothing.</p>
+    <p>Magnet strength is measured against the <strong>flattening field</strong>: the push that flattens a strip's well so it can't hold "off" at all. We taped a magnet of 0.8 times that, just short of pinning a strip, under every slot of the counter in turn, pushing strips on and then off, and ran 32 spins each:</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/magnets.svg" alt="Two grids of cells, one per board, with a column for each of 20 slots and rows for a magnet pushing strips on or off. Each cell shows how often the i9 still found the clean best set. On night 1 some cells stay near 100% while others fall to 0. On night 5 most cells are low, and 12 cells that night 1 passed are outlined." width="1000" height="530"></div>
+    <figcaption>What a 0.8x magnet costs, slot by slot, on two boards. The colors show how often the i9 still latched the clean night's best set. Dots: where the tilted model, solved exactly, says the best set moves. Outlines: magnets the calibration load (night 1) passed, and night 5 lost to.</figcaption>
+  </figure>
+  <div class="col flow">
+    <h3>Where the error lands matters more than how big it is</h3>
+    <p>The same magnet is harmless in one spot and ruinous in the next. On night 1, a magnet under slot 8 pushing <em>on</em> takes the best set from 100% to 0: it pushes trades into the set that clash with the ones that belong there. Turn it around to push <em>off</em> and it costs nothing, because the strips near slot 8 aren't in the best set anyway. A model error only hurts where it touches a decision.</p>
+
+    <h3>You can predict it, roughly</h3>
+    <p>You can estimate the damage without spinning anything: add the magnet's push to each trade's worth (a push is worth a fixed number of Goo to the drum), solve the tilted board exactly, and see if the best set moves. That's a model of the model error, and it calls 64 of the 80 cells right. It misses both ways. Sometimes the best set moves on paper and the drum still finds the clean one. Sometimes nothing moves on paper and the drum still slips. A <em>stress test</em> like this tells you where to look, not what will happen.</p>
+
+    <h3>Score with your own books</h3>
+    <p>The i9 has one defense built in. It never trusts where the strips end up. While the drum spins, it scores every reading with its own clean model and keeps the best. Across the 80 magnet cells, the strips came to <em>rest</em> on the clean best set in 17% of spins, but the i9 <em>latched</em> it in 51%. (Even with no magnet on night 1, the strips rest on it 62% of the time and the latch catches it 100%.) A drum that's been tampered with still passes the right answer by now and then, and an i9 that scores by its own books grabs it.</p>
+
+    <h3>The calibration load only tests itself</h3>
+    <p>An obvious check: run a board whose answer you know (night 1, which the clean drum gets right on Normal nearly every time), and if the drum misses it, suspect tampering. In the figure, night 1 passes 20 of the 40 magnets, and <strong>12 of those 20 rob night 5</strong>. A known-answer test can only see errors that touch its own answer. Passing it means "nothing that hurts this board", not "nothing".</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>Reconciliation: the idle check</h2></div>
+  <div class="col flow">
+    <p>Here's a check that doesn't depend on which board you run. Stop the drum and let the strips come to rest. Each strip has a Hall sensor that reads where it sits, and the i9 knows the shape of the well, so it knows how hard the well pulls on the strip at that spot. A strip at rest isn't moving, so the forces on it add up to zero:</p>
+    <p class="eq">the well's pull = the trade's push + the springs from its neighbors + <em>whatever's left</em></p>
+    <p>Everything but the last term is something the i9 installed or can measure. Whatever's left over is a force nobody accounts for. On a clean board it should be zero.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/idle.svg" alt="On a log scale, the push nobody accounts for on each of night 1's 17 strips. A 0.6x magnet near strip 5 makes a peak of about 0.5 falling off to under 0.01 at the ends, and the i9's readings sit exactly on the true field. Behind the shield the curve is 10 times lower and still read exactly. A clean board reads below one millionth everywhere." width="1000" height="470"></div>
+    <figcaption>The idle check on night 1. Lines: the magnet's real field. Rings: what the i9 reads. Gray: a clean board.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>It works to about two millionths of the flattening field. It finds the magnet behind the shield, too (10% gets through, and 10% of a magnet is still far above the noise). It needs no idea what the magnet is, only that a force exists that the books don't explain, and on which strip. That strip is where the shield goes. The plate covers two strips either side, so you have to know where to put it.</p>
+    <p>This is <strong>reconciliation</strong>: two independent records of the same thing (where the strip sits, and the forces that are supposed to put it there) must agree, and the difference between them, the <em>break</em>, is the information. It also works with a want installed, since a want is a push the i9 put there itself and can subtract.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>A push that's only there when nobody's checking</h2></div>
+  <div class="col flow">
+    <p>The smart Salties know about the idle check. So they don't tape a magnet. They hide a coil, an electromagnet wired to the drum's motor so it only pushes while the drum shakes. When the drum stops, it's off. They aim it, too: they scout tonight's board and put it where the best set loses the most.</p>
+    <p>At rest, a board with the coil in it reads <em>exactly</em> like a clean board, to the last digit. The i9's answer is a <strong>spin check</strong>: the same force balance, read about once per time unit while the drum shakes, and averaged. The shaking, the springs' ringing and the strips' hops push both ways and average toward zero. The coil always pushes the same way, so it doesn't.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/spincheck.svg" alt="Left: on night 1 the coil pushes strips 9 to 15 off, up to 0.8x at strip 12; the idle check reads zero on every strip, and the spin check's averages land on the coil's push. Right: histograms of each spin's loudest reading for clean spins and coil spins, for Quick Wash, Permanent Press and Normal. The clean spins spread out to 0.4 on Quick Wash and stay under 0.2 on Normal; the coil spins sit between 0.5 and 1. A dashed alarm line at 0.3." width="1000" height="520"></div>
+    <figcaption><b>Left:</b> one Normal spin with the coil: the idle check sees nothing, the spin check sees the coil. <b>Right:</b> 480 clean spins and 480 coil spins per wash program, each spin's loudest average push.</figcaption>
+  </figure>
+  <div class="col flow">
+    <ul>
+      <li><strong>What it costs.</strong> Across 10 different boards on Normal, the coil drops the best set from 75% of spins to 26%. On Quick Wash, from 26% to 7%.</li>
+      <li><strong>More readings, less noise.</strong> On a clean spin the loudest average push is 0.22 on Quick Wash (about 150 readings), 0.17 on Permanent Press (about 300) and 0.09 on Normal (about 1,000). Noise that averages out shrinks like one over the square root of the number of readings: 6.7 times the readings should cut it by 2.6, and it fell by 2.4.</li>
+      <li><strong>The alarm is a trade-off.</strong> The i9 calls a push real above 0.3. On Normal that's an easy call: every clean spin stayed under 0.18, every coil spin was above 0.67, and it caught 480 of 480 with no false alarms. On Quick Wash the clean spins reach 0.40, and 50 of 480 raised a false alarm. Lower the line and you catch more and cry wolf more. Raise it and you miss more. The way out is more data, which costs time.</li>
+    </ul>
+    <p>Once the spin check names a strip, the shield goes there. In the game's bench (nights 1 to 10, 48 spins each), shielding the named strip brought Normal back to about its clean rate: 98% vs 98% clean, 81 vs 81, 85 vs 85.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>In the game</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>The Salties show up on about 3 nights in 10.</strong> The dumb ones brag on the banner and bring a magnet, a breaker trip (a power cut that freezes the drum early), or an "EMP" that makes popcorn. Four in ten of them are smart: no brag, no flicker, an aimed coil or a quiet cut early in the spin.</li>
+      <li><strong>DEFENSES</strong> in the SPIN CYCLE panel: the idle check ("strip 9 feels 0.47x the flattening field nobody installed"), a steel shield from a dead hard drive over the strip you pick, and a battery of Vape Lady's 18650 cells for power cuts. The spin check runs on every cycle and names the strip.</li>
+      <li><strong>The battle:</strong> lose a spin, read the numbers, defend, spin again. The i9 roasts with the measured numbers: "Your shield took it from 0.80x to 0.08x. Steel: 1, Salt: 0."</li>
+      <li><strong>Not every defense pays.</strong> The battery's cells are cells somebody could trade for. On night 4 they're worth 7 Goo of trades, and the quiet cut costs about 2. The honest call is to take the hit (exercise 5).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>On a trading desk</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>Every number is a model.</strong> Prices of anything that doesn't trade every second, hedge ratios, risk limits and margin all come out of models. Banks run whole model-risk teams. In the US, the Federal Reserve's 2011 guidance (SR 11-7) asks for exactly what this lesson did: independent validation, a sense of where the model is sensitive, and monitoring once it's live.</li>
+      <li><strong>Reconciliation is the daily idle check.</strong> Your positions and cash per your own books must match what the clearing house, the custodian and the other side of each trade say. Every mismatch, a "break", gets chased down. Nobody needs to know in advance what went wrong; the break says where to look.</li>
+      <li><strong>P&amp;L explain is the force balance.</strong> Each day, a desk splits its profit and loss into what its risk model says should have happened (each sensitivity times how far that market moved) and what's left. A big or persistent unexplained P&amp;L means the model is missing a force, or someone is hiding one. Bank regulators test this directly.</li>
+      <li><strong>Checks that people know about get dodged.</strong> Jérôme Kerviel at Société Générale hid huge positions behind fake offsetting trades, cancelled and replaced before they could be checked; unwinding them cost the bank €4.9 billion in 2008. Nick Leeson hid Barings' losses in an error account, numbered 88888, until the bank collapsed in 1995. Lehman Brothers used "Repo 105" deals to move about $50 billion off its balance sheet just before quarter ends, when the balance sheet gets reported. All of them looked clean at the moment of the check, which is the coil exactly. The answers are the spin check's: check continuously or at unpredictable times, and have someone independent do it.</li>
+      <li><strong>Backtests test the past.</strong> A model validated on one period or one portfolio passes on that data, just like the calibration load. It says little about a market it never saw.</li>
+    </ul>
+    <div class="aside">
+      <span class="label">Every alarm has a threshold</span>
+      <p>Trade surveillance, fraud detection and risk limits all pick a line. Too low and the analysts drown in false alarms and start ignoring them. Too high and the real thing walks past. The spin check shows the only free lunch: more data pulls the two piles apart. Quick Wash checks fast and cries wolf about one spin in ten. Normal takes longer and never did.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">06</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+<pre><code># a magnet under every slot, on night 1 and night 5 (~4 min: 2,624 spins)
+cargo run --release --example machine_figs -- magnets
+
+# the idle check on night 1 (seconds)
+cargo run --release --example machine_figs -- idle --night 1
+
+# the coil, the idle check and the spin check on 10 boards (~2 min: 2,880 spins)
+cargo run --release --example machine_figs -- spincheck
+
+# one night with tonight's Salties, and the coil bench for one night
+cargo run --release --example trade_cli -- run --night 21 --salty
+cargo run --release --example trade_cli -- smart --night 1</code></pre>
+    <p>The magnet, the coil, the shield and the spin check are in <code>src/trade/salties.rs</code>. The idle check is <code>Machine::stray_field</code> in <code>src/trade/machine.rs</code>: the well's pull at each strip's position minus every force the i9 installed. The drum is CortenForge's Langevin thermostat, and the magnet goes into it as one more external field.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">07</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>The magnet sits 1.5 strip widths below the row, and its push falls off like (1.5² ÷ (<em>d</em>² + 1.5²))<sup>1.5</sup> for a strip <em>d</em> slots to the side. The strip right above it feels 1. What does a strip 3 slots over feel? Why does the shield have to go over the magnet?</p>
+        <details><summary>Answer</summary><p>(2.25 ÷ 11.25)<sup>1.5</sup> = 0.2<sup>1.5</sup> ≈ 0.09, about 9%. The field is concentrated right over the magnet, so a plate a few slots away covers almost none of it. You have to find the magnet first.</p></details></div></li>
+      <li><div><p>The spin check's noise on a clean spin is about 0.22 with 150 readings. If noise shrinks like one over the square root of the readings, how many readings get it under 0.1?</p>
+        <details><summary>Answer</summary><p>(0.22 ÷ 0.1)² × 150 ≈ 730 readings. Normal takes about 1,000 and measured 0.09.</p></details></div></li>
+      <li><div><p>A strip sits still. The well pulls it toward "off" with 0.5. The trade's push is 0.2 toward "on", and the springs from its neighbors push 0.1 toward "on". What does the idle check report?</p>
+        <details><summary>Answer</summary><p>The known forces add to 0.2 + 0.1 − 0.5 = −0.2, toward "off". The strip isn't moving, so something else pushes 0.2 toward "on". That's the reading: an unexplained 0.2 toward "on" on this strip.</p></details></div></li>
+      <li><div><p>The calibration load comes back perfect. Can you say there's no magnet?</p>
+        <details><summary>Answer</summary><p>No. You can say there's no magnet that hurts the calibration board. A magnet pushing off under strips night 1 doesn't use passes every time. In our map, 12 of the 20 magnets night 1 passed cost night 5 its best set. A test can only rule out what it can see.</p></details></div></li>
+      <li><div><p>The Salties show up on 30% of nights, 40% of those are smart, and 35% of the smart ones cut the power. A quiet cut costs about 2 Goo. The battery that prevents it ties up about 7 Goo of trades every night you run it. Should you run it every night? What if you knew a cut was coming tonight?</p>
+        <details><summary>Answer</summary><p>A quiet cut comes on 0.3 × 0.4 × 0.35 ≈ 4% of nights, so it costs about 0.04 × 2 ≈ 0.08 Goo a night on average. The battery costs 7. Even on a night you <em>know</em> the cut is coming, 2 is less than 7: take the hit. Insurance that costs more than the loss isn't protection, it's a worse loss.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../optimization/">← Lesson 5: greedy is not a strategy</a>
+    <a href="../../#lessons">All lessons →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Measured on the game's real boards and in CortenForge's Langevin simulation (<a href="https://crates.io/crates/cortenforge">CortenForge</a>), for <em>Upddayett's School of Biddness</em>. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

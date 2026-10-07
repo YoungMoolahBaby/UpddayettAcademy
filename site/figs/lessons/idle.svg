@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1000" height="470" fill="#ffffff"/>
+<text x="80.0" y="28.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">The idle check: stop the drum, and every strip's position has to be explained by the forces the i9 installed</text>
+<line x1="97.6" y1="70.0" x2="97.6" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="97.6" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">0</text>
+<line x1="132.9" y1="70.0" x2="132.9" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="132.9" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">1</text>
+<line x1="168.2" y1="70.0" x2="168.2" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="168.2" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">2</text>
+<line x1="203.5" y1="70.0" x2="203.5" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="203.5" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">3</text>
+<line x1="238.8" y1="70.0" x2="238.8" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="238.8" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">4</text>
+<line x1="274.1" y1="70.0" x2="274.1" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="274.1" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">5</text>
+<line x1="309.4" y1="70.0" x2="309.4" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="309.4" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">6</text>
+<line x1="344.7" y1="70.0" x2="344.7" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="344.7" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">7</text>
+<line x1="380.0" y1="70.0" x2="380.0" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="380.0" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">8</text>
+<line x1="415.3" y1="70.0" x2="415.3" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="415.3" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">9</text>
+<line x1="450.6" y1="70.0" x2="450.6" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="450.6" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">10</text>
+<line x1="485.9" y1="70.0" x2="485.9" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="485.9" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">11</text>
+<line x1="521.2" y1="70.0" x2="521.2" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="521.2" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">12</text>
+<line x1="556.5" y1="70.0" x2="556.5" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="556.5" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">13</text>
+<line x1="591.8" y1="70.0" x2="591.8" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="591.8" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">14</text>
+<line x1="627.1" y1="70.0" x2="627.1" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="627.1" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">15</text>
+<line x1="662.4" y1="70.0" x2="662.4" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="662.4" y="396.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">16</text>
+<line x1="80.0" y1="70.0" x2="680.0" y2="70.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="74.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">1</text>
+<line x1="80.0" y1="147.5" x2="680.0" y2="147.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="151.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">0.01</text>
+<line x1="80.0" y1="225.0" x2="680.0" y2="225.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="229.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">0.0001</text>
+<line x1="80.0" y1="302.5" x2="680.0" y2="302.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="306.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">10⁻⁶</text>
+<line x1="80.0" y1="380.0" x2="680.0" y2="380.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="384.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">10⁻⁸</text>
+<rect x="80.0" y="70.0" width="600.0" height="310.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
+<text x="380.0" y="414.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">strip</text>
+<text transform="translate(22.0,225.0) rotate(-90)" font-size="12" fill="#1d2026" text-anchor="middle">push nobody accounts for (x the flattening field)</text>
+<line x1="288.2" y1="70.0" x2="288.2" y2="380.0" stroke="#7a808c" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="294.2" y="372.0" font-size="11" fill="#7a808c" text-anchor="start" font-weight="normal">the magnet</text>
+<path d="M97.6,145.1 L101.2,144.3 L104.7,143.4 L108.2,142.5 L111.8,141.6 L115.3,140.6 L118.8,139.7 L122.4,138.7 L125.9,137.7 L129.4,136.7 L132.9,135.7 L136.5,134.7 L140.0,133.6 L143.5,132.5 L147.1,131.4 L150.6,130.3 L154.1,129.2 L157.6,128.0 L161.2,126.8 L164.7,125.6 L168.2,124.4 L171.8,123.1 L175.3,121.9 L178.8,120.6 L182.4,119.2 L185.9,117.9 L189.4,116.5 L192.9,115.1 L196.5,113.6 L200.0,112.1 L203.5,110.6 L207.1,109.1 L210.6,107.6 L214.1,106.0 L217.6,104.4 L221.2,102.8 L224.7,101.1 L228.2,99.5 L231.8,97.8 L235.3,96.1 L238.8,94.4 L242.4,92.7 L245.9,91.1 L249.4,89.5 L252.9,87.9 L256.5,86.4 L260.0,84.9 L263.5,83.6 L267.1,82.3 L270.6,81.3 L274.1,80.3 L277.6,79.6 L281.2,79.0 L284.7,78.7 L288.2,78.6 L291.8,78.7 L295.3,79.0 L298.8,79.6 L302.4,80.3 L305.9,81.3 L309.4,82.3 L312.9,83.6 L316.5,84.9 L320.0,86.4 L323.5,87.9 L327.1,89.5 L330.6,91.1 L334.1,92.7 L337.6,94.4 L341.2,96.1 L344.7,97.8 L348.2,99.5 L351.8,101.1 L355.3,102.8 L358.8,104.4 L362.4,106.0 L365.9,107.6 L369.4,109.1 L372.9,110.6 L376.5,112.1 L380.0,113.6 L383.5,115.1 L387.1,116.5 L390.6,117.9 L394.1,119.2 L397.6,120.6 L401.2,121.9 L404.7,123.1 L408.2,124.4 L411.8,125.6 L415.3,126.8 L418.8,128.0 L422.4,129.2 L425.9,130.3 L429.4,131.4 L432.9,132.5 L436.5,133.6 L440.0,134.7 L443.5,135.7 L447.1,136.7 L450.6,137.7 L454.1,138.7 L457.6,139.7 L461.2,140.6 L464.7,141.6 L468.2,142.5 L471.8,143.4 L475.3,144.3 L478.8,145.1 L482.4,146.0 L485.9,146.9 L489.4,147.7 L492.9,148.5 L496.5,149.3 L500.0,150.1 L503.5,150.9 L507.1,151.7 L510.6,152.4 L514.1,153.2 L517.6,153.9 L521.2,154.7 L524.7,155.4 L528.2,156.1 L531.8,156.8 L535.3,157.5 L538.8,158.2 L542.4,158.9 L545.9,159.5 L549.4,160.2 L552.9,160.8 L556.5,161.5 L560.0,162.1 L563.5,162.7 L567.1,163.4 L570.6,164.0 L574.1,164.6 L577.6,165.2 L581.2,165.8 L584.7,166.4 L588.2,166.9 L591.8,167.5 L595.3,168.1 L598.8,168.6 L602.4,169.2 L605.9,169.7 L609.4,170.3 L612.9,170.8 L616.5,171.4 L620.0,171.9 L623.5,172.4 L627.1,172.9 L630.6,173.4 L634.1,173.9 L637.6,174.4 L641.2,174.9 L644.7,175.4 L648.2,175.9 L651.8,176.4 L655.3,176.9 L658.8,177.3 L662.4,177.8 " fill="none" stroke="#d8392b" stroke-width="2" stroke-opacity="0.55" stroke-linejoin="round"/>
+<path d="M97.6,183.9 L101.2,183.0 L104.7,182.1 L108.2,181.2 L111.8,180.3 L115.3,179.4 L118.8,178.4 L122.4,177.5 L125.9,176.5 L129.4,175.5 L132.9,174.5 L136.5,173.4 L140.0,172.4 L143.5,171.3 L147.1,170.2 L150.6,169.1 L154.1,167.9 L157.6,166.8 L161.2,165.6 L164.7,164.4 L168.2,163.1 L171.8,161.9 L175.3,160.6 L178.8,159.3 L182.4,158.0 L185.9,156.6 L189.4,155.2 L192.9,153.8 L196.5,152.4 L200.0,150.9 L203.5,149.4 L207.1,147.9 L210.6,146.3 L214.1,144.7 L217.6,143.1 L221.2,141.5 L224.7,139.9 L228.2,138.2 L231.8,136.5 L235.3,134.8 L238.8,133.2 L242.4,131.5 L245.9,129.8 L249.4,128.2 L252.9,126.6 L256.5,125.1 L260.0,123.7 L263.5,122.3 L267.1,121.1 L270.6,120.0 L274.1,119.1 L277.6,118.3 L281.2,117.8 L284.7,117.5 L288.2,117.3 L291.8,117.5 L295.3,117.8 L298.8,118.3 L302.4,119.1 L305.9,120.0 L309.4,121.1 L312.9,122.3 L316.5,123.7 L320.0,125.1 L323.5,126.6 L327.1,128.2 L330.6,129.8 L334.1,131.5 L337.6,133.2 L341.2,134.8 L344.7,136.5 L348.2,138.2 L351.8,139.9 L355.3,141.5 L358.8,143.1 L362.4,144.7 L365.9,146.3 L369.4,147.9 L372.9,149.4 L376.5,150.9 L380.0,152.4 L383.5,153.8 L387.1,155.2 L390.6,156.6 L394.1,158.0 L397.6,159.3 L401.2,160.6 L404.7,161.9 L408.2,163.1 L411.8,164.4 L415.3,165.6 L418.8,166.8 L422.4,167.9 L425.9,169.1 L429.4,170.2 L432.9,171.3 L436.5,172.4 L440.0,173.4 L443.5,174.5 L447.1,175.5 L450.6,176.5 L454.1,177.5 L457.6,178.4 L461.2,179.4 L464.7,180.3 L468.2,181.2 L471.8,182.1 L475.3,183.0 L478.8,183.9 L482.4,184.8 L485.9,185.6 L489.4,186.4 L492.9,187.3 L496.5,188.1 L500.0,188.9 L503.5,189.7 L507.1,190.4 L510.6,191.2 L514.1,191.9 L517.6,192.7 L521.2,193.4 L524.7,194.1 L528.2,194.9 L531.8,195.6 L535.3,196.3 L538.8,196.9 L542.4,197.6 L545.9,198.3 L549.4,198.9 L552.9,199.6 L556.5,200.2 L560.0,200.9 L563.5,201.5 L567.1,202.1 L570.6,202.7 L574.1,203.3 L577.6,203.9 L581.2,204.5 L584.7,205.1 L588.2,205.7 L591.8,206.3 L595.3,206.8 L598.8,207.4 L602.4,207.9 L605.9,208.5 L609.4,209.0 L612.9,209.6 L616.5,210.1 L620.0,210.6 L623.5,211.2 L627.1,211.7 L630.6,212.2 L634.1,212.7 L637.6,213.2 L641.2,213.7 L644.7,214.2 L648.2,214.7 L651.8,215.1 L655.3,215.6 L658.8,216.1 L662.4,216.6 " fill="none" stroke="#d99a00" stroke-width="2" stroke-opacity="0.7" stroke-linejoin="round"/>
+<circle cx="97.6" cy="145.1" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="97.6" cy="183.9" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="97.6" cy="321.0" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="132.9" cy="135.7" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="132.9" cy="174.5" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="132.9" cy="336.4" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="168.2" cy="124.4" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="168.2" cy="163.2" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="168.2" cy="346.4" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="203.5" cy="110.6" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="203.5" cy="149.4" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="203.5" cy="346.4" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="238.8" cy="94.4" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="238.8" cy="133.2" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="238.8" cy="342.5" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="274.1" cy="80.3" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="274.1" cy="119.1" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="274.1" cy="372.8" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="309.4" cy="82.3" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="309.4" cy="121.1" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="309.4" cy="308.6" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="344.7" cy="97.8" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="344.7" cy="136.5" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="344.7" cy="320.1" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="380.0" cy="113.6" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="380.0" cy="152.4" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="380.0" cy="320.1" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="415.3" cy="126.8" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="415.3" cy="165.6" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="415.3" cy="356.9" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="450.6" cy="137.7" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="450.6" cy="176.5" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="450.6" cy="326.1" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="485.9" cy="146.9" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="485.9" cy="185.6" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="485.9" cy="352.6" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="521.2" cy="154.7" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="521.2" cy="193.4" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="521.2" cy="354.4" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="556.5" cy="161.5" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="556.5" cy="200.2" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="556.5" cy="346.5" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="591.8" cy="167.5" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="591.8" cy="206.3" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="591.8" cy="371.9" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="627.1" cy="172.9" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="627.1" cy="211.5" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="627.1" cy="334.1" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="662.4" cy="177.8" r="4.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<circle cx="662.4" cy="216.8" r="4.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<circle cx="662.4" cy="308.5" r="3.5" fill="#7a808c" stroke="#7a808c" stroke-width="0"/>
+<circle cx="727.0" cy="86.0" r="5.0" fill="#ffffff" stroke="#d8392b" stroke-width="2"/>
+<text x="742.0" y="90.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">A magnet, 0.6x, open</text>
+<text x="742.0" y="107.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">line: its real field; rings: what the i9 reads</text>
+<circle cx="727.0" cy="136.0" r="5.0" fill="#ffffff" stroke="#d99a00" stroke-width="2"/>
+<text x="742.0" y="140.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">The same magnet behind the shield</text>
+<text x="742.0" y="157.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">10% gets through, and the i9 still reads it</text>
+<circle cx="727.0" cy="186.0" r="5.0" fill="#7a808c" stroke="#7a808c" stroke-width="2"/>
+<text x="742.0" y="190.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">A clean board</text>
+<text x="742.0" y="207.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">the strips' last bit of ringing: the noise floor</text>
+<text x="720.0" y="260.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">Biggest gap between reading and truth:</text>
+<text x="720.0" y="278.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">  open 2 × 10⁻⁶, shielded 3 × 10⁻⁶</text>
+<text x="720.0" y="296.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">Biggest reading on a clean board: 7 × 10⁻⁷</text>
+<text x="720.0" y="314.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal"></text>
+<text x="720.0" y="332.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">The smart Salties' coil is off whenever</text>
+<text x="720.0" y="350.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">the drum stops. At idle the i9 reads a</text>
+<text x="720.0" y="368.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">board with the coil in it exactly like a</text>
+<text x="720.0" y="386.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">clean one (biggest reading 7 × 10⁻⁷).</text>
+<text x="80.0" y="450.0" font-size="11" fill="#7a808c" text-anchor="start" font-weight="normal">Night 1, the strips at rest after 30 time units with the drum stopped, in CortenForge's Langevin model. The reading is the force balance on each strip.</text>
+</svg>

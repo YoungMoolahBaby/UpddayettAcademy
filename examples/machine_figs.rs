@@ -3,7 +3,7 @@
 //! every curve and dot is a CortenForge run or the night's real board, not a
 //! drawing (the settlement figure is a labeled model).
 //!
-//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs|fees|noise|settle|waits|collapse|ladder|blowup|penalties] [--night N]`
+//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs|fees|noise|settle|waits|collapse|ladder|blowup|penalties|magnets|idle|spincheck] [--night N]`
 //! writes the machine figures to `docs/machine/*.svg` (and copies to
 //! `site/figs/machine/`), the lessons to `site/figs/lessons/`. Without `--night` it picks the first night
 //! (from 1) where grabbing the best trade first loses Goo, so the board figure
@@ -13,7 +13,7 @@ use std::fmt::Write as _;
 use std::sync::Mutex;
 
 use cortenforge::sim::thermostat::{DoubleWellPotential, WellState};
-use cortenforge_play::trade::{self, Anneal, Cycle, Ising, Machine, Physics, TradeComputer, qubo};
+use cortenforge_play::trade::{self, Anneal, Cycle, Ising, Machine, Magnet, Physics, TradeComputer, qubo};
 
 const OUT: &str = "docs/machine";
 /// The site (upddayettacademy.com) keeps its own copies.
@@ -937,6 +937,15 @@ fn main() {
     if all || what == "penalties" {
         penalties();
     }
+    if all || what == "magnets" {
+        magnet_map();
+    }
+    if all || what == "idle" {
+        idle(night);
+    }
+    if all || what == "spincheck" {
+        spincheck();
+    }
 }
 
 // ---- lesson figures (upddayettacademy.com) ----
@@ -1840,4 +1849,517 @@ fn penalties() {
     }
     s.text((80.0, 455.0), &format!("Nights 1-{}, {} Normal spins each per penalty ({} spins a bar), in CortenForge's Langevin drum. Penalty in units of the night's most valuable candidate.", nights.len(), spins, nights.len() as u64 * spins), 11.0, DIM, "start", "normal");
     s.save_to(SITE_LESSONS, "penalties");
+}
+
+// ---- Lesson 6: model risk (the Salties) ----
+
+/// The magnet's strength on the map: just under flattening, so it steers the
+/// strips without pinning the one above it.
+const MAP_STRENGTH: f64 = 0.8;
+const MAP_SPINS: u64 = 32;
+/// The map's two boards: the calibration load, and a night it doesn't cover.
+const MAP_NIGHTS: [u64; 2] = [trade::salties::CALIBRATION_NIGHT, 5];
+
+/// What the model of the model says a field costs: tilt each trade's value
+/// by the Goo the field is worth to the drum (`salties::aim`'s rule), solve
+/// exactly, and score that set against the clean night. (Goo lost, the set.)
+fn on_paper(tc: &TradeComputer, field: &[f64]) -> (f64, u32) {
+    let masks = qubo::conflict_masks(&tc.cycles);
+    let per_goo = 2.0 / (tc.beta * tc.problem.scale);
+    let tilted: Vec<f64> = tc.cycles.iter().zip(field).map(|(c, h)| c.value() + h * per_goo).collect();
+    let (set, _) = qubo::best_valid_set(&tilted, &masks);
+    (tc.evaluate(tc.ground_state()).0 - tc.evaluate(set).0, set)
+}
+
+/// Spins on a board with a hidden field on top (a magnet, or with `coil` one
+/// that runs only while the drum shakes).
+struct Spins {
+    /// The i9 latched the clean best set.
+    best: f64,
+    /// The strips came to rest on it.
+    rest: f64,
+    lost: f64,
+}
+
+fn spins_with(tc: &TradeComputer, field: Option<&[f64]>, anneal: &Anneal, seeds: std::ops::RangeInclusive<u64>) -> Spins {
+    let best = tc.evaluate(tc.ground_state()).0;
+    let (mut hit, mut rest, mut lost, mut n) = (0, 0, 0.0, 0);
+    for seed in seeds {
+        let mut m = match field {
+            Some(f) => Machine::with_stray_field(&tc.ising, Physics::default(), seed, f),
+            None => tc.machine(Physics::default(), seed),
+        }
+        .expect("machine");
+        let l = tc.spin(&mut m, anneal, 1.0, f64::INFINITY, |_, _| {}).expect("spin");
+        hit += tc.is_optimal(l.best_bits) as usize;
+        rest += tc.is_optimal(l.final_bits) as usize;
+        lost += best - tc.evaluate(l.best_bits).0;
+        n += 1;
+    }
+    Spins { best: hit as f64 / n as f64, rest: rest as f64 / n as f64, lost: lost / n as f64 }
+}
+
+/// `a` to `b` (both "#rrggbb") at `t` in 0..1.
+fn mix(a: &str, b: &str, t: f64) -> String {
+    let c = |s: &str, k: usize| u8::from_str_radix(&s[1 + 2 * k..3 + 2 * k], 16).unwrap() as f64;
+    let ch = |k: usize| (c(a, k) + (c(b, k) - c(a, k)) * t.clamp(0.0, 1.0)).round() as u8;
+    format!("#{:02x}{:02x}{:02x}", ch(0), ch(1), ch(2))
+}
+
+/// A best-set share as a cell color: pale red at 0, pale gold at half, pale green at 1.
+fn share_color(x: f64) -> String {
+    if x < 0.5 { mix("#eba59c", "#f4dc9a", x * 2.0) } else { mix("#f4dc9a", "#acd98f", (x - 0.5) * 2.0) }
+}
+
+/// A magnet under each slot of the counter in turn, pushing on and pushing
+/// off, on the calibration load and on night 5: what the drum loses, against
+/// what the tilted model predicts.
+fn magnet_map() {
+    let dv = Physics::default().delta_v;
+    let slots = trade::MAX_BITS;
+    let tcs: Vec<TradeComputer> = MAP_NIGHTS.iter().map(|&n| computer(n)).collect();
+    let clean = par_map(&[0usize, 1], |&b| spins_with(&tcs[b], None, &Anneal::default(), 1..=MAP_SPINS));
+    let jobs: Vec<(usize, usize, f64)> = (0..2).flat_map(|b| (0..slots).flat_map(move |p| [(b, p, 1.0), (b, p, -1.0)])).collect();
+    let rows = par_map(&jobs, |&(b, p, sign)| {
+        let tc = &tcs[b];
+        let f = Magnet { pos: p as f64, strength: sign * MAP_STRENGTH }.field(tc.cycles.len(), dv);
+        (on_paper(tc, &f).0, spins_with(tc, Some(&f), &Anneal::default(), 1..=MAP_SPINS))
+    });
+    let cell = |b: usize, p: usize, sign: f64| &rows[(b * slots + p) * 2 + (sign < 0.0) as usize];
+    for (b, tc) in tcs.iter().enumerate() {
+        println!(
+            "night {}: {} strips, best set {}, clean: latch {:.0}%, rest {:.0}%",
+            MAP_NIGHTS[b],
+            tc.cycles.len(),
+            tc.evaluate(tc.ground_state()).0,
+            100.0 * clean[b].best,
+            100.0 * clean[b].rest
+        );
+        for p in 0..slots {
+            let mut line = format!("  slot {p:>2}{}", if tc.ground_state() >> p & 1 == 1 { "*" } else { " " });
+            for sign in [1.0, -1.0] {
+                let (paper, s) = cell(b, p, sign);
+                line += &format!(
+                    " | {:<3} paper {paper:>4.1}: latch {:>3.0}% rest {:>3.0}% lost {:>4.1}",
+                    if sign > 0.0 { "on" } else { "off" },
+                    100.0 * s.best,
+                    100.0 * s.rest,
+                    s.lost
+                );
+            }
+            println!("{line}");
+        }
+    }
+    // How well the paper model calls it, and what the calibration load misses.
+    let hurt = |s: &Spins, b: usize| s.best < clean[b].best - 0.2;
+    let (mut agree, mut all, mut cal_pass, mut missed) = (0, 0, 0, 0);
+    let (mut rest_sum, mut latch_sum) = (0.0, 0.0);
+    for p in 0..slots {
+        for sign in [1.0, -1.0] {
+            for b in 0..2 {
+                let (paper, s) = cell(b, p, sign);
+                all += 1;
+                agree += ((*paper > 1e-9) == hurt(s, b)) as usize;
+                rest_sum += s.rest;
+                latch_sum += s.best;
+            }
+            if !hurt(&cell(0, p, sign).1, 0) {
+                cal_pass += 1;
+                missed += hurt(&cell(1, p, sign).1, 1) as usize;
+            }
+        }
+    }
+    println!(
+        "  paper agrees with the drum (hurt = 20 points under clean) on {agree}/{all} cells; mean at rest {:.0}%, latched {:.0}%",
+        100.0 * rest_sum / all as f64,
+        100.0 * latch_sum / all as f64
+    );
+    println!("  the calibration load passes {cal_pass} of {} magnets; {missed} of those rob night {}", 2 * slots, MAP_NIGHTS[1]);
+
+    let mut s = Svg::new(1000.0, 530.0);
+    s.text((40.0, 28.0), "A magnet under each slot of the counter: what it costs depends on where it is, and which board", 15.0, INK, "start", "bold");
+    let (x0, cw, rh) = (190.0, 38.0, 34.0);
+    for (b, tc) in tcs.iter().enumerate() {
+        let top = 72.0 + b as f64 * 160.0;
+        let n = tc.cycles.len();
+        let head = if b == 0 {
+            format!("Night {}, the calibration load: {} strips; clean, the i9 latches its best set {:.0}% of the time", MAP_NIGHTS[b], n, 100.0 * clean[b].best)
+        } else {
+            format!("Night {}, tonight: {} strips; clean, {:.0}%", MAP_NIGHTS[b], n, 100.0 * clean[b].best)
+        };
+        s.text((40.0, top), &head, 12.5, INK, "start", "bold");
+        // The strips over each slot; green ones are in tonight's best set.
+        s.text((x0 - 10.0, top + 25.0), "strip in the best set", 11.0, DIM, "end", "normal");
+        for p in 0..slots {
+            let x = x0 + p as f64 * cw;
+            if p < n {
+                let on = tc.ground_state() >> p & 1 == 1;
+                s.rect((x + 4.0, top + 15.0), (cw - 8.0, 12.0), 2.0, if on { GOO } else { "#d7dbe2" }, if on { GOO } else { "#c5c9d1" });
+            } else {
+                s.text((x + cw / 2.0, top + 25.0), "-", 11.0, DIM, "middle", "normal");
+            }
+        }
+        for (r, sign) in [1.0, -1.0].iter().enumerate() {
+            let y = top + 36.0 + r as f64 * (rh + 4.0);
+            s.text((x0 - 10.0, y + rh / 2.0 + 4.0), if *sign > 0.0 { "pushing on" } else { "pushing off" }, 12.0, INK, "end", "normal");
+            for p in 0..slots {
+                let (paper, sp) = cell(b, p, *sign);
+                let x = x0 + p as f64 * cw;
+                let fill = share_color(sp.best);
+                s.rect((x + 1.0, y), (cw - 2.0, rh), 3.0, &fill, &fill);
+                s.text((x + cw / 2.0, y + rh / 2.0 + 4.0), &format!("{:.0}", 100.0 * sp.best), 11.5, INK, "middle", "bold");
+                if b == 1 && !hurt(&cell(0, p, *sign).1, 0) && hurt(sp, 1) {
+                    s.rect((x + 1.0, y), (cw - 2.0, rh), 3.0, "none", INK);
+                }
+                if *paper > 1e-9 {
+                    s.circle((x + cw - 6.0, y + 6.0), 2.6, INK, INK, 0.0);
+                }
+            }
+        }
+    }
+    let by = 72.0 + 160.0 + 36.0 + 2.0 * (rh + 4.0);
+    for p in 0..slots {
+        s.text((x0 + p as f64 * cw + cw / 2.0, by + 12.0), &p.to_string(), 11.0, DIM, "middle", "normal");
+    }
+    s.text((x0 + slots as f64 * cw / 2.0, by + 32.0), "the slot the magnet is taped under", 12.0, INK, "middle", "normal");
+    // Legend.
+    let ly = by + 50.0;
+    for k in 0..=20 {
+        let t = k as f64 / 20.0;
+        let c = share_color(t);
+        s.rect((40.0 + k as f64 * 9.0, ly), (9.0, 14.0), 0.0, &c, &c);
+    }
+    s.text((40.0, ly + 30.0), "0%", 11.0, DIM, "start", "normal");
+    s.text((229.0, ly + 30.0), "100%", 11.0, DIM, "end", "normal");
+    s.text((245.0, ly + 11.0), "Normal spins where the i9 still latched the clean best set", 12.0, INK, "start", "normal");
+    s.circle((249.0, ly + 33.0), 2.6, INK, INK, 0.0);
+    s.text((259.0, ly + 37.0), "on paper, the best set moves (the tilted model, solved exactly)", 12.0, INK, "start", "normal");
+    s.rect((640.0, ly + 25.0), (22.0, 16.0), 3.0, "none", INK);
+    s.text((670.0, ly + 37.0), "night 1 passed this magnet; it robbed night 5", 12.0, INK, "start", "normal");
+    s.text(
+        (40.0, 495.0),
+        &format!(
+            "Each cell: {MAP_SPINS} Normal spins in CortenForge's Langevin drum with a magnet of {MAP_STRENGTH}x the flattening field, 1.5 strip pitches under the slot, scored against the clean night's best set."
+        ),
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.text(
+        (40.0, 513.0),
+        "Passed or robbed: within 20 points of the clean night's rate, or more than 20 under it.",
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.save_to(SITE_LESSONS, "magnets");
+}
+
+/// `2 × 10⁻⁶` for 2e-6 (one significant figure).
+fn sci(x: f64) -> String {
+    let mut e = x.abs().log10().floor() as i32;
+    let mut m = (x / 10f64.powi(e)).round();
+    if m.abs() >= 10.0 {
+        (m, e) = (m / 10.0, e + 1);
+    }
+    let sup: String = e.to_string().chars().map(|c| match c {
+        '-' => '\u{207b}',
+        d => ['\u{2070}', '\u{b9}', '\u{b2}', '\u{b3}', '\u{2074}', '\u{2075}', '\u{2076}', '\u{2077}', '\u{2078}', '\u{2079}'][d.to_digit(10).unwrap() as usize],
+    }).collect();
+    format!("{m} \u{d7} 10{sup}")
+}
+
+/// The idle check on a board at rest: what it reads on each strip, clean,
+/// with a magnet, and with the magnet behind the shield, against the field
+/// the magnet really puts there.
+fn idle(night: u64) {
+    let tc = computer(night);
+    let k = tc.cycles.len();
+    let dv = Physics::default().delta_v;
+    let flat = trade::machine::max_safe_field(dv);
+    let read = |field: Option<&[f64]>, coil: bool| -> Vec<f64> {
+        let mut m = match field {
+            Some(f) if coil => Machine::with_component(&tc.ising, Physics::default(), 7, trade::salties::Coil(f.to_vec())),
+            Some(f) => Machine::with_stray_field(&tc.ising, Physics::default(), 7, f),
+            None => tc.machine(Physics::default(), 7),
+        }
+        .expect("machine");
+        m.rest(30.0).expect("rest");
+        m.stray_field(&tc.ising).iter().map(|x| x / flat).collect()
+    };
+    let mag = Magnet { pos: 5.4, strength: 0.6 };
+    let truth: Vec<f64> = mag.field(k, dv).iter().map(|x| x / flat).collect();
+    let truth_s: Vec<f64> = mag.shielded().field(k, dv).iter().map(|x| x / flat).collect();
+    let f: Vec<f64> = truth.iter().map(|x| x * flat).collect();
+    let fs: Vec<f64> = truth_s.iter().map(|x| x * flat).collect();
+    let clean = read(None, false);
+    let open = read(Some(&f), false);
+    let shield = read(Some(&fs), false);
+    let coil = read(Some(&f), true);
+    let worst = |v: &[f64], t: &[f64]| v.iter().zip(t).fold(0.0f64, |m, (a, b)| m.max((a - b).abs()));
+    let biggest = |v: &[f64]| v.iter().fold(0.0f64, |m, x| m.max(x.abs()));
+    let (e_open, e_shield, floor, coil_idle) = (worst(&open, &truth), worst(&shield, &truth_s), biggest(&clean), biggest(&coil));
+    let top = (0..k).max_by(|&a, &b| open[a].total_cmp(&open[b])).unwrap();
+    println!(
+        "  night {night}: magnet {:.1}x at {:.1}; strongest read strip {top} at {:.3}x; error open {e_open:.1e}, shielded {e_shield:.1e}; clean floor {floor:.1e}; coil at idle {coil_idle:.1e}",
+        mag.strength, mag.pos, open[top]
+    );
+
+    let mut s = Svg::new(1000.0, 470.0);
+    s.text((80.0, 28.0), "The idle check: stop the drum, and every strip's position has to be explained by the forces the i9 installed", 15.0, INK, "start", "bold");
+    let a = Axes::new((80.0, 70.0, 600.0, 310.0), (-0.5, k as f64 - 0.5), (1e-8, 1.0)).logs(false, true);
+    let xl: Vec<String> = (0..k).map(|i| i.to_string()).collect();
+    let xt: Vec<(f64, &str)> = xl.iter().enumerate().map(|(i, l)| (i as f64, l.as_str())).collect();
+    a.draw(
+        &mut s,
+        &xt,
+        &[(1.0, "1"), (1e-2, "0.01"), (1e-4, "0.0001"), (1e-6, "10\u{207b}\u{2076}"), (1e-8, "10\u{207b}\u{2078}")],
+        "strip",
+        "",
+    );
+    s.vtext((a.x - 58.0, a.y + a.h / 2.0), "push nobody accounts for (x the flattening field)", 12.0, INK);
+    s.line((a.fx(mag.pos), a.y), (a.fx(mag.pos), a.y + a.h), DIM, 1.0, Some("4 3"));
+    s.text((a.fx(mag.pos) + 6.0, a.y + a.h - 8.0), "the magnet", 11.0, DIM, "start", "normal");
+    let curve = |t: &[f64]| -> Vec<(f64, f64)> {
+        // The true field between strips too, for a smooth line.
+        let scale = t[0] / truth[0];
+        (0..=(10 * (k - 1))).map(|j| j as f64 / 10.0).map(|x| a.p(x, scale * mag.strength * (1.5f64 * 1.5 / ((x - mag.pos).powi(2) + 2.25)).powf(1.5))).collect()
+    };
+    s.path(&curve(&truth), RED, 2.0, 0.55, None);
+    s.path(&curve(&truth_s), GOLD, 2.0, 0.7, None);
+    for i in 0..k {
+        s.circle(a.p(i as f64, open[i].abs().max(1e-8)), 4.0, "#ffffff", RED, 2.0);
+        s.circle(a.p(i as f64, shield[i].abs().max(1e-8)), 4.0, "#ffffff", GOLD, 2.0);
+        s.circle(a.p(i as f64, clean[i].abs().max(1e-8)), 3.5, DIM, DIM, 0.0);
+    }
+    let lx = 720.0;
+    let legend = [
+        (RED, "A magnet, 0.6x, open", "line: its real field; rings: what the i9 reads"),
+        (GOLD, "The same magnet behind the shield", "10% gets through, and the i9 still reads it"),
+        (DIM, "A clean board", "the strips' last bit of ringing: the noise floor"),
+    ];
+    for (j, (c, t, d)) in legend.iter().enumerate() {
+        let y = 90.0 + j as f64 * 50.0;
+        s.circle((lx + 7.0, y - 4.0), 5.0, if *c == DIM { DIM } else { "#ffffff" }, c, 2.0);
+        s.text((lx + 22.0, y), t, 12.5, INK, "start", "bold");
+        s.text((lx + 22.0, y + 17.0), d, 11.5, DIM, "start", "normal");
+    }
+    let notes = [
+        "Biggest gap between reading and truth:".to_string(),
+        format!("  open {}, shielded {}", sci(e_open), sci(e_shield)),
+        format!("Biggest reading on a clean board: {}", sci(floor)),
+        String::new(),
+        "The smart Salties' coil is off whenever".to_string(),
+        "the drum stops. At idle the i9 reads a".to_string(),
+        "board with the coil in it exactly like a".to_string(),
+        format!("clean one (biggest reading {}).", sci(coil_idle)),
+    ];
+    for (j, l) in notes.iter().enumerate() {
+        s.text((lx, 260.0 + j as f64 * 18.0), l, 12.0, INK, "start", "normal");
+    }
+    s.text(
+        (80.0, 450.0),
+        &format!("Night {night}, the strips at rest after 30 time units with the drum stopped, in CortenForge's Langevin model. The reading is the force balance on each strip."),
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.save_to(SITE_LESSONS, "idle");
+}
+
+const CHECK_BOARDS: usize = 10;
+const CHECK_SPINS: u64 = 48;
+
+/// The first `count` nights with boards unlike any earlier night's (some
+/// nights deal the street the same trades).
+fn distinct_nights(count: usize) -> Vec<u64> {
+    let mut seen: Vec<String> = vec![];
+    let mut out = vec![];
+    for n in 1.. {
+        let tc = computer(n);
+        let sig = format!("{:?} {:?}", tc.cycles.iter().map(|c| c.value()).collect::<Vec<_>>(), qubo::conflict_masks(&tc.cycles));
+        if !seen.contains(&sig) {
+            seen.push(sig);
+            out.push(n);
+            if out.len() == count {
+                break;
+            }
+        }
+    }
+    out
+}
+
+/// The smart Salties' coil on 10 different boards: the idle check reads
+/// nothing, the spin check (the same force balance, averaged while the drum
+/// shakes) reads it, and how loud a clean spin reads for each wash length.
+fn spincheck() {
+    let dv = Physics::default().delta_v;
+    let flat = trade::machine::max_safe_field(dv);
+    let alarm = trade::salties::SPIN_ALARM;
+    let programs = [("Quick Wash", 150.0), ("Permanent Press", 300.0), ("Normal", 1000.0)];
+    let nights = distinct_nights(CHECK_BOARDS);
+    println!("boards: nights {nights:?}");
+    let boards: Vec<(TradeComputer, Magnet, f64)> = nights
+        .iter()
+        .map(|&n| {
+            let tc = computer(n);
+            let (coil, cost) = trade::salties::aim(&tc, dv);
+            (tc, coil, cost)
+        })
+        .collect();
+    let coil_machine = |tc: &TradeComputer, coil: &Magnet, seed: u64| {
+        Machine::with_component(&tc.ising, Physics::default(), seed, trade::salties::Coil(coil.field(tc.ising.n, dv))).expect("machine")
+    };
+    let jobs: Vec<(usize, usize, bool, u64)> = (0..boards.len())
+        .flat_map(|b| (0..programs.len()).flat_map(move |p| [false, true].into_iter().flat_map(move |c| (1..=CHECK_SPINS).map(move |s| (b, p, c, s)))))
+        .collect();
+    // (board, program, coil?, latched best?, Goo lost, loudest strip, its reading, reads, every strip's mean)
+    let rows = par_map(&jobs, |&(b, p, coiled, seed)| {
+        let (tc, coil, _) = &boards[b];
+        let anneal = Anneal { duration: programs[p].1, ..Anneal::default() };
+        let mut m = if coiled { coil_machine(tc, coil, seed) } else { tc.machine(Physics::default(), seed).expect("machine") };
+        let mut check = trade::salties::SpinCheck::default();
+        let l = tc.spin(&mut m, &anneal, 1.0, 1.0, |mm, _| check.observe(mm, &tc.ising)).expect("spin");
+        let (k, v) = check.strongest().expect("reads");
+        let lost = tc.evaluate(tc.ground_state()).0 - tc.evaluate(l.best_bits).0;
+        let mean: Vec<f64> = check.mean().iter().map(|x| x / flat).collect();
+        (b, p, coiled, tc.is_optimal(l.best_bits), lost, k, v.abs() / flat, check.samples(), mean)
+    });
+    let pick = |b: Option<usize>, p: usize, c: bool| rows.iter().filter(move |r| b.is_none_or(|b| r.0 == b) && r.1 == p && r.2 == c);
+    for (b, (tc, coil, cost)) in boards.iter().enumerate() {
+        let k = coil.strip(tc.cycles.len());
+        let mut im = coil_machine(tc, coil, 3);
+        im.rest(30.0).expect("rest");
+        let idle = im.stray_field(&tc.ising).iter().fold(0.0f64, |m, x| m.max(x.abs())) / flat;
+        let mut line = format!("night {:>2}: coil under {k:>2} ({:+.1}x), paper {cost:>4.1}, idle {idle:.0e} |", nights[b], coil.strength);
+        for (p, (name, _)) in programs.iter().enumerate() {
+            let rate = |c: bool| 100.0 * pick(Some(b), p, c).filter(|r| r.3).count() as f64 / CHECK_SPINS as f64;
+            let right = pick(Some(b), p, true).filter(|r| r.6 >= alarm && r.5 == k).count();
+            let fa = pick(Some(b), p, false).filter(|r| r.6 >= alarm).count();
+            let lost = pick(Some(b), p, true).map(|r| r.4).sum::<f64>() / CHECK_SPINS as f64;
+            line += &format!(" {}: clean {:.0}% (fa {fa}), coil {:.0}% lost {lost:.1}, right strip {right} |", &name[..5], rate(false), rate(true));
+        }
+        println!("{line}");
+    }
+    let mut stats = vec![];
+    for (p, (name, _)) in programs.iter().enumerate() {
+        let cl: Vec<f64> = pick(None, p, false).map(|r| r.6).collect();
+        let co: Vec<f64> = pick(None, p, true).map(|r| r.6).collect();
+        let reads = pick(None, p, false).map(|r| r.7).sum::<usize>() / cl.len();
+        let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
+        let max = cl.iter().fold(0.0f64, |m, x| m.max(*x));
+        let min = co.iter().fold(f64::INFINITY, |m, x| m.min(*x));
+        let fa = cl.iter().filter(|x| **x >= alarm).count();
+        let caught = co.iter().filter(|x| **x >= alarm).count();
+        let best_clean = 100.0 * pick(None, p, false).filter(|r| r.3).count() as f64 / cl.len() as f64;
+        let best_coil = 100.0 * pick(None, p, true).filter(|r| r.3).count() as f64 / co.len() as f64;
+        println!(
+            "{name}: ~{reads} reads; clean loudest mean {:.3} max {max:.3}, false alarms {fa}/{}; coil quietest {min:.3} mean {:.3}, caught {caught}/{}; best set clean {best_clean:.0}%, coil {best_coil:.0}%",
+            mean(&cl),
+            cl.len(),
+            mean(&co),
+            co.len()
+        );
+        stats.push((cl, co, reads, fa, caught));
+    }
+
+    // The figure: one coil night up close, then every spin's loudest reading.
+    let (tc0, coil0, _) = &boards[0];
+    let n0 = tc0.cycles.len();
+    let k0 = coil0.strip(n0);
+    let truth: Vec<f64> = coil0.field(n0, dv).iter().map(|x| x / flat).collect();
+    let mut im = coil_machine(tc0, coil0, 3);
+    im.rest(30.0).expect("rest");
+    let idle_read: Vec<f64> = im.stray_field(&tc0.ising).iter().map(|x| x / flat).collect();
+    let spin_read = &pick(Some(0), 2, true).next().expect("a coil spin").8;
+    let mut s = Svg::new(1000.0, 520.0);
+    s.text((60.0, 28.0), "The smart Salties' coil only pushes while the drum shakes: check at rest and it isn't there", 15.0, INK, "start", "bold");
+    let lo = truth.iter().fold(0.0f64, |m, x| m.min(*x)).min(spin_read.iter().fold(0.0f64, |m, x| m.min(*x)));
+    let a = Axes::new((80.0, 80.0, 360.0, 300.0), (-0.5, n0 as f64 - 0.5), ((lo * 1.15).min(-0.2), 0.25));
+    let xl: Vec<String> = (0..n0).map(|i| if i % 2 == 0 { i.to_string() } else { String::new() }).collect();
+    let xt: Vec<(f64, &str)> = xl.iter().enumerate().map(|(i, l)| (i as f64, l.as_str())).collect();
+    a.draw(&mut s, &xt, &[(0.0, "0"), (-0.2, "-0.2"), (-0.4, "-0.4"), (-0.6, "-0.6"), (-0.8, "-0.8"), (0.2, "0.2")], "strip", "unexplained push (x flattening)");
+    s.text((a.x, a.y - 14.0), &format!("Night {}: the coil under strip {k0}, pushing off at {:.1}x", nights[0], coil0.strength.abs()), 12.5, INK, "start", "bold");
+    let bw = a.w / n0 as f64 * 0.62;
+    for i in 0..n0 {
+        let (x, y0) = a.p(i as f64, 0.0);
+        let y1 = a.fy(truth[i]);
+        s.rect((x - bw / 2.0, y0.min(y1)), (bw, (y1 - y0).abs()), 1.0, "#f6d3ce", "#f6d3ce");
+        s.circle(a.p(i as f64, spin_read[i]), 4.0, RED, RED, 0.0);
+        s.rect((x - 6.0, a.fy(idle_read[i]) - 1.5), (12.0, 3.0), 0.0, INK, INK);
+    }
+    let lg = [("#f6d3ce", "the coil's push while the drum shakes"), (RED, "spin check: averaged over one Normal spin"), (INK, "idle check: drum stopped (reads 0)")];
+    for (j, (c, t)) in lg.iter().enumerate() {
+        let y = a.y + a.h + 52.0 + j as f64 * 18.0;
+        if j == 1 {
+            s.circle((a.x + 7.0, y - 4.0), 4.0, c, c, 0.0);
+        } else {
+            s.rect((a.x, y - 9.0 + if j == 2 { 4.0 } else { 0.0 }), (14.0, if j == 2 { 3.0 } else { 10.0 }), 0.0, c, c);
+        }
+        s.text((a.x + 22.0, y), t, 11.5, INK, "start", "normal");
+    }
+    // Right: every spin's loudest unexplained push, clean vs coil, by wash length.
+    let bx = 540.0;
+    let bwid = 420.0;
+    let xmax = 1.0;
+    let fx = |v: f64| bx + v.min(xmax) / xmax * bwid;
+    s.text((bx, a.y - 14.0), &format!("Every spin's loudest reading, {} boards x {CHECK_SPINS} spins", boards.len()), 12.5, INK, "start", "bold");
+    let rowh = 92.0;
+    let bins = 50usize;
+    for (p, (name, _)) in programs.iter().enumerate() {
+        let (cl, co, reads, fa, caught) = &stats[p];
+        let top = a.y + 8.0 + p as f64 * rowh;
+        let base = top + 58.0;
+        s.text((bx, top + 4.0), &format!("{name}, ~{reads} reads"), 12.0, INK, "start", "bold");
+        s.text(
+            (bx + bwid, top + 4.0),
+            &format!("false alarms {fa}/{}, caught {caught}/{}", cl.len(), co.len()),
+            11.0,
+            if *fa > 0 { RED } else { DIM },
+            "end",
+            "normal",
+        );
+        let hist = |v: &[f64]| {
+            let mut h = vec![0usize; bins];
+            for x in v {
+                h[((x / xmax * bins as f64) as usize).min(bins - 1)] += 1;
+            }
+            h
+        };
+        let (hc, hk) = (hist(cl), hist(co));
+        let peak = hc.iter().chain(&hk).copied().max().unwrap_or(1) as f64;
+        let bwx = bwid / bins as f64;
+        for (h, c) in [(&hc, DIM), (&hk, RED)] {
+            for (j, &cnt) in h.iter().enumerate() {
+                if cnt > 0 {
+                    let hh = 44.0 * cnt as f64 / peak;
+                    s.rect((bx + j as f64 * bwx + 0.5, base - hh), (bwx - 1.0, hh), 0.0, c, c);
+                }
+            }
+        }
+        s.line((bx, base), (bx + bwid, base), "#c5c9d1", 1.0, None);
+        s.line((fx(alarm), top + 12.0), (fx(alarm), base + 4.0), INK, 1.5, Some("5 3"));
+    }
+    let bottom = a.y + 8.0 + 3.0 * rowh - 26.0;
+    for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
+        s.text((fx(t), bottom + 16.0), &format!("{t}"), 11.0, DIM, "middle", "normal");
+    }
+    s.text((bx + bwid / 2.0, bottom + 34.0), "loudest average push on any strip (x flattening)", 12.0, INK, "middle", "normal");
+    s.text((fx(alarm) + 5.0, bottom - 4.0), &format!("alarm at {alarm}"), 11.0, INK, "start", "bold");
+    s.rect((bx, bottom + 50.0), (12.0, 10.0), 0.0, DIM, DIM);
+    s.text((bx + 18.0, bottom + 59.0), "clean spins", 11.5, INK, "start", "normal");
+    s.rect((bx + 110.0, bottom + 50.0), (12.0, 10.0), 0.0, RED, RED);
+    s.text((bx + 128.0, bottom + 59.0), "spins with the coil", 11.5, INK, "start", "normal");
+    s.text(
+        (60.0, 505.0),
+        &format!("Nights {}: the first {} different boards. The coil is aimed per board by the Salties' own scouting (0.8x the flattening field). CortenForge's Langevin drum.", nights.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(", "), boards.len()),
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.save_to(SITE_LESSONS, "spincheck");
 }
