@@ -5,6 +5,7 @@ mod arrows;
 mod cards;
 mod counter;
 mod drum;
+mod guide;
 mod printer;
 #[cfg(feature = "solari")]
 mod rt;
@@ -26,6 +27,7 @@ impl Plugin for GamePlugin {
         app.insert_resource(cards::Cards::new(lm.night))
             .insert_resource(lm)
             .init_resource::<tv::Tv>()
+            .init_resource::<guide::Guide>()
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()
@@ -55,13 +57,15 @@ impl Plugin for GamePlugin {
                 )
                     .chain(),
             )
-            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear), tape::ui.run_if(cards::clear)).chain());
+            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear), tape::ui.run_if(cards::clear), guide::ui.run_if(cards::clear)).chain());
         #[cfg(feature = "solari")]
         app.add_plugins(rt::RtPlugin);
         if cards::shots_enabled() {
             app.add_systems(Update, cards::shots);
         } else if shots::enabled() {
             app.add_systems(Update, shots::drive.after(sim::step_sim));
+        } else if guide::shots_enabled() {
+            app.add_systems(Update, guide::shots);
         } else if tape::shots_enabled() {
             app.add_systems(Update, tape::shots.after(tape::update));
         }

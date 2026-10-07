@@ -10,13 +10,13 @@ use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
 use super::sim::{Laundromat, Mode, PROGRAMS, TRACE_DT, TRACE_LEN};
 
-fn c32(c: Color) -> egui::Color32 {
+pub(super) fn c32(c: Color) -> egui::Color32 {
     let s = c.to_srgba();
     egui::Color32::from_rgba_unmultiplied((s.red * 255.0) as u8, (s.green * 255.0) as u8, (s.blue * 255.0) as u8, (s.alpha * 255.0) as u8)
 }
 
-const GOLD: egui::Color32 = egui::Color32::from_rgb(255, 205, 60);
-const GOO_GREEN: egui::Color32 = egui::Color32::from_rgb(90, 200, 30);
+pub(super) const GOLD: egui::Color32 = egui::Color32::from_rgb(255, 205, 60);
+pub(super) const GOO_GREEN: egui::Color32 = egui::Color32::from_rgb(90, 200, 30);
 const ICY: egui::Color32 = egui::Color32::from_rgb(140, 200, 255);
 const HUNGRY: egui::Color32 = egui::Color32::from_rgb(255, 150, 60);
 /// Gifts and Karma: the same warm gold as the gift arrows (`arrows::GIFT`).
@@ -24,7 +24,7 @@ const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
 /// The Salties: road-salt white with a cold blue cast.
 const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
 /// The counter (escrow): cardboard tan.
-const COUNTER: egui::Color32 = egui::Color32::from_rgb(215, 180, 130);
+pub(super) const COUNTER: egui::Color32 = egui::Color32::from_rgb(215, 180, 130);
 /// PromiseTV's purple-and-gold.
 const PROMISE: egui::Color32 = egui::Color32::from_rgb(215, 160, 255);
 /// Why the counter: on hover of its rule and its result line.
@@ -102,6 +102,7 @@ pub fn panels(
     mut hidden: Local<bool>,
     tv: Res<super::tv::Tv>,
     mut shop: ResMut<super::printer::PrintShop>,
+    mut guide: ResMut<super::guide::Guide>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (cam, cam_tf) = *camera;
@@ -209,6 +210,9 @@ pub fn panels(
                     if flip.clicked() {
                         let on = !lm.yuck.tv_on;
                         lm.set_tv(on);
+                    }
+                    if ui.button(egui::RichText::new("How to play").small()).on_hover_text("The picture book (F1).").clicked() {
+                        guide.open = !guide.open;
                     }
                 });
                 let w = &lm.tc.world;

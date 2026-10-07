@@ -33,7 +33,7 @@ pub struct Cards {
 impl Cards {
     pub fn new(night: u64) -> Self {
         // Screenshot runs and the render bench skip the title.
-        let shooting = super::shots::enabled() || super::tape::shots_enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
+        let shooting = super::shots::enabled() || super::tape::shots_enabled() || super::guide::shots_enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
         Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0, night, ads: !shooting, reel: false }
     }
 }
@@ -251,9 +251,9 @@ pub fn draw(
     Ok(())
 }
 
-/// The board-cam inset is its own camera, drawn over egui: off while a card is up.
-pub fn hide_inset(cards: Res<Cards>, mut cam: Single<&mut Camera, With<BoardCam>>) {
-    let on = cards.showing.is_none();
+/// The board-cam inset is its own camera, drawn over egui: off while a card or the how-to-play book is up.
+pub fn hide_inset(cards: Res<Cards>, guide: Res<super::guide::Guide>, mut cam: Single<&mut Camera, With<BoardCam>>) {
+    let on = cards.showing.is_none() && !guide.open;
     if cam.is_active != on {
         cam.is_active = on;
     }

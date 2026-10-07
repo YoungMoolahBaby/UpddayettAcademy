@@ -661,6 +661,32 @@ the TV switch. The game keeps it in `Laundromat::yuck`.
      how big the street is, and how missions are given and tracked. The
      drum stays the heart: the missions feed the board.
 
+### How to play, started (2026-10-06)
+
+The book is `src/game/guide.rs`. F1 or the banner's "How to play" button
+opens it; arrows turn pages, Esc closes it. It's a contents list down the
+left and one page at a time, each a picture over a few short paragraphs.
+Every picture is drawn from tonight's real board: the Goo page uses
+tonight's best 2-way swap and the people in it, and the loop page uses
+tonight's best 3-4 way loop. So the example on the page is one you can
+find on the street.
+
+- **Written** (the core loop):
+  1. The street
+  2. Goo
+  3. A trade
+  4. Loops
+  5. Collisions
+  6. The drum (the double well, tilt, push-apart, shake and cool)
+- **Next, with the user:** wash programs, the counter, gifts and Karma,
+  wants and give-aways, the Salties, prints, yuck and ghosts, the TV, the
+  tape deck. Then a guided first night.
+- **Details:**
+  - The book draws at `Order::Tooltip`, so it sits over the panels.
+  - The board-cam inset is turned off while the book is open, because a
+    second camera draws over egui.
+  - `UPD_GUIDE=all|2,6` shoots pages to `shots/guide_<k>.png`.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
