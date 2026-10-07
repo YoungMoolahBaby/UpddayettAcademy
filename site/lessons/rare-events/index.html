@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rare Events and the Hump · Upddayett Academy</title>
+<meta name="description" content="Lesson 4: rare events. 2,400 real waits for a steel strip to hop its hump: exponential, memoryless, and exponentially sensitive to the noise. What barrier crossing has to do with default.">
+<meta property="og:title" content="Rare Events and the Hump">
+<meta property="og:description" content="Waiting times, Kramers' law and what barrier crossing has to do with default, measured on real simulated strips.">
+<meta property="og:image" content="https://youngmoolahbaby.github.io/UpddayettAcademy/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&family=UnifrakturMaguntia&family=Yellowtail&display=swap">
+<link rel="stylesheet" href="../../assets/site.css?v=dev">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="street" aria-hidden="true"><span class="elevator"></span><span class="tower"></span><span class="poles"><span class="wires"></span></span><span class="lowrider"><span class="body"></span><span class="wheel rear"></span><span class="wheel front"></span></span></div>
+  <div class="eyebrow">Lesson 4 · Stochastic processes · In the game: the strips</div>
+  <h1>Rare events and the hump</h1>
+  <p class="lede">A steel strip sits in its dip, rattling, until one kick is big enough to throw it over the hump. When will that happen? We timed it 2,400 times. The answer is the same law that prices the risk of a company defaulting, and it has three surprises in it.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>A strip waiting to hop</h2></div>
+  <div class="col flow">
+    <p>Every candidate trade in the game's machine is a buckled steel strip with two resting shapes, off and on, and a hump between them. The drum shakes the strips with heat: random kicks whose strength is set by the temperature, kT. (<a href="../../machine/">The Machine</a> has the whole picture.) Usually a strip just rattles in its dip. Once in a while the kicks line up and it hops over the hump to the other side.</p>
+    <p>Here we take lone strips, with no springs to neighbors and no tilt, a hump of 5 and the drum at kT 0.85, and time how long each one waits before it hops. 240 strips, ten waits each, in CortenForge's Langevin simulation.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/waits.svg" alt="Left: histogram of 2,400 waiting times, highest at short waits and falling off with a long tail, mean 427, following the exponential curve from Kramers' rate. Right: the fraction still waiting against time on a log scale, a straight line; strips that already waited 427 follow the same line." width="1000" height="440"></div>
+    <figcaption><b>Left:</b> how long strips waited before hopping. <b>Right:</b> the share still waiting after a given time, on a log scale. The purple line in both is Kramers' prediction, from CortenForge's own formula.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>Three surprises</h2></div>
+  <div class="col flow">
+    <h3>1. The typical wait is shorter than the average</h3>
+    <p>The mean wait is <strong>427</strong> time units, but half of all waits are over by <strong>279</strong>, and the longest took <strong>4,256</strong>, ten times the mean. Most hops come quickly; a few strips sit for ages. That shape is the <strong>exponential distribution</strong>, the signature of an event that has the same small chance of happening in every moment.</p>
+
+    <h3>2. It never becomes "due"</h3>
+    <p>Look at the strips that had already waited 427 units without hopping. You might think they're overdue. On average they waited another <strong>468</strong>, about the same as a strip that had just landed. On the right, their curve (gold) lies on top of everyone's (blue). The strip has no memory of how long it has waited. Every moment it faces the same odds. This is called <strong>memorylessness</strong>, and it's why "it's been quiet for years, so it's coming soon" is bad reasoning about rare events.</p>
+
+    <h3>3. A small change in the noise is a huge change in the rate</h3>
+    <p>Hendrik Kramers worked out the hop rate in 1940:</p>
+<pre><code>rate ≈ attempt rate × e^(−hump / kT)</code></pre>
+    <p>The <em>attempt rate</em> is how often a strip rattles up against the hump. The exponential is the chance that a given rattle carries it over. Everything depends on one number, the hump measured in units of the noise, hump/kT. Here are three different humps, each measured at five temperatures:</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/collapse.svg" alt="Left: hop rate against kT for humps of 3, 5 and 7, three separate curves. Right: the same rates divided by the attempt rate, against hump/kT, all falling on the single line e^(-hump/kT)." width="1000" height="450"></div>
+    <figcaption><b>Left:</b> against the drum's temperature, three humps give three unrelated-looking curves. <b>Right:</b> against hump/kT, all 15 measurements fall on one line. Physicists call this a <b>data collapse</b>.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>Each step of 1 in hump/kT divides the rate by e ≈ 2.7. Go from 5 to 7 and hops become 7 times rarer. The measured rates match the formula within about 11% everywhere it's meant to hold. The one larger miss (+22%) is at hump/kT = 3, where the hump is barely taller than the rattling and Kramers' approximation starts to break down.</p>
+    <div class="aside">
+      <span class="label">A mistake worth making once</span>
+      <p>The first time we measured these waits, we ran the strips for a fixed 4,000 time units and averaged every completed wait. The mean came out at 372, 12% below Kramers. The bug: when the clock stops, each strip is in the middle of a wait, and that unfinished wait gets thrown away. Long waits are the most likely to be unfinished, so dropping them biases the average low. This is called <strong>right-censoring</strong>, and it shows up everywhere: in clinical trials, in how long customers stay, and in how long companies survive. The fix was to stop each strip right after its tenth hop, so every wait counted is complete. The mean became 427, against Kramers' 425.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>In the game</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>Cooling is exponential freezing.</strong> Normal's cool-down takes the drum from 4 kT to 0.35 kT, so hump/kT goes from about 1 to about 14, and the hop rate falls by a factor of hundreds of thousands. Early in a spin the strips hop constantly. By the end, a strip in a bad dip is stuck for good. That's why cooling too fast (Quick Wash) freezes in bad answers.</li>
+      <li><strong>The board's humps aren't all equal.</strong> A good trade's tilt deepens its "on" dip, and springs from colliding trades push back. On a real board the humps differ strip by strip, and a hop changes its neighbors' humps. That's where the machine's intelligence lives.</li>
+      <li><strong>Watch it live.</strong> The scope (<code>UPD_SCOPE=3 cargo run --release</code>) shows one strip's position and counts its hops. Each one is a Kramers hop.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>On a trading desk</h2></div>
+  <div class="col flow">
+    <p>Swap "strip" for "company" and "hop" for "default".</p>
+    <ul>
+      <li><strong>Default as a barrier crossing.</strong> In Robert Merton's model (1974), a company's assets wander randomly, and it defaults if they end up below what it owes. Black and Cox (1976) made it a first-passage problem: default happens the first time the assets touch a barrier. That's a strip hopping its hump.</li>
+      <li><strong>Distance to default.</strong> Credit analysts measure how far a company's assets sit above its default point, in units of its asset volatility: the hump in units of the noise. For a smooth dip the hump grows like the square of that distance, so e<sup>−hump/kT</sup> behaves like the bell curve's tail, e<sup>−d²/2</sup>. Either way the lesson is the same as the data collapse: a small slide in the distance is a big jump in the risk.</li>
+      <li><strong>Default intensity.</strong> Many credit models skip the barrier and treat default as a memoryless event with a rate, its <em>intensity</em> (Jarrow and Turnbull 1995, Duffie and Singleton 1999), exactly like the exponential waits above. A rough rule ties it to the bond market: the extra yield a company pays is about its default intensity times the share of the money lenders would lose (the credit triangle).</li>
+      <li><strong>When the noise rises, everything changes at once.</strong> In a crisis volatility jumps, which is kT going up. Every company's hump shrinks in noise units, and default rates rise exponentially, not proportionally.</li>
+      <li><strong>Rare events are expensive to simulate.</strong> At hump/kT = 10 you'd wait 20 times longer per hop than at 7. Quants use tricks like <em>importance sampling</em>, simulating a more volatile world and reweighting the results, to measure risks that plain simulation would almost never see.</li>
+    </ul>
+    <div class="aside">
+      <span class="label">Where the model is too kind</span>
+      <p>Lone strips are independent and the drum's noise is perfectly Gaussian. Markets are neither. Big moves come more often than a bell curve allows ("fat tails"), volatility comes in clusters, and defaults are linked, like strips joined by springs: one failure moves its neighbors' humps. Use the memoryless law as the starting point, not the last word.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+<pre><code># the waiting times (~10 s) and the data collapse (~25 s)
+cargo run --release --example machine_figs -- waits
+cargo run --release --example machine_figs -- collapse
+
+# hop rates against the drum, lone strips and the real board
+cargo run --release --example machine_figs -- freeze
+
+# one strip on the scope, live, in the game
+UPD_SCOPE=3 cargo run --release</code></pre>
+    <p>The strips are CortenForge's <code>DoubleWellPotential</code> shaken by its <code>LangevinThermostat</code>; Kramers' rate is <code>DoubleWellPotential::kramers_rate_turnover</code>. The measurement is <code>hop_times</code> in <code>examples/machine_figs.rs</code>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">06</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>With a hump of 5, a strip hops about 0.0056 times per time unit at kT 1.0 and about 0.0008 at kT 0.71. What's the mean wait at each? How does their ratio compare with Kramers' law?</p>
+        <details><summary>Answer</summary><p>About 1/0.0056 ≈ 180 and 1/0.0008 ≈ 1,250 time units, a ratio of about 7. Hump/kT goes from 5 to 7, and e<sup>2</sup> ≈ 7.4. The attempt rate barely changes, so the exponential does almost all the work.</p></details></div></li>
+      <li><div><p>At kT 0.85 a strip has sat in its dip for 1,000 time units. How much longer should you expect it to wait?</p>
+        <details><summary>Answer</summary><p>About 425 more, the same as a fresh strip. The exponential distribution is memoryless: having waited tells you nothing about how soon it will hop.</p></details></div></li>
+      <li><div><p>A company's distance to default slips from 4 standard deviations to 3. Using the bell curve's tail, roughly how much more likely is default?</p>
+        <details><summary>Answer</summary><p>The chance of falling more than 3 standard deviations is about 0.135%. More than 4 is about 0.0032%. That's about 40 times riskier for one step of distance, because the tail falls off like e<sup>−d²/2</sup>.</p></details></div></li>
+      <li><div><p>A company's default intensity is 2% a year, and lenders would get back 40% of their money in a default. Roughly what extra yield should its bonds pay over safe ones?</p>
+        <details><summary>Answer</summary><p>About 2% × (1 − 40%) = 1.2% a year, or 120 basis points (the credit triangle: spread ≈ intensity × loss given default).</p></details></div></li>
+      <li><div><p>You track 1,000 new customers for six months and average how long the ones who left had stayed. Why is that number misleading, and how do you fix it?</p>
+        <details><summary>Answer</summary><p>Customers still with you at six months are left out, and they're the ones with the longest stays: right-censoring, the same bug as our first measurement. Count the customers who stayed as "at least six months" with a survival method (Kaplan–Meier is the standard one), or, for a constant rate, divide the number who left by the total customer-months observed.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../settlement/">← Lesson 3: nobody walks off with the hub motor</a>
+    <a href="../../#lessons">All lessons →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Measured in CortenForge's Langevin simulation (<a href="https://crates.io/crates/cortenforge">CortenForge</a>), for <em>Upddayett's School of Biddness</em>. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -748,6 +748,21 @@ GitHub Pages. It's `site/`, static HTML with one shared stylesheet.
      stranding, plus Herstatt 1974, PvP/DvP and kidney chains.
 - **Coming:** Kramers and rare events, greedy vs global, magnets and
   model risk.
+- **Lesson 4, rare events (the strips), 2026-10-07.** Lone strips (hump
+  5, kT 0.85) waiting to hop:
+  - **Waits:** 2,400 complete waits (each strip's first 10) have mean 427
+    vs Kramers' 425 and median 279; the longest was 4,256.
+  - **Memoryless:** 856 strips had already waited past the mean, and on
+    average they waited 468 more.
+  - **Censoring, caught on the way:** the first try ran a fixed 4,000
+    units and dropped every strip's unfinished last wait. Its mean came
+    out at 372, 12% low (right-censoring). The lesson tells the story.
+  - **Data collapse:** humps 3, 5 and 7, each at hump/kT 3-7, measured
+    against `kramers_rate_turnover`. Within 11%, except +22% at hump 7,
+    hump/kT 3.
+  - **The desk side:** Merton and Black-Cox (default as a barrier
+    crossing), distance to default, intensity models, the credit
+    triangle, importance sampling, and fat tails as the caveat.
 
 **Status:**
 - **Look (user, 2026-10-07): "west coast whistly", then "non palm tree like and more gritty, like a midwesterner's imagination listening to west coast whistle music not really paying attention to the lyrics"**: a hazy dusk over a county road (grain elevator, water tower, power lines whose wires sway in the wind, film grain, weathered-steel wordmark), with the G-funk details kept. Before that: 90s G-funk. A dusk sunset band with palms and a low sun on every page, the whistle (a gliding sine) across the sky and as the section dividers, a chrome Old English wordmark (UnifrakturMaguntia), script numerals (Yellowtail), neon-gold headings and a car-stereo LCD readout, palms that sway, and a lowrider in front of the sun that pumps its hydraulics every 7 s and hops while the band is hovered (all off under reduced motion). It is one deliberate dark look; the figures stay on white plates in chrome frames. No real logos and no gang or drug imagery.
