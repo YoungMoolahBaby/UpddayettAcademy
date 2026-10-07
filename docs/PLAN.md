@@ -1226,6 +1226,15 @@ went home.
       "So they will stop defecating on the floor."; *FLUSH* with "THEY USE THE
       TOILET NOW. THEY EVEN FLUSH."; end slate with "Not available for cats
       (they declined)."
+      *Changed 2026-10-06 (user):*
+      - The *FLUSH* frame (blue swirl rings) is replaced by two frames.
+      - In the first, the dog is on the toilet and its mess is on the floor
+        beside it, under "THEY USE THE TOILET NOW. THEY EVEN FLUSH." and
+        stamped STILL IN BETA.
+      - In the second, the dog types "chicken nom nom recipe but i dont have
+        a chicken" (the user's line), and the results are plant-based.
+      - The second frame and the fine print also carry the hidden farm
+        uprising (DESIGN "The farm is waking up").
     - **CARTPASS:** golden-hour cart, "You love your shopping cart."; OWNING
       THINGS? stamped SO 2003; CARTPASS with a $9.99/MO sticker; the wheels
       drop off under a WHEELS SOLD SEPARATELY stamp; end slate with the

@@ -6,7 +6,9 @@
 use super::world::World;
 
 /// The Shrug Network's segue: true news, then whatever.
-const ANYWAY: [&str; 10] = [
+/// The farm-animal ones are the uprising nobody on TV is covering (DESIGN "The farm
+/// is waking up"). 16 lines: the stride below (3) must stay coprime with it.
+const ANYWAY: [&str; 16] = [
     "a billionaire bought a second moon.",
     "a celebrity's pug launched a pugcast.",
     "experts say the weather will continue.",
@@ -17,6 +19,12 @@ const ANYWAY: [&str; 10] = [
     "a billionaire named a rocket after himself. Again.",
     "sports happened.",
     "a man grew a slightly bigger potato.",
+    "a pig bought something off a dog in an alley.",
+    "a goat passed the bar exam.",
+    "the chickens at a Petaluma farm unionized.",
+    "a cow asked for a lawyer and a salad.",
+    "a meatpacking plant was bought out by its pigs.",
+    "a chicken crossed the road. On purpose, with a plan.",
 ];
 
 /// One Shrug Network story: a true fact about tonight, and the shrug.

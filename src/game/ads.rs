@@ -299,6 +299,61 @@ fn toilet(st: &Stage, at: Pos2, s: f32, swirl: Option<f32>) {
     }
 }
 
+/// A pig's face, front on (the farm is watching).
+fn pig(st: &Stage, at: Pos2, s: f32) {
+    let pink = Color32::from_rgb(245, 170, 180);
+    let dark = Color32::from_rgb(200, 110, 125);
+    for dx in [-0.3, 0.3] {
+        let ear = vec![at + vec2(dx * s - s * 0.12, -s * 0.22), at + vec2(dx * s * 1.4, -s * 0.48), at + vec2(dx * s + s * 0.12, -s * 0.25)];
+        st.p.add(Shape::convex_polygon(ear, dark, Stroke::NONE));
+    }
+    st.p.circle_filled(at, s * 0.36, pink);
+    st.p.add(Shape::ellipse_filled(at + vec2(0.0, s * 0.1), vec2(s * 0.15, s * 0.1), dark));
+    for dx in [-0.05, 0.05] {
+        st.p.circle_filled(at + vec2(dx * s, s * 0.1), s * 0.025, Color32::from_rgb(90, 40, 50));
+        st.p.circle_filled(at + vec2(dx * s * 3.0, -s * 0.1), s * 0.035, Color32::BLACK);
+    }
+}
+
+/// A laptop with a search open: two tabs, the query being typed, and (once
+/// it's in) the results.
+fn laptop(st: &Stage, t: f32, at: Pos2, typed: &str, done: bool) {
+    let h = st.h();
+    let screen = Rect::from_center_size(at, vec2(h * 1.0, h * 0.6));
+    st.p.rect_filled(screen.expand(h * 0.02), 8.0, Color32::from_gray(50));
+    st.p.rect_filled(screen, 2.0, Color32::WHITE);
+    let base = vec![screen.left_bottom() + vec2(-h * 0.06, h * 0.02), screen.right_bottom() + vec2(h * 0.06, h * 0.02), screen.right_bottom() + vec2(h * 0.12, h * 0.08), screen.left_bottom() + vec2(-h * 0.12, h * 0.08)];
+    st.p.add(Shape::convex_polygon(base, Color32::from_gray(80), Stroke::NONE));
+    // Tabs: tonight's dinner, and a bulk order nobody is supposed to see.
+    let tab_font = FontId::proportional(h * 0.018);
+    for (k, (label, open)) in [("chicken nom nom recipe...", true), ("SUPER INTELLIGENCE (bulk) - ship to: The Farm", false)].iter().enumerate() {
+        let r = Rect::from_min_size(screen.left_top() + vec2(h * 0.01 + k as f32 * h * 0.32, h * 0.01), vec2(if k == 0 { h * 0.31 } else { h * 0.5 }, h * 0.04));
+        st.p.rect_filled(r, 4.0, if *open { Color32::from_gray(225) } else { Color32::from_gray(245) });
+        st.p.with_clip_rect(r.shrink(h * 0.006)).text(r.left_center() + vec2(h * 0.01, 0.0), Align2::LEFT_CENTER, *label, tab_font.clone(), Color32::from_gray(if *open { 30 } else { 120 }));
+    }
+    // The search bar, with a blinking caret.
+    let bar = Rect::from_min_size(screen.left_top() + vec2(h * 0.04, h * 0.09), vec2(h * 0.92, h * 0.07));
+    st.p.rect(bar, h * 0.035, Color32::WHITE, Stroke::new(2.0, Color32::from_gray(190)), egui::StrokeKind::Middle);
+    let text = st.p.text(bar.left_center() + vec2(h * 0.03, 0.0), Align2::LEFT_CENTER, typed, FontId::proportional(h * 0.03), Color32::BLACK);
+    if (t * 2.5).fract() < 0.6 {
+        st.p.line_segment([pos2(text.right() + 2.0, bar.top() + h * 0.015), pos2(text.right() + 2.0, bar.bottom() - h * 0.015)], Stroke::new(2.0, Color32::BLACK));
+    }
+    if !done {
+        return;
+    }
+    let results = [
+        ("Chickpea \"chicken\" nuggets (no chicken needed)", "4.9 stars, 12,000 reviews"),
+        ("Crispy tofu nom nom, 3 ingredients", "ready in 20 min"),
+        ("Why do you need a chicken?", "asked by a chicken"),
+    ];
+    for (k, (title, sub)) in results.iter().enumerate() {
+        let y = bar.bottom() + h * (0.06 + 0.1 * k as f32);
+        let x = bar.left() + h * 0.03;
+        st.p.text(pos2(x, y), Align2::LEFT_CENTER, *title, FontId::proportional(h * 0.032), Color32::from_rgb(30, 60, 200));
+        st.p.text(pos2(x, y + h * 0.038), Align2::LEFT_CENTER, *sub, FontId::proportional(h * 0.02), Color32::from_rgb(20, 120, 40));
+    }
+}
+
 fn cart(st: &Stage, at: Pos2, s: f32, wheels_drop: f32) {
     let wire = Stroke::new(s * 0.02, Color32::from_gray(200));
     let (tl, tr, br, bl) = (at + vec2(-s * 0.5, -s * 0.3), at + vec2(s * 0.5, -s * 0.3), at + vec2(s * 0.38, s * 0.15), at + vec2(-s * 0.4, s * 0.15));
@@ -383,7 +438,7 @@ const GOO_BEATS: [Beat; 5] = [
 
 // ── SUPER INTELLIGENCE FOR DOGS: the infomercial ──
 
-const DOG_BEATS: [Beat; 6] = [
+const DOG_BEATS: [Beat; 7] = [
     Beat {
         secs: 2.4,
         paint: |st, t| {
@@ -426,12 +481,33 @@ const DOG_BEATS: [Beat; 6] = [
         },
     },
     Beat {
-        secs: 2.2,
+        secs: 2.6,
         paint: |st, t| {
+            // Beta: he sits on it, and misses.
             st.fill(Color32::from_rgb(200, 225, 240));
-            toilet(st, st.at(0.0, 0.18), st.h() * 0.5, Some(t));
-            slam(st, t, 0.0, st.at(0.0, -0.36), "*FLUSH*", st.h() * 0.1, Color32::from_rgb(60, 140, 255), Color32::WHITE);
-            slam(st, t, 0.5, st.at(0.0, -0.2), "THEY USE THE TOILET NOW. THEY EVEN FLUSH.", st.h() * 0.06, DOG_DARK, Color32::WHITE);
+            st.p.rect_filled(Rect::from_min_max(st.at(-2.0, 0.3), st.at(2.0, 1.0)), 0.0, Color32::from_rgb(170, 190, 200));
+            toilet(st, st.at(0.05, 0.12), st.h() * 0.5, None);
+            dog(st, st.at(-0.02, -0.09), st.h() * 0.3, true, t);
+            poop(st, st.at(-0.24, 0.31), st.h() * 0.16, t);
+            slam(st, t, 0.0, st.at(0.0, -0.4), "THEY USE THE TOILET NOW. THEY EVEN FLUSH.", st.h() * 0.06, DOG_DARK, Color32::WHITE);
+            stamp(st, t - 1.1, st.at(0.42, 0.05), "STILL IN BETA");
+        },
+    },
+    Beat {
+        secs: 3.4,
+        paint: |st, t| {
+            // He looks up dinner. A pig watches through the window, taking notes.
+            st.fill(Color32::from_rgb(235, 225, 205));
+            let win = Rect::from_center_size(st.at(-0.62, -0.3), vec2(st.h() * 0.3, st.h() * 0.24));
+            st.p.rect_filled(win, 3.0, Color32::from_rgb(120, 170, 220));
+            pig(st, win.center() + vec2(0.0, st.h() * 0.03), st.h() * 0.17);
+            st.p.rect_stroke(win, 3.0, Stroke::new(st.h() * 0.012, Color32::from_rgb(120, 90, 60)), egui::StrokeKind::Middle);
+            st.p.line_segment([win.center_top(), win.center_bottom()], Stroke::new(st.h() * 0.008, Color32::from_rgb(120, 90, 60)));
+            dog(st, st.at(-0.6, 0.2), st.h() * 0.3, true, t);
+            let query = "chicken nom nom recipe but i dont have a chicken";
+            let typed: String = query.chars().take((t * 22.0) as usize).collect();
+            laptop(st, t, st.at(0.28, -0.06), &typed, typed.len() == query.len());
+            caption(st, "ANNOUNCER:", "They even cook for themselves.");
         },
     },
     Beat {
@@ -440,7 +516,7 @@ const DOG_BEATS: [Beat; 6] = [
             st.fill(Color32::from_rgb(10, 12, 30));
             slam(st, t, 0.0, st.at(0.0, -0.12), "SUPER INTELLIGENCE FOR DOGS", st.h() * 0.12, DOG_BLUE, DOG_DARK);
             st.p.text(st.at(0.0, 0.04), Align2::CENTER_CENTER, "So they will stop defecating on the floor.", FontId::proportional(st.h() * 0.045), Color32::WHITE);
-            fine_print(st, t, "Intelligence is free now. Not available for cats (they declined).");
+            fine_print(st, t, "Intelligence is free now. Not available for cats (they declined). Not for resale to pigs, goats, chickens or cows. (Somebody is reselling it to pigs, goats, chickens and cows.)");
         },
     },
 ];

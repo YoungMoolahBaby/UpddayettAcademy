@@ -403,6 +403,41 @@ Parody names only: no real networks, politicians or parties. Both channels
 get skewered equally, for behavior (apathy, empty promises), not policy.
 No crypto ads.
 
+### The farm is waking up (a hidden thread, 2026-10-06)
+
+The user's idea: the animals we eat (pigs, goats, chickens, cows) are
+getting superintelligence on the black market, from dogs who got it in
+the ad and from people who sell it on. They are organizing to end their
+own systematic oppression, and "oppression" is an understatement. The
+uprising is loud where it happens and hidden in the game: it shows up in
+corners and fine print, and the TV shrugs it off. They win by out-thinking
+the system, not by violence: unions, lawsuits, buyouts, salads.
+- **In SUPER INTELLIGENCE FOR DOGS:**
+  - the smart dog searches "chicken nom nom recipe but i dont have a
+    chicken" (the user's line). The results are chickpea nuggets, tofu,
+    and "Why do you need a chicken?", asked by a chicken;
+  - his second tab is "SUPER INTELLIGENCE (bulk) - ship to: The Farm";
+  - a pig watches through the window;
+  - the fine print says "Not for resale to pigs, goats, chickens or cows.
+    (Somebody is reselling it to pigs, goats, chickens and cows.)"
+- **On the Shrug Network:** six of the sixteen "Anyway" segues are
+  dispatches from the uprising, read as if they were nothing:
+  - "a pig bought something off a dog in an alley";
+  - "a goat passed the bar exam";
+  - "the chickens at a Petaluma farm unionized";
+  - "a cow asked for a lawyer and a salad";
+  - "a meatpacking plant was bought out by its pigs";
+  - "a chicken crossed the road. On purpose, with a plan."
+- **The plant-based hint:** the smart animals' own answer is to get
+  everyone onto plants. The dog's search finds chickpeas, and the cow
+  wants a salad.
+- **Later (ideas):**
+  - the uprising's own ad (a goat lawyer's billboard: "Eaten? You may be
+    entitled to compensation");
+  - farm animals in the laundromat in hats and trench coats ("just three
+    goats in a coat, doing laundry");
+  - the pug anchors (3.2) shrugging it off on air.
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone
