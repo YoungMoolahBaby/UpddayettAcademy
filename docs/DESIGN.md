@@ -242,10 +242,7 @@ The washing machine spins fast, then winds down, and the bits settle into the
 best three- or four-way trade chain: simulated annealing, done by a real
 washing machine. Clamp "I want a hub motor" and it runs backward to find the
 chain that gets you there. Upddayett takes a cut (Biddness); the same machine
-routes restaurant surplus to shelters (Karma). (The "it's not money
-laundering, it's a Boltzmann machine" gag was cut 2026-10-07 with the lesson's
-old name: nothing here is money laundering, so the sign and title say what it
-is.)
+routes restaurant surplus to shelters (Karma).
 
 ### How the machine decides
 
@@ -576,8 +573,7 @@ the player helps it along. A proposal; nothing is built yet.
   - the barn's power budget;
   - time: the market-share curve creeps up night by night.
 - **Open questions:**
-  - the lesson's name ("Lesson 4: Shell Companies (Legally)" echoed
-    Lesson 3's old name; Lesson 3 is now plainly "The Laundromat");
+  - the lesson's name;
   - the cores' names (the brand names above are placeholders);
   - which request first (the barn computer reuses Upddayett's printer);
   - whether heat joins the Salties or replaces them.

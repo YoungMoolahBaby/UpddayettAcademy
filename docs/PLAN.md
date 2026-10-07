@@ -1,6 +1,6 @@
 # Build plan: the few-hour slice
 
-Slice = Lesson 3, **The Laundromat** (named "Money Laundering (Legally)" until 2026-10-07): a laundromat trade computer
+Slice = Lesson 3, **The Laundromat**: a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,
@@ -1007,8 +1007,7 @@ look without watching the window).
   and the i9 `Latch`; `step_sim` advances `speed x frame time / dt` steps
   per frame (cap 5,000) and feeds the latch once per time unit.
 - Scene: checker floor, a row of out-of-order washers, fluorescent tubes,
-  green neon "LAUNDROMAT" (text gizmos, flickers; it read "MONEY LAUNDERING
-  (LEGALLY)" until the user asked for an honest sign, 2026-10-07). The hero
+  green neon "LAUNDROMAT" (text gizmos, flickers). The hero
   washer shakes and its drum spins with the temperature; 14 slap-bit strips
   on top arch up or sag down from live `qpos`; magnet pucks and Hall LEDs
   glow green when on; the i9 on the front panel shows the latched set.
