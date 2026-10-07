@@ -23,7 +23,7 @@
   --row: clamp(130px, 19vw, 200px); /* the buildings' height */
   --rust: var(--pink);   /* older markup's accent hook */
   --display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
-  --gothic: "UnifrakturMaguntia", "Old English Text MT", "Big Shoulders Display", serif;
+  --gothic: "Grenze Gotisch", "Old English Text MT", "Big Shoulders Display", serif;
   --script: "Yellowtail", "Brush Script MT", cursive;
   --body: "Source Serif 4", Georgia, "Times New Roman", serif;
   --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
@@ -70,8 +70,8 @@ sup, sub { line-height: 0; }
 }
 .wordmark { display: flex; align-items: baseline; gap: 0.7rem; text-decoration: none; }
 .wordmark b {
-  font: 400 1.9rem/1 var(--gothic); letter-spacing: 0.01em;
-  background: linear-gradient(180deg, #f3e7d6 0%, #d8c3a8 40%, #8a5a3e 52%, #b8714a 66%, #e7c08a 100%);
+  font: 600 2.1rem/1 var(--gothic); letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #fbf2e4 0%, #ead6bb 45%, #c98a5c 60%, #efcf9c 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 2px 0 #0e080e) drop-shadow(0 0 8px rgba(224, 134, 63, 0.3));
 }
@@ -282,7 +282,7 @@ footer a { color: var(--muted); }
   body { font-size: 1rem; }
   .lede { font-size: 1.08rem; }
   .wordmark span { display: none; }
-  .wordmark b { font-size: 1.6rem; }
+  .wordmark b { font-size: 1.75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero::before, .lowrider .body, .hero:hover .lowrider, .hero:hover .street::after { animation: none; }
