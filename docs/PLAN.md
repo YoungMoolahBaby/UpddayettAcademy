@@ -417,6 +417,44 @@ panel. `UPD_SHOT=1 UPD_PRINT=sled|feeder|bracket|hook` shoots the flow.
 Log whatever the pipeline costs a newcomer: how the two checkers relate,
 units, MJCF round-trip gaps, speed.
 
+## Step 8: bring your own tape (plan, 2026-10-06)
+
+The user's idea, and a theme from here on: **let the player bring their own
+stuff in.** Everyone's taste in music differs, so instead of generated
+music the laundromat has a beat-up boombox with a tape deck, and the
+player drops their own music into it. It's a win for both sides: we ship
+no music, and nobody hears songs they don't like.
+
+- **The boombox:** a cf-design CSG prop on the counter or the TV shelf.
+  It has a cassette window whose two reels spin while it plays, and a
+  label strip showing the track name.
+- **Dropping music in:**
+  - drag audio files (or a folder) onto the game window, or put them in
+    `music/` next to the game (git-ignored);
+  - formats: MP3, Ogg, FLAC, WAV (Bevy features `mp3`, `flac`, `wav`;
+    Ogg is on already);
+  - a dropped file is copied into `music/`, so it's still there next
+    launch. The tape goes in with a clunk.
+- **Controls:**
+  - in the panel: play/pause, next, shuffle, volume;
+  - on the keyboard: M (pause) and N (next);
+  - by clicking the boombox, if it's easy.
+
+  The deck remembers the volume, and it plays nothing until you give it
+  something.
+- **Empty deck:** with no tapes, the label says "BYO TAPE", like the
+  laundromat's other handmade signs.
+- **Volume:** the deck ducks under the ad reel (when ads get sound) and
+  the pug anchors (when 3.2 lands).
+- **CortenForge?** None needed: this is Bevy audio. The prop is cf-design.
+- **The same theme, later (ideas, not planned):**
+  - **bring your own part:** drop an STL onto the window, and the i9 checks
+    it with mesh-io + mesh-printability, then Upddayett prints it as
+    tonight's item. That one is all CortenForge (`load_stl`,
+    `validate_for_printing`).
+  - **bring your own voice:** record the pugs' lines.
+  - **bring your own ad:** an image on PromiseTV.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
@@ -718,11 +756,13 @@ on short programs before).
 - Layout note for 3.5: the Spin Cycle panel is now tall enough to cover
   Sound Guy Ray's portrait card.
 
-### 3.2 The AI's voice (DEFERRED: later, together with generated music)
+### 3.2 The AI's voice (DEFERRED: later)
 
-Deferred 2026-10-05 at the user's call: the voice lines, their delivery and
-music we generate belong together, so this moves to its own later step.
-The design below stands; the current two placeholder lines stay meanwhile.
+Deferred 2026-10-05 at the user's call: the voice lines and their delivery
+belong together, so this moves to its own later step. The design below
+stands; the current two placeholder lines stay meanwhile. **Music is no
+longer ours to generate (user, 2026-10-06):** everyone's taste differs, so
+the player brings their own (see "Step 8: bring your own tape").
 
 - A pure `voice` module in the library (no Bevy, unit-testable): an
   `Outcome` (program, want, at-rest bits, latched bits, best bits, latch
