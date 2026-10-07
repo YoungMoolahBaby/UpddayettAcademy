@@ -4,7 +4,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 use cortenforge::sim::thermostat::WellState;
-use cortenforge_play::trade::{Cycle, Sabotage, World, qubo, salties};
+use cortenforge_play::trade::{Cycle, Sabotage, World, qubo, salties, yuck};
 
 use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
@@ -142,7 +142,10 @@ pub fn panels(
         if let Some(p) = &tv.promise
             && npc.name == "Upddayett"
         {
-            let galley = painter.layout(format!("\"{}\"", p.heckle(&lm.tc.world)), egui::FontId::proportional(13.0), egui::Color32::WHITE, 230.0);
+            // On a night he carries yuck, his heckles turn mean: his only tell.
+            let mean = lm.tc.world.yuck_tax(k) > 0.0;
+            let line = if mean { p.heckle_yucky(&lm.tc.world) } else { p.heckle(&lm.tc.world) };
+            let galley = painter.layout(format!("\"{line}\""), egui::FontId::proportional(13.0), egui::Color32::WHITE, 230.0);
             // Up and to the left: the trade board covers the right.
             let size = galley.size() + egui::vec2(12.0, 8.0);
             let bubble = egui::Rect::from_min_size(at + egui::vec2(-26.0 - size.x, -34.0 - size.y), size);
@@ -197,6 +200,15 @@ pub fn panels(
                         .on_disabled_hover_text("Wait for the drum to stop.");
                     if next.clicked() {
                         lm.next_night();
+                    }
+                    // The TV is a yuck pump; off, it shows nothing (no news, no promises).
+                    let tv = if lm.yuck.tv_on { "TV on" } else { "TV off" };
+                    let flip = ui
+                        .add_enabled(!spinning, egui::Button::new(egui::RichText::new(tv).small()))
+                        .on_hover_text("Switch the TV. Off, it pumps no yuck, but you lose the true numbers on the news and the promises you can check.");
+                    if flip.clicked() {
+                        let on = !lm.yuck.tv_on;
+                        lm.set_tv(on);
                     }
                 });
                 let w = &lm.tc.world;
@@ -420,6 +432,11 @@ pub fn panels(
                         let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
                         let text = format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.");
                         ui.label(egui::RichText::new(text).small().color(GIFT_EGUI));
+                        // Giving lifts the giver (Dunn, Aknin and Norton, 2008): it clears his own yuck.
+                        let upd = lm.tc.world.find_npc("Upddayett");
+                        if upd.is_some_and(|u| lm.yuck.exposed(&lm.tc.world).contains(&u)) {
+                            ui.label(egui::RichText::new("Giving lifts the giver: it cleared the yuck he was carrying.").small().color(GHOST));
+                        }
                     } else if !small {
                         ui.small("Give something away and the drum sends it where it does the most good.");
                     }
@@ -583,6 +600,7 @@ pub fn panels(
         });
     let rules_top = rules.map_or(screen.y, |r| r.response.rect.top());
 
+    let mut ghost_act = None;
     let mut clicked = None;
     egui::Window::new("TRADES")
         .anchor(egui::Align2::RIGHT_TOP, [-12.0, 12.0])
@@ -639,11 +657,16 @@ pub fn panels(
                         ui.end_row();
                     }
                 });
-                ghost_rows(ui, &lm, small);
+                ghost_act = ghost_rows(ui, &lm, small, spinning);
             });
         });
     if clicked.is_some() {
         lm.scope = clicked;
+    }
+    match ghost_act {
+        Some(GhostAct::Call(call)) => lm.call_yuck(call),
+        Some(GhostAct::Cure) => lm.cure_yuck(),
+        None => {}
     }
     // The scope sits bottom center, clear of the board cam and the rules.
     scope(ctx, &mut lm, 12.0);
@@ -657,39 +680,110 @@ trades die. These are trades from tonight's best set that didn't survive, with w
 Nobody gets labeled. Read the map: if the ghosts gather around one person, that's a person. If they gather around \
 everyone with the same chip (hungry, cold), that's a pump, and fixing the pump helps them all.";
 
+/// What the player did in the GHOSTS section.
+enum GhostAct {
+    Call(yuck::Call),
+    Cure,
+}
+
 /// Ghost strips (DESIGN "Yuck: the one enemy"): the trades tonight's yuck
 /// killed, faint, with what they would have paid. Where they cluster is
-/// the map; nobody is labeled.
-fn ghost_rows(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
-    if lm.ghosts.trades.is_empty() {
-        return;
+/// the map; nobody is labeled. Then the call (a person, or a pump?) and,
+/// for a right call, the cure.
+fn ghost_rows(ui: &mut egui::Ui, lm: &Laundromat, small: bool, spinning: bool) -> Option<GhostAct> {
+    if lm.ghosts.trades.is_empty() && lm.call.is_none() {
+        return None;
     }
-    ui.add_space(6.0);
-    let head = if small {
-        format!("GHOSTS: yuck cost {:.0} Goo", lm.ghosts.cost)
-    } else {
-        format!("GHOSTS  -  trades the yuck killed tonight (it cost the street {:.0} Goo)", lm.ghosts.cost)
-    };
-    ui.label(egui::RichText::new(head).small().strong().color(GHOST)).on_hover_text(GHOST_WHY);
     let w = &lm.tc.world;
-    egui::Grid::new("ghosts").num_columns(3).spacing([8.0, 2.0]).show(ui, |ui| {
-        for g in &lm.ghosts.trades {
-            // A dashed outline where a strip's color would be.
-            let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
-            let dash = egui::Stroke::new(1.2, GHOST);
-            for (a, b) in [(rect.left_top(), rect.right_top()), (rect.right_top(), rect.right_bottom()), (rect.right_bottom(), rect.left_bottom()), (rect.left_bottom(), rect.left_top())] {
-                ui.painter().add(egui::Shape::dashed_line(&[a, b], dash, 2.0, 2.0));
+    let mut act = None;
+    ui.add_space(6.0);
+    if !lm.ghosts.trades.is_empty() {
+        let head = if small {
+            format!("GHOSTS: yuck cost {:.0} Goo", lm.ghosts.cost)
+        } else {
+            format!("GHOSTS  -  trades the yuck killed tonight (it cost the street {:.0} Goo)", lm.ghosts.cost)
+        };
+        ui.label(egui::RichText::new(head).small().strong().color(GHOST)).on_hover_text(GHOST_WHY);
+        egui::Grid::new("ghosts").num_columns(3).spacing([8.0, 2.0]).show(ui, |ui| {
+            for g in &lm.ghosts.trades {
+                // A dashed outline where a strip's color would be.
+                let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
+                let dash = egui::Stroke::new(1.2, GHOST);
+                for (a, b) in [(rect.left_top(), rect.right_top()), (rect.right_top(), rect.right_bottom()), (rect.right_bottom(), rect.left_bottom()), (rect.left_bottom(), rect.left_top())] {
+                    ui.painter().add(egui::Shape::dashed_line(&[a, b], dash, 2.0, 2.0));
+                }
+                ui.label(egui::RichText::new(format!("{:>2.0} Goo", g.goo())).italics().color(GHOST));
+                let text = if small { initials_chain(g, w) } else { g.short(w) };
+                ui.label(egui::RichText::new(text).small().italics().color(GHOST))
+                    .on_hover_text(format!("{}.\nWould have paid: {}\nTonight it doesn't happen.", g.describe(w), g.gains_text(w)));
+                ui.end_row();
             }
-            ui.label(egui::RichText::new(format!("{:>2.0} Goo", g.goo())).italics().color(GHOST));
-            let text = if small { initials_chain(g, w) } else { g.short(w) };
-            ui.label(egui::RichText::new(text).small().italics().color(GHOST))
-                .on_hover_text(format!("{}.\nWould have paid: {}\nTonight it doesn't happen.", g.describe(w), g.gains_text(w)));
-            ui.end_row();
-        }
-    });
-    if !small {
-        ui.label(egui::RichText::new("Where do the ghosts gather: around one person, or around everyone with the same chip?").small().color(GHOST));
+        });
     }
+    let pump_name = |p: &str| match p {
+        "hungry" => "hunger",
+        "cold" => "the cold",
+        _ => "the TV",
+    };
+    match lm.call {
+        None => {
+            if !small {
+                ui.label(egui::RichText::new("Where do the ghosts gather: around one person, or around everyone with the same chip?").small().color(GHOST));
+            }
+            // The call: anyone on a ghost strip, or a pump. One a night.
+            let mut people: Vec<usize> = lm.ghosts.trades.iter().flat_map(|g| g.legs.iter().map(|l| l.to)).collect();
+            people.sort_unstable();
+            people.dedup();
+            let warn = "One call a night. Right, and you can cure it. Wrong, and the blame spreads the yuck to Upddayett.";
+            ui.horizontal_wrapped(|ui| {
+                ui.label(egui::RichText::new("Call it:").small().strong().color(GHOST));
+                for k in people {
+                    let label = if small { initials(w.npcs[k].name) } else { w.npcs[k].name.to_string() };
+                    if ui.add_enabled(!spinning, egui::Button::new(egui::RichText::new(label).small())).on_hover_text(warn).clicked() {
+                        act = Some(GhostAct::Call(yuck::Call::Person(k)));
+                    }
+                }
+                ui.label(egui::RichText::new("or a pump:").small().color(GHOST));
+                for p in yuck::PUMPS {
+                    if ui.add_enabled(!spinning, egui::Button::new(egui::RichText::new(pump_name(p)).small())).on_hover_text(warn).clicked() {
+                        act = Some(GhostAct::Call(yuck::Call::Pump(p)));
+                    }
+                }
+            });
+        }
+        Some((call, true)) => {
+            let (said, cure) = match call {
+                yuck::Call::Person(k) => (
+                    "Right: one person.".to_string(),
+                    format!("Treat {} kindly: a fair trade and a can of Goo. No label.", w.npcs[k].name),
+                ),
+                yuck::Call::Pump(p) => (
+                    format!("Right: it's {}, a pump.", pump_name(p)),
+                    match p {
+                        "hungry" => "Ask Amir to feed everyone tonight.".to_string(),
+                        "cold" => "Open the Suds & Duds as a warming room.".to_string(),
+                        _ => "Switch the TV off.".to_string(),
+                    },
+                ),
+            };
+            ui.label(egui::RichText::new(said).small().strong().color(egui::Color32::from_rgb(120, 230, 120)));
+            if lm.cured {
+                ui.label(egui::RichText::new(format!("Cured: {:.0} Goo of trades came back.", lm.restored)).small().color(egui::Color32::from_rgb(120, 230, 120)));
+            } else if ui.add_enabled(!spinning, egui::Button::new(egui::RichText::new(cure).small())).clicked() {
+                act = Some(GhostAct::Cure);
+            }
+        }
+        Some((call, false)) => {
+            let truth = match (&lm.yuck.source, call) {
+                (yuck::Source::Pump(_), yuck::Call::Person(_)) => "It wasn't one person: look at the chips.".to_string(),
+                (yuck::Source::Pump(_), yuck::Call::Pump(p)) => format!("It wasn't {}.", pump_name(p)),
+                (_, yuck::Call::Pump(_)) => "It wasn't a pump.".to_string(),
+                (_, yuck::Call::Person(_)) => "It wasn't them.".to_string(),
+            };
+            ui.label(egui::RichText::new(format!("Wrong. {truth} Blaming is yuck too: it spread to Upddayett.")).small().color(egui::Color32::from_rgb(255, 150, 120)));
+        }
+    }
+    act
 }
 
 /// THE i9 CALLS IT: the trades it latched, the totals, and the AI's lines.

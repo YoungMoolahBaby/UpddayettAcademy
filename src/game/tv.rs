@@ -207,7 +207,13 @@ pub fn update(
     let brag = lm.sabotage().and_then(|s| s.brag());
 
     let gold = Color::srgb(1.0, 0.8, 0.2);
+    // Switched off (a yuck pump fix): a dark screen, no news, no promises.
+    let off = || (String::new(), String::new(), String::new(), String::new(), String::new(), [Color::BLACK; 3]);
     let (logo, bug, big, sub, ticker, colors) = match channel {
+        _ if !lm.yuck.tv_on => {
+            tv.promise = None;
+            off()
+        }
         Channel::Shrug => {
             tv.promise = None;
             let news = tv::shrug(w, lm.tc.cycles.len() - gifts, brag);

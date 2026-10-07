@@ -585,8 +585,81 @@ The user asked for the ghost strips in the game.
   touches a carrier).
 - **Note:** game boards on yucky nights are smaller and easier than the
   clean ones the program labels ("i9 best 81%") were measured on.
-- **Not built yet:** the person-or-pump call, spread along trades,
-  Upddayett giving to cure his own, and the TV's off switch.
+- **Built next, the same evening:** the rest of the yuck (below).
+
+### Yuck, finished (2026-10-06)
+
+The user: "lets finish everything". `yuck::Yuck` holds tonight's source,
+who caught it last night, who's cured, whether the pump is fixed, and
+the TV switch. The game keeps it in `Laundromat::yuck`.
+- **The call** (`Laundromat::call_yuck`, one a night, under the ghost
+  rows): name anyone on a ghost strip, or a pump (hunger, the cold, the
+  TV).
+  - A person call is right only if that person carries it as a person.
+    Blaming one of a pump's hungry people is wrong: the Cohen-Cole and
+    Fletcher lesson (`Yuck::check`).
+  - A wrong call spreads the yuck to Upddayett, the caller. The game says
+    which kind it wasn't, never who.
+- **The cures** (`cure_yuck`, after a right call):
+  - a person: "Treat {name} kindly: a fair trade and a can of Goo. No
+    label.";
+  - hunger: "Ask Amir to feed everyone tonight.";
+  - the cold: "Open the Suds & Duds as a warming room.";
+  - the TV: "Switch the TV off."
+
+  It shows "Cured: N Goo of trades came back." On night 1, the hunger cure
+  restored 24 Goo and the TV cure 22.
+- **The TV pump:** the TV is now a pump (one pump night in three). It
+  touches whoever faces the screen, `world::TV_WATCHERS`: Upddayett,
+  Shopping-Cart Guy and Librarian Tamara.
+  - The night banner has a "TV on / TV off" switch.
+  - Off, the screen goes black, PromiseTV's heckles stop, and the TV
+    pumps nothing. You lose the true numbers and the checkable promises.
+  - The switch carries over to the next night.
+- **Spread** (`yuck::spread`): after a cycle, each person in a chosen
+  *trade* with a carrier catches it for tomorrow, one in two (a coin from
+  the night). Gifts don't spread it.
+- **Giving cures the giver:** when Upddayett gives something away, his
+  own yuck goes (Dunn, Aknin and Norton, 2008). The give panel says
+  "Giving lifts the giver: it cleared the yuck he was carrying."
+- **Upddayett's tell:** on nights he carries yuck, his PromiseTV heckles
+  turn mean (`Promise::heckle_yucky`, the same lines for every
+  candidate). It's the player's only hint about themselves.
+- **Checks:**
+  - `UPD_CALL=hungry|cold|tv|<name>` makes the call and shoots
+    `yuck_1_call`, then cures and shoots `yuck_2_cured`, then runs the
+    cycle.
+  - Night 1 shots: the hunger pump called right, then cured; the hunger
+    pump blamed on Vape Lady (wrong); the TV pump called right (dark
+    screen, 11 trades back).
+  - Tests: `the_call_and_the_cures`, `it_spreads_along_trades_not_gifts`,
+    and the roll (a third each, the TV about a third of pumps).
+- **Known:** on a finished cycle the call row sits below the i9's call in
+  the TRADES scroll. It's reachable, but you have to scroll.
+
+## Next arcs (the user, 2026-10-06)
+
+1. **How to play, built together.** Once everything's finished, we make
+   an in-game how-to-play resource with visuals, and use it to explain
+   everything to the user as we go: a tutorial arc written *with* the
+   user, not for them. Likely pieces:
+   - a guided first night;
+   - picture cards for each system (the drum and strips, Goo and Karma,
+     wants and gifts, the counter, the Salties, prints, the tape deck,
+     yuck and ghosts);
+   - the HOW IT WORKS panel growing into it.
+2. **Third person, with missions** (the user: "the game will be like
+   gta/skyrim a bit where we do missions and its like 3rd person").
+   - You walk Upddayett around Market St in third person instead of
+     watching from a fixed camera.
+   - Missions are the work the game already has: Pigeon Lady's letters
+     and the cores' requests (Lesson 4), prints, deliveries, curing
+     yuck, defending against the Salties.
+   - The laundromat becomes one location among several (the library,
+     Amir's kitchen, the bike kitchen, the farm).
+   - To settle when we get there: the controls, how the camera follows,
+     how big the street is, and how missions are given and tracked. The
+     drum stays the heart: the missions feed the board.
 
 ## Backlog (2026-10-06; not planned yet, best first)
 

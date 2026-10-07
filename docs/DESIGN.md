@@ -674,6 +674,9 @@ of power.
     blamed for bringing AIDS to North America. Worobey's 2016 study in
     *Nature* showed he didn't; the virus had reached New York around 1970.
 - **Decided** (the user left these to us, 2026-10-06):
+  - **All of it is built** (PLAN "Yuck, finished"): the call, the cures,
+    the TV pump and switch, spread along trades, giving cures the giver,
+    and the mean heckles as Upddayett's tell.
   - **Diagnosis works through ghost strips** (built: PLAN "Ghost strips,
     built"). The i9 knows what tonight's
     board would be without the yuck, so it shows the trades that *didn't*

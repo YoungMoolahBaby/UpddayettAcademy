@@ -32,6 +32,7 @@ pub fn drive(
     mut shop: ResMut<super::printer::PrintShop>,
     mut printing: Local<u8>,
     mut set_up: Local<bool>,
+    mut calling: Local<u8>,
 ) {
     use super::printer::{PRINT_SECS, Stage};
     // The drum's model takes ~12 s to build; start once it tumbles.
@@ -83,6 +84,48 @@ pub fn drive(
             3 if shop.stage == Stage::Done => {
                 shot(&mut commands, "print_3_done");
                 *printing = 4;
+                *frame = 0;
+            }
+            _ => {}
+        }
+        return;
+    }
+    // UPD_CALL=hungry|cold|tv|<name>: make the yuck call on tonight's ghosts, picture
+    // it, cure it if it was right, picture that, then run the cycle.
+    if f >= 30
+        && *calling != 9
+        && let Ok(what) = std::env::var("UPD_CALL")
+    {
+        let shot = |commands: &mut Commands, name: &str| {
+            std::fs::create_dir_all("shots").ok();
+            commands.spawn(Screenshot::primary_window()).observe(save_to_disk(format!("shots/{name}.png")));
+        };
+        match *calling {
+            0 => {
+                let call = match what.as_str() {
+                    "hungry" => Some(cortenforge_play::trade::yuck::Call::Pump("hungry")),
+                    "cold" => Some(cortenforge_play::trade::yuck::Call::Pump("cold")),
+                    "tv" => Some(cortenforge_play::trade::yuck::Call::Pump("tv")),
+                    name => lm.tc.world.find_npc(name).map(cortenforge_play::trade::yuck::Call::Person),
+                };
+                match call {
+                    Some(c) => lm.call_yuck(c),
+                    None => error!("UPD_CALL: no customer like {what:?} (or hungry, cold, tv)"),
+                }
+                *since = f;
+                *calling = 1;
+            }
+            1 if f >= *since + 10 => {
+                shot(&mut commands, "yuck_1_call");
+                *calling = 2;
+            }
+            2 if f >= *since + 20 => {
+                lm.cure_yuck();
+                *calling = 3;
+            }
+            3 if f >= *since + 30 => {
+                shot(&mut commands, "yuck_2_cured");
+                *calling = 9;
                 *frame = 0;
             }
             _ => {}

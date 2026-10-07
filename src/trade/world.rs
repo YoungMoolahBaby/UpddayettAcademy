@@ -295,12 +295,14 @@ impl World {
     }
 
     /// Who a pump makes yucky tonight: `"hungry"` (hangry), `"cold"` (out in
-    /// the cold), or nobody for a pump that isn't running.
+    /// the cold), `"tv"` (whoever faces the TV, [`TV_WATCHERS`]), or nobody
+    /// for a pump that isn't running.
     pub fn pump(&self, pump: &str) -> Vec<usize> {
         (0..self.npcs.len())
             .filter(|&k| match pump {
                 "hungry" => self.night.hungry[k],
                 "cold" => self.night.cold && self.npcs[k].sleeps_out,
+                "tv" => TV_WATCHERS.contains(&self.npcs[k].name),
                 _ => false,
             })
             .collect()
@@ -321,6 +323,9 @@ impl World {
         self.items.iter().position(|i| i.name.to_lowercase().contains(&name))
     }
 }
+
+/// The regulars who face the TV from where they stand (Upddayett heckles it).
+pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Shopping-Cart Guy", "Librarian Tamara"];
 
 /// The regulars at the Suds & Duds on Market Street, on night `seed`. Values
 /// are in Goo: what a can of Mtn Goo (the neon-green parody soda) is worth

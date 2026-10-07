@@ -91,6 +91,14 @@ pub struct Laundromat {
     pub printed: Option<usize>,
     /// Trades tonight's yuck killed (the ghost strips), and what it cost.
     pub ghosts: yuck::Ghosts,
+    /// Tonight's yuck: its source, who caught it last night, the cures.
+    pub yuck: yuck::Yuck,
+    /// The player's call on the ghosts tonight (one a night), and whether it was right.
+    pub call: Option<(yuck::Call, bool)>,
+    /// The cure for a right call is done.
+    pub cured: bool,
+    /// Goo of trades the cure brought back tonight (the karma of it).
+    pub restored: f64,
 }
 
 /// One scope sample: sim time, the drum's kT, every strip's deflection.
@@ -152,25 +160,37 @@ fn clean_world(night: u64, give: Option<usize>, battery: bool, printed: Option<u
     w
 }
 
-/// Tonight's yuck (DESIGN "Yuck: the one enemy"): rolled from the night, or
-/// `UPD_YUCK=clean|hungry|cold|upd,vape` for checking.
-fn yucky_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> (world::World, yuck::Source) {
-    yuck::tonight(clean_world(night, give, battery, printed), std::env::var("UPD_YUCK").ok().as_deref())
+/// Night `night`'s yuck (DESIGN "Yuck: the one enemy"): rolled from the
+/// night, or `UPD_YUCK=clean|hungry|cold|tv|upd,vape` for checking.
+fn roll_yuck(night: u64) -> yuck::Yuck {
+    let w = world::laundromat(night);
+    std::env::var("UPD_YUCK").ok().and_then(|s| yuck::Yuck::parse(&s, &w)).unwrap_or_else(|| yuck::Yuck::roll(&w))
+}
+
+/// The night's world with `yuck` on it. Giving something away cures
+/// Upddayett's own: giving lifts the giver.
+fn yucky_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> world::World {
+    let mut w = clean_world(night, give, battery, printed);
+    let mut y = yuck.clone();
+    if give.is_some() {
+        y.cured.push(upddayett(&w));
+    }
+    y.apply(&mut w);
+    w
 }
 
 /// Tonight's trade computer: the night's world with its yuck.
-fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
-    TradeComputer::new(yucky_world(night, give, battery, printed).0, 5.0, 1.6)
+fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> TradeComputer {
+    TradeComputer::new(yucky_world(night, give, battery, printed, yuck), 5.0, 1.6)
 }
 
 /// [`board_for`], logged, with the ghosts: the trades tonight's yuck killed,
 /// against the same board without it.
-fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> (TradeComputer, yuck::Ghosts) {
-    let (w, source) = yucky_world(night, give, battery, printed);
-    let tc = TradeComputer::new(w, 5.0, 1.6);
+fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> (TradeComputer, yuck::Ghosts) {
+    let tc = board_for(night, give, battery, printed, yuck);
     let ghosts = yuck::Ghosts::find(&TradeComputer::new(clean_world(night, give, battery, printed), 5.0, 1.6), &tc);
-    let carriers: Vec<&str> = source.carriers(&tc.world).iter().map(|&k| tc.world.npcs[k].name).collect();
-    info!("yuck: {source:?} (carriers {carriers:?}), {} ghost trade(s), cost {:.0} Goo", ghosts.trades.len(), ghosts.cost);
+    let carriers: Vec<&str> = (0..tc.world.npcs.len()).filter(|&k| tc.world.yuck_tax(k) > 0.0).map(|k| tc.world.npcs[k].name).collect();
+    info!("yuck: {:?} (carriers now {carriers:?}), {} ghost trade(s), cost {:.0} Goo", yuck.source, ghosts.trades.len(), ghosts.cost);
     let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
     info!(
         "night {night} (UPD_SEED={night} replays it): {}{}{}{}, {} trades + {gifts} gifts{}",
@@ -202,7 +222,8 @@ impl Laundromat {
         let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let (tc, ghosts) = open(night, None, false, None);
+        let yuck = roll_yuck(night);
+        let (tc, ghosts) = open(night, None, false, None, &yuck);
         let machine = tc.machine(physics, night).expect("build the slap-bit board");
         let mut lm = Self {
             want_menu: vec![],
@@ -229,6 +250,10 @@ impl Laundromat {
             printed: None,
             tc,
             ghosts,
+            yuck,
+            call: None,
+            cured: false,
+            restored: 0.0,
             machine,
             physics,
             anneal: Anneal::default(),
@@ -449,7 +474,7 @@ impl Laundromat {
         self.give_menu = kept.giveable(upd).into_iter().map(|item| (item, kept.value[upd][item])).collect();
         // What the battery takes off tonight's best set.
         let best = |tc: &TradeComputer| tc.evaluate(tc.forward_best).0;
-        self.battery_cost = (best(&board_for(self.night, self.give, false, self.printed)) - best(&board_for(self.night, self.give, true, self.printed))).max(0.0);
+        self.battery_cost = (best(&board_for(self.night, self.give, false, self.printed, &self.yuck)) - best(&board_for(self.night, self.give, true, self.printed, &self.yuck))).max(0.0);
         self.ground = tc.ground_state();
         self.activity = vec![0.0; tc.cycles.len()];
         // The smart Salties scout the board as it stands (they don't see wants).
@@ -462,10 +487,71 @@ impl Laundromat {
         if matches!(self.mode, Mode::Cycle { .. }) {
             return;
         }
+        // Yuck spreads along tonight's trades (if the drum ran) into tomorrow.
+        let caught = if self.mode == Mode::Done {
+            let trades: Vec<_> = cortenforge_play::trade::qubo::chosen(self.latch.best_bits, self.n()).into_iter().map(|i| &self.tc.cycles[i]).collect();
+            let carriers: Vec<usize> = (0..self.tc.world.npcs.len()).filter(|&k| self.tc.world.yuck_tax(k) > 0.0).collect();
+            yuck::spread(&carriers, &trades, self.night)
+        } else {
+            vec![]
+        };
         self.night += 1;
         // One print a night: tomorrow's board starts without it.
         self.printed = None;
         self.seed = self.night;
+        let tv_on = self.yuck.tv_on;
+        self.yuck = roll_yuck(self.night);
+        self.yuck.spread = caught;
+        self.yuck.tv_on = tv_on;
+        self.call = None;
+        self.cured = false;
+        self.restored = 0.0;
+        self.reopen();
+    }
+
+    /// The player's call on tonight's ghosts: a person, or a pump? One a
+    /// night. A wrong call is yuck itself: blaming spreads it to the caller.
+    pub fn call_yuck(&mut self, call: yuck::Call) {
+        if matches!(self.mode, Mode::Cycle { .. }) || self.call.is_some() || self.ghosts.trades.is_empty() {
+            return;
+        }
+        let right = self.yuck.check(call);
+        if !right {
+            let upd = upddayett(&self.tc.world);
+            if !self.yuck.spread.contains(&upd) {
+                self.yuck.spread.push(upd);
+            }
+        }
+        self.call = Some((call, right));
+        info!("yuck call {call:?}: {}", if right { "right" } else { "wrong (Upddayett caught it)" });
+        self.reopen();
+    }
+
+    /// Act on a right call: treat the person kindly (no label), or fix the
+    /// pump (feed everyone, open the warming room, or switch the TV off).
+    pub fn cure_yuck(&mut self) {
+        let (Some((call, true)), false) = (self.call, self.cured) else { return };
+        if matches!(self.mode, Mode::Cycle { .. }) {
+            return;
+        }
+        let before = self.ghosts.cost;
+        match call {
+            yuck::Call::Person(k) => self.yuck.cured.push(k),
+            yuck::Call::Pump("tv") => self.yuck.tv_on = false,
+            yuck::Call::Pump(_) => self.yuck.pump_fixed = true,
+        }
+        self.cured = true;
+        self.reopen();
+        self.restored = (before - self.ghosts.cost).max(0.0);
+        info!("yuck cured: {:.0} Goo of trades came back", self.restored);
+    }
+
+    /// Switch the TV on or off. Off it pumps no yuck, and shows nothing.
+    pub fn set_tv(&mut self, on: bool) {
+        if matches!(self.mode, Mode::Cycle { .. }) || self.yuck.tv_on == on {
+            return;
+        }
+        self.yuck.tv_on = on;
         self.reopen();
     }
 
@@ -505,7 +591,7 @@ impl Laundromat {
         if self.give.is_some_and(|item| !tonight.giveable(upd).contains(&item)) {
             self.give = None;
         }
-        (self.tc, self.ghosts) = open(self.night, self.give, self.battery, self.printed);
+        (self.tc, self.ghosts) = open(self.night, self.give, self.battery, self.printed, &self.yuck);
         self.idle = None;
         self.cut_at = None;
         self.spin_check = SpinCheck::default();

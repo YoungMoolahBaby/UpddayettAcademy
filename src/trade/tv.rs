@@ -110,6 +110,17 @@ impl Promise {
             k => format!("Who's giving them up, {}? There are {k}.", self.nick),
         }
     }
+
+    /// The heckle on a night Upddayett carries yuck himself: meaner, about
+    /// people instead of the promise. It's his only tell (DESIGN "Yuck: the
+    /// one enemy"). Every candidate gets the same lines.
+    pub fn heckle_yucky(&self, w: &World) -> String {
+        let owner = w.npcs[w.items[self.item].owner].name;
+        match self.supply(w) {
+            1 => format!("Sure, {}. Just take {owner}'s. Nobody cares about {owner} anyway.", self.nick),
+            k => format!("{k} of them and {} wants to hand them to idiots. Typical.", self.nick),
+        }
+    }
 }
 
 #[cfg(test)]
