@@ -750,7 +750,7 @@ GitHub Pages. It's `site/`, static HTML with one shared stylesheet.
   model risk.
 
 **Status:**
-- **Look (user, 2026-10-07): "west coast whistly"**: 90s G-funk. A dusk sunset band with palms and a low sun on every page, the whistle (a gliding sine) across the sky and as the section dividers, a chrome Old English wordmark (UnifrakturMaguntia), script numerals (Yellowtail), neon-gold headings and a car-stereo LCD readout. It is one deliberate dark look; the figures stay on white plates in chrome frames. No real logos and no gang or drug imagery.
+- **Look (user, 2026-10-07): "west coast whistly"**: 90s G-funk. A dusk sunset band with palms and a low sun on every page, the whistle (a gliding sine) across the sky and as the section dividers, a chrome Old English wordmark (UnifrakturMaguntia), script numerals (Yellowtail), neon-gold headings and a car-stereo LCD readout, palms that sway, and a lowrider in front of the sun that pumps its hydraulics every 7 s and hops while the band is hovered (all off under reduced motion). It is one deliberate dark look; the figures stay on white plates in chrome frames. No real logos and no gang or drug imagery.
 - **Live (2026-10-07):** https://youngmoolahbaby.github.io/UpddayettAcademy/, deployed by the Pages workflow on every push to `site/`. The user is keeping upddayettacademy.com reserved for later, so the custom domain and `site/CNAME` were removed. To move to the domain: set it in the Pages settings, add the DNS records (4 A records for GitHub Pages plus a `www` CNAME) and put back the absolute paths in `404.html` and the `og:image` URLs.
 - **Built:**
   - The workflow is manual until then.
