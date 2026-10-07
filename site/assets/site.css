@@ -1,40 +1,57 @@
-/* Upddayett Academy, West Coast edition: a dusk sky over Market St.
-   Layout: one reading column of ~66ch under a full-width sunset band; figures
-   break out wider as white plates in chrome frames. The whistle (a gliding
+/* Upddayett Academy: the West Coast as a Midwesterner pictures it with the
+   whistle on and the lyrics off. A hazy dusk over a county road: a grain
+   elevator, a water tower, power lines swaying in the wind, a lowered sedan
+   on the shoulder, film grain over everything.
+   Layout: one reading column of ~66ch under a full-width dusk band; figures
+   break out wider as white plates in steel frames. The whistle (a gliding
    sine, the G-funk lead and the strips' own motion) divides the sections.
    One deliberate look, dark at dusk in every theme. */
 :root {
   color-scheme: dark;
-  --night: #170b25;      /* the sky after sundown: page ground */
-  --surface: #241338;    /* cards, code, asides */
-  --ink: #f7ead6;        /* warm streetlight cream */
-  --muted: #bba7cc;
-  --rule: #4b2f66;
-  --sun: #ff8a3d;        /* sunset orange */
-  --pink: #ff4f9a;       /* the neon */
-  --gold: #ffc94a;       /* pinstripes, the whistle */
-  --teal: #3ee0c8;       /* pool water, the car-stereo LCD */
+  --night: #17111a;      /* dusk over a county road: page ground */
+  --surface: #241b25;    /* cards, code, asides */
+  --ink: #efe3d0;        /* porch-light cream */
+  --muted: #b3a399;
+  --rule: #4a3a42;
+  --sun: #e0863f;        /* a hazy sunset */
+  --pink: #e2647f;       /* dusty neon */
+  --gold: #e9b94e;       /* the whistle, pinstripes */
+  --teal: #6cc7b2;       /* the car-stereo LCD */
   --plate: #ffffff;      /* figures are drawn on white */
-  --goo: #7fe04a;
+  --goo: #8fd65a;
+  --sil: #140c14;        /* everything against the sky */
   --rust: var(--pink);   /* older markup's accent hook */
   --display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   --gothic: "UnifrakturMaguntia", "Old English Text MT", "Big Shoulders Display", serif;
   --script: "Yellowtail", "Brush Script MT", cursive;
   --body: "Source Serif 4", Georgia, "Times New Roman", serif;
   --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
-  --whistle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='14' viewBox='0 0 160 14'%3E%3Cpath d='M0 7 C10 0 20 0 30 7 S50 14 60 7 S76 0 84 7 S96 14 102 7 S110 0 114 7 S120 14 124 7 S130 0 134 7 S146 14 160 7' fill='none' stroke='%23ffc94a' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
-  --palm: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'%3E%3Cg fill='%2312071c'%3E%3Cpath d='M98 300 C104 230 94 160 106 92 L113 92 C103 160 112 230 110 300 Z'/%3E%3Cpath d='M110 90 Q62 58 8 86 Q62 70 110 95 Z'/%3E%3Cpath d='M110 90 Q154 50 198 66 Q152 62 110 95 Z'/%3E%3Cpath d='M110 90 Q84 30 44 18 Q88 42 110 95 Z'/%3E%3Cpath d='M110 90 Q134 24 172 14 Q134 42 110 95 Z'/%3E%3Cpath d='M110 90 Q70 92 42 142 Q82 102 110 97 Z'/%3E%3Cpath d='M110 90 Q152 96 178 142 Q142 104 110 97 Z'/%3E%3C/g%3E%3C/svg%3E");
+  --whistle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='14' viewBox='0 0 160 14'%3E%3Cpath d='M0 7 C10 0 20 0 30 7 S50 14 60 7 S76 0 84 7 S96 14 102 7 S110 0 114 7 S120 14 124 7 S130 0 134 7 S146 14 160 7' fill='none' stroke='%23e9b94e' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* A country elevator: four silos, the gallery across their tops, the head house, a spout. */
+  --elevator: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 200'%3E%3Cg fill='%23140c14'%3E%3Crect x='10' y='60' width='34' height='140'/%3E%3Crect x='46' y='60' width='34' height='140'/%3E%3Crect x='82' y='60' width='34' height='140'/%3E%3Crect x='118' y='60' width='34' height='140'/%3E%3Crect x='10' y='48' width='146' height='12'/%3E%3Crect x='156' y='10' width='44' height='190'/%3E%3Crect x='152' y='4' width='52' height='8'/%3E%3Crect x='200' y='148' width='38' height='52'/%3E%3C/g%3E%3Cpath d='M200 34 L236 128' stroke='%23140c14' stroke-width='3'/%3E%3Crect x='169' y='40' width='6' height='8' fill='%23e9b94e' opacity='.75'/%3E%3Crect x='183' y='96' width='6' height='8' fill='%23e9b94e' opacity='.5'/%3E%3C/svg%3E");
+  /* A water tower: cone roof, tank, bowl, four legs, braces, the riser. */
+  --tower: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 220'%3E%3Cg fill='%23140c14'%3E%3Cpath d='M12 44 L60 14 L108 44 Z'/%3E%3Crect x='18' y='42' width='84' height='40' rx='4'/%3E%3Cpath d='M18 80 Q60 104 102 80 Z'/%3E%3Crect x='58' y='4' width='4' height='12'/%3E%3C/g%3E%3Cg stroke='%23140c14' fill='none'%3E%3Cpath d='M26 86 L10 220 M46 92 L38 220 M74 92 L82 220 M94 86 L110 220' stroke-width='3.5'/%3E%3Cpath d='M60 98 L60 220' stroke-width='5'/%3E%3Cpath d='M16 170 L42 128 L78 128 L104 170 M22 128 L40 170 L80 170 L98 128' stroke-width='1.6'/%3E%3C/g%3E%3C/svg%3E");
+  /* One wooden pole with its crossarm, every 300 units along the road. */
+  --pole: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200'%3E%3Cg fill='%23140c14'%3E%3Crect x='38' y='40' width='4' height='160'/%3E%3Crect x='20' y='46' width='40' height='3'/%3E%3Crect x='23' y='42' width='2' height='5'/%3E%3Crect x='39' y='42' width='2' height='5'/%3E%3Crect x='55' y='42' width='2' height='5'/%3E%3C/g%3E%3C/svg%3E");
+  /* Three wires from pole to pole, sagging (the part of the last span that shows, too). */
+  --wires: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60' preserveAspectRatio='none'%3E%3Cpath d='M24 2 Q174 40 324 2 M-276 2 Q-126 40 24 2 M40 2 Q190 44 340 2 M-260 2 Q-110 44 40 2 M56 2 Q206 38 356 2 M-244 2 Q-94 38 56 2' fill='none' stroke='%23140c14' stroke-width='1.2'/%3E%3C/svg%3E");
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; color: var(--ink); font: 400 1.08rem/1.65 var(--body);
-  background: var(--night);
-  background-image: radial-gradient(120% 60% at 50% 0%, #2c1244 0%, var(--night) 70%);
+  background-color: var(--night);
+  background-image: radial-gradient(120% 60% at 50% 0%, #2a1d29 0%, var(--night) 70%);
   background-repeat: no-repeat;
 }
-::selection { background: var(--pink); color: #1a0a20; }
+/* Film grain over the whole page. */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  background: var(--grain); opacity: 0.07; mix-blend-mode: overlay;
+}
+::selection { background: var(--pink); color: #1a0f16; }
 img { max-width: 100%; }
 .page { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 0 64px; }
 .col { max-width: min(66ch, 100%); margin-inline: auto; width: 100%; }
@@ -42,17 +59,17 @@ h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.05;
 h1 { font-size: clamp(2.5rem, 7vw, 4.4rem); font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; }
 h2 {
   font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
-  color: var(--gold); text-shadow: 0 0 18px rgba(255, 79, 154, 0.45);
+  color: var(--gold); text-shadow: 0 0 16px rgba(226, 100, 127, 0.3);
 }
 h3 { font-size: 1.35rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
 p { margin: 0; }
-a { color: var(--gold); text-decoration-color: rgba(255, 201, 74, 0.5); text-underline-offset: 3px; }
+a { color: var(--gold); text-decoration-color: rgba(233, 185, 78, 0.5); text-underline-offset: 3px; }
 a:hover { color: var(--pink); text-decoration-color: var(--pink); }
 a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
-strong { font-weight: 600; color: #fff4e2; }
+strong { font-weight: 600; color: #f8ecd9; }
 sup, sub { line-height: 0; }
 
-/* Site header: chrome Old English wordmark, pinstriped underneath */
+/* Site header: weathered-steel Old English wordmark, pinstriped underneath */
 .site-head {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1.4rem;
   padding-block: 20px 16px; margin-bottom: 0;
@@ -61,9 +78,9 @@ sup, sub { line-height: 0; }
 .wordmark { display: flex; align-items: baseline; gap: 0.7rem; text-decoration: none; }
 .wordmark b {
   font: 400 1.9rem/1 var(--gothic); letter-spacing: 0.01em;
-  background: linear-gradient(180deg, #ffffff 0%, #e9e4f2 42%, #8f86a3 52%, #fdf2d8 62%, #ffc94a 100%);
+  background: linear-gradient(180deg, #f3e7d6 0%, #d8c3a8 40%, #8a5a3e 52%, #b8714a 66%, #e7c08a 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 2px 0 #12071c) drop-shadow(0 0 10px rgba(255, 79, 154, 0.35));
+  filter: drop-shadow(0 2px 0 #0e080e) drop-shadow(0 0 8px rgba(224, 134, 63, 0.3));
 }
 .wordmark span { font: 400 1.25rem/1 var(--script); color: var(--pink); letter-spacing: 0.01em; text-transform: none; }
 .nav { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; font: 600 0.8rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
@@ -83,44 +100,60 @@ section {
   background: var(--whistle) center top / 160px 14px repeat-x;
 }
 
-/* The sunset band: dusk at the top, the sun going down behind the palms */
+/* The dusk band: a hazy sun going down behind the county road */
 .eyebrow { font: 600 0.78rem/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); }
 .hero.col { max-width: 100%; }
 .hero {
   position: relative; overflow: hidden; isolation: isolate;
   display: flex; flex-direction: column; gap: 1.1rem;
   margin-block: 1.4rem 2.2rem; padding: clamp(1.6rem, 4vw, 2.8rem) clamp(1.1rem, 4vw, 3rem) clamp(150px, 20vw, 210px);
-  border-radius: 10px; border: 1px solid #5a3a72;
+  border-radius: 10px; border: 1px solid var(--rule);
   background:
-    linear-gradient(180deg, transparent calc(100% - 12px), #12071c calc(100% - 12px)),
-    radial-gradient(circle at 50% 100%, #ffe08a 0, #ffc94a 64px, #ff8a3d 66px, rgba(255, 138, 61, 0.55) 120px, rgba(255, 79, 154, 0) 260px),
-    linear-gradient(180deg, #1d0d30 0%, #351450 38%, #7a1f63 64%, #d83f78 82%, #ff8a3d 96%);
+    linear-gradient(180deg, transparent calc(100% - 12px), var(--sil) calc(100% - 12px)),
+    linear-gradient(180deg, transparent 72%, rgba(232, 172, 110, 0.22) 94%, transparent 100%),
+    radial-gradient(circle at 60% 100%, #f6d08a 0, #eebb6a 56px, #e0863f 60px, rgba(224, 134, 63, 0.45) 120px, rgba(169, 80, 62, 0) 250px),
+    linear-gradient(180deg, #1e1620 0%, #3a2533 36%, #6d3540 60%, #a9503e 78%, #d4843f 92%, #e3a25a 100%);
+}
+/* Grain on the band, a little heavier than the page. */
+.hero::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: var(--grain); opacity: 0.16; mix-blend-mode: overlay;
 }
 /* The whistle across the sky, gliding slowly */
 .hero::before {
-  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: clamp(110px, 15vw, 160px); height: 14px;
-  background: var(--whistle) 0 0 / 160px 14px repeat-x; opacity: 0.55;
+  content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: clamp(118px, 16vw, 168px); height: 14px;
+  background: var(--whistle) 0 0 / 160px 14px repeat-x; opacity: 0.5;
   animation: whistle 14s linear infinite;
 }
 @keyframes whistle { to { background-position: 160px 0; } }
 
-/* The street: palms swaying, each at its own pace, and a lowrider in front of
-   the sun that works its hydraulics every few seconds and hops while you
-   hover the band (a strip jumping its hump). */
+/* The county road: a grain elevator, a water tower, power lines swaying in
+   the wind, and a lowered sedan in front of the sun that works its
+   hydraulics every few seconds and hops while you hover the band (a strip
+   jumping its hump). */
 .hero > .street { position: absolute; inset: 0; z-index: -1; max-width: none; pointer-events: none; }
-.palm {
-  position: absolute; bottom: 10px; aspect-ratio: 2 / 3;
-  background: var(--palm) bottom center / contain no-repeat;
-  transform-origin: 55% 100%; animation: sway 7s ease-in-out infinite alternate;
+.elevator {
+  position: absolute; left: 2%; bottom: 10px; width: clamp(150px, 24vw, 250px); aspect-ratio: 240 / 200;
+  background: var(--elevator) bottom left / contain no-repeat;
 }
-.palm.p1 { left: 3%; width: clamp(70px, 11vw, 120px); }
-.palm.p2 { left: 13%; width: clamp(46px, 7vw, 78px); animation-duration: 5.5s; animation-delay: -2s; }
-.palm.p3 { right: 4%; width: clamp(80px, 13vw, 140px); animation-duration: 8s; animation-delay: -4s; }
-.palm.p4 { right: 17%; width: clamp(40px, 6vw, 64px); animation-duration: 6s; animation-delay: -1s; }
-@keyframes sway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.8deg); } }
+.tower {
+  position: absolute; right: 7%; bottom: 10px; width: clamp(58px, 9vw, 100px); aspect-ratio: 120 / 220;
+  background: var(--tower) bottom center / contain no-repeat;
+}
+.poles {
+  --ph: clamp(110px, 15vw, 160px);
+  position: absolute; left: 0; right: 0; bottom: 10px; height: var(--ph);
+  background: var(--pole) 0 0 / calc(var(--ph) * 1.5) var(--ph) repeat-x;
+}
+.wires {
+  position: absolute; left: 0; right: 0; top: calc(var(--ph) * 0.235); height: calc(var(--ph) * 0.3);
+  background: var(--wires) 0 0 / calc(var(--ph) * 1.5) 100% repeat-x;
+  transform-origin: 50% 0; animation: wind 4.5s ease-in-out infinite alternate;
+}
+@keyframes wind { from { transform: scaleY(0.85); } to { transform: scaleY(1.2); } }
 
 .lowrider {
-  --car: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 70'%3E%3Cpath d='M6 44 Q6 36 16 35 L58 33 Q74 31 86 20 Q96 13 112 13 L150 13 Q164 13 174 22 Q182 29 194 31 L226 34 Q236 35 236 44 L236 50 Q236 54 232 54 L208 54 A16 16 0 0 0 176 54 L68 54 A16 16 0 0 0 36 54 L10 54 Q6 54 6 50 Z' fill='%2312071c'/%3E%3Cpath d='M92 29 Q100 18 113 17 L148 17 Q160 17 168 29 Z' fill='%23662a64'/%3E%3Cpath d='M16 41 L230 41' stroke='%23ffc94a' stroke-width='1.3'/%3E%3Cpath d='M226 47 L239 47 M2 47 L12 47' stroke='%23d9d3e4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --car: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 70'%3E%3Cpath d='M6 44 Q6 36 16 35 L58 33 Q74 31 86 20 Q96 13 112 13 L150 13 Q164 13 174 22 Q182 29 194 31 L226 34 Q236 35 236 44 L236 50 Q236 54 232 54 L208 54 A16 16 0 0 0 176 54 L68 54 A16 16 0 0 0 36 54 L10 54 Q6 54 6 50 Z' fill='%23140c14'/%3E%3Cpath d='M92 29 Q100 18 113 17 L148 17 Q160 17 168 29 Z' fill='%235a3340'/%3E%3Cpath d='M16 41 L230 41' stroke='%23ffc94a' stroke-width='1.3'/%3E%3Cpath d='M226 47 L239 47 M2 47 L12 47' stroke='%23d9d3e4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
   position: absolute; left: 50%; bottom: 6px; width: clamp(130px, 22vw, 230px); aspect-ratio: 240 / 70;
   transform: translateX(-50%);
 }
@@ -196,14 +229,14 @@ section {
 .screen { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .screen img {
   display: block; width: 100%; height: auto; border-radius: 8px; background: #0a0510;
-  border: 2px solid #b9b2c8; box-shadow: 0 0 0 1px #12071c, 0 0 0 4px #4b2f66, 0 14px 40px rgba(0, 0, 0, 0.45);
+  border: 2px solid #b9b2c8; box-shadow: 0 0 0 1px #12071c, 0 0 0 4px var(--rule), 0 14px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* Figures: white plates (the SVGs are drawn on white) in a chrome frame */
 figure { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 .plate {
   background: var(--plate); border-radius: 8px; padding: 10px; overflow-x: auto;
-  border: 2px solid #c9c2d6; box-shadow: 0 0 0 1px #12071c, 0 0 0 4px #4b2f66, 0 12px 32px rgba(0, 0, 0, 0.4);
+  border: 2px solid #c9c2d6; box-shadow: 0 0 0 1px #12071c, 0 0 0 4px var(--rule), 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 .plate img { display: block; width: 100%; height: auto; min-width: 560px; }
 .plate.wide img { min-width: 720px; }
@@ -223,7 +256,7 @@ th { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.1em; text-transform: u
 td.n { font-family: var(--mono); font-size: 0.9rem; white-space: nowrap; }
 tr.win td { color: var(--goo); }
 code { font: 400 0.86em var(--mono); background: var(--surface); color: #ffe3b0; padding: 0.08em 0.3em; border-radius: 3px; overflow-wrap: anywhere; }
-pre { margin: 0; background: #10071a; border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; font: 400 0.84rem/1.55 var(--mono); color: #ffe3b0; }
+pre { margin: 0; background: #120c13; border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; font: 400 0.84rem/1.55 var(--mono); color: #ffe3b0; }
 pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
 .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
 .compare > div { display: flex; flex-direction: column; gap: 0.3rem; padding: 1rem 1.1rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
@@ -237,8 +270,8 @@ pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: norm
 .lessons { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
 .lesson {
   display: flex; flex-direction: column; gap: 0.55rem; padding: 1.1rem 1.2rem 1.2rem; border-radius: 10px;
-  text-decoration: none; color: var(--ink); background: linear-gradient(180deg, #2b1641, #1d0f2e);
-  border: 1px solid #6a5582; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-decoration: none; color: var(--ink); background: linear-gradient(180deg, #2a1f29, #1b141c);
+  border: 1px solid #5b4a50; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 a.lesson:hover { border-color: var(--pink); box-shadow: 0 0 0 1px var(--pink), 0 0 22px rgba(255, 79, 154, 0.35); transform: translateY(-2px); color: var(--ink); }
@@ -274,7 +307,7 @@ footer a { color: var(--muted); }
   .wordmark b { font-size: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero::before, .palm, .lowrider .body, .hero:hover .lowrider, .hero:hover .street::after { animation: none; }
+  .hero::before, .wires, .lowrider .body, .hero:hover .lowrider, .hero:hover .street::after { animation: none; }
   .lesson { transition: none; }
   a.lesson:hover { transform: none; }
 }
