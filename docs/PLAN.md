@@ -720,6 +720,43 @@ Measured for the doc:
 
 Next, maybe: a short version as a chapter of the in-game book.
 
+### Upddayett Academy: the site (2026-10-07)
+
+The user bought upddayettacademy.com: "let's make this site really good
+for the next generation of aspiring quants". They chose a lessons hub on
+GitHub Pages. It's `site/`, static HTML with one shared stylesheet.
+
+**Pages:**
+- **Home:** who it's for, The Machine, lesson cards and how to play.
+- **The Machine:** the explainer, the same as `docs/MACHINE.md`.
+- **Three lessons,** each with a measured figure, desk parallels,
+  commands and exercises:
+  1. **Transaction costs (yuck).** A flat fee on every trader, with
+     exact best sets on nights 1-30.
+     - With no fee the street makes 33.8 Goo a night (trades only).
+     - At a fee of 2, the street keeps 5.6, pays 9.1 in fees, and 19.1 is
+       destroyed.
+     - Fee revenue peaks at 19.5 at a fee of 1.95.
+     - At a fee of 3 no trade survives.
+     - Because gains are whole Goo, the curve is a staircase.
+  2. **Statistics and overfitting (the wash programs).** 480 Normal spins
+     on night 2 hit 62%.
+     - 12-spin experiments read 33-92%; 48-spin ones read 54-71%.
+     - The rematch's paired CI vs the unpaired one.
+     - CEM runs 1, 2, 5 and 6, and the hand sweep's selection bias.
+  3. **Settlement (the counter).** A labeled model of loop completion and
+     stranding, plus Herstatt 1974, PvP/DvP and kidney chains.
+- **Coming:** Kramers and rare events, greedy vs global, magnets and
+  model risk.
+
+**Status:**
+- **Waiting on the user:** switching Pages on and setting the DNS records.
+- **Built:**
+  - The workflow is manual until then.
+  - `site/CNAME` is set.
+  - The phone layout is checked at a 492 px viewport. Headless Edge won't
+    go narrower: `--window-size=400` lays out at 492 and crops.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

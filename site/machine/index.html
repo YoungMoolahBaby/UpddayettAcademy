@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Laundromat Trade Machine · Upddayett Academy</title>
+<meta name="description" content="How Upddayett's washer solves Market St's trades with physics: the puzzle, the energy, the strips, the spin, freeze-out, the i9 latch and the wash programs, with every figure from a real CortenForge run.">
+<meta property="og:title" content="The Laundromat Trade Machine">
+<meta property="og:description" content="A washer that solves a street's barter market with physics. Every figure is a real run.">
+<meta property="og:image" content="https://upddayettacademy.com/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../">Home</a>
+    <a href="./" aria-current="page">The Machine</a>
+    <a href="../#lessons">Lessons</a>
+    <a href="../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<header class="hero col">
+  <div class="eyebrow">Upddayett's School of Biddness · Lesson 3 · Money Laundering (Legally)</div>
+  <h1>The Laundromat Trade Machine</h1>
+  <p class="lede">The big washer at the back of Upddayett's laundromat isn't washing anything. It's a computer. Every night it works out who on Market St should swap what with whom, so everybody goes home better off. It does that with physics: a drum full of springy steel strips, shaken hot and cooled slowly, until the strips settle into the answer.</p>
+  <div class="readout" aria-label="Night 1 at a glance">
+    <span>Night <b>1</b></span><span>Strips <b>17</b></span><span>Patterns <b>131,072</b></span><span>Valid <b>1,134</b></span><span>Greedy <b>37</b></span><span>Best <b>43 Goo</b></span>
+  </div>
+  <p>Every figure on this page is real data: the curves are <a href="https://crates.io/crates/cortenforge">CortenForge</a> simulations and the boards are the game's real nights.</p>
+  <ol class="toc">
+    <li><a href="#puzzle">The puzzle</a></li>
+    <li><a href="#energy">Turning it into energy</a></li>
+    <li><a href="#strips">The strips</a></li>
+    <li><a href="#spin">The spin</a></li>
+    <li><a href="#i9">The i9 watches</a></li>
+    <li><a href="#programs">Wash programs</a></li>
+    <li><a href="#hands">Your hands on it</a></li>
+    <li><a href="#real">Is this real?</a></li>
+    <li><a href="#math">The math</a></li>
+  </ol>
+</header>
+
+<figure>
+  <div class="plate wide"><img src="../figs/machine/pipeline.svg" alt="Seven boxes in a row: the street, loops, energy, strips, spin, the i9, the counter." width="980" height="190"></div>
+  <figcaption>The whole machine, from a laundromat full of stuff to a set of trades.</figcaption>
+</figure>
+
+<!-- 1 -->
+<section id="puzzle">
+  <div class="sec-head col"><span class="sec-num">01</span><h2>The puzzle</h2></div>
+  <div class="col flow">
+    <h3>Goo, and why trades go in loops</h3>
+    <p>Nobody on Market St has money. What they have is stuff, and stuff is worth different amounts to different people. The game measures that in <strong>Goo</strong>: what a thing is worth to one person, tonight (1 Goo is about a can of Mtn Goo to them). A bag of aeroponic kale might be worth 2 Goo to Upddayett and 7 to Librarian Tamara. That gap is where every trade comes from: the same thing is worth more in somebody else's hands.</p>
+    <p>A <strong>trade</strong> only happens if everyone in it comes out ahead. Two-way swaps are rare, because it has to happen that you want what I have and I want what you have. Economists call this the double coincidence of wants, and it's the reason money was invented. The machine gets around it with <strong>loops</strong>: A hands something to B, B to C, C back to A, each getting something worth more to them than what they gave. Loops go up to 4 people. Every extra person is one more way a loop can fall apart, which is why the counter holds everything until the drum stops.</p>
+    <p>Kidney exchange programs work the same way. A patient whose donor doesn't match swaps donors with another pair, in 2- and 3-way loops, with all the surgeries at once so nobody can back out. Alvin Roth shared the 2012 economics Nobel partly for designing them.</p>
+
+    <h3>Tonight's board</h3>
+    <p>Each evening the machine lists every loop where everyone gains. Each loop is a <strong>candidate trade</strong>, and each candidate gets one <strong>strip</strong> in the drum. The board also holds <strong>gifts</strong>, scored in <strong>Karma</strong> instead of Goo: a need met (food for someone hungry, warmth on a cold night) counts 1x, and a treat or a tool counts 1.5x once that person's needs are covered. Night 1, the night every figure here uses, has 17 strips: 11 trades and 6 gifts.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../figs/machine/board.svg" alt="Night 1's 17 candidate trades in a ring, with lines between trades that collide. The best set (green) is worth 43; grabbing the biggest first (gold rings) gets 37." width="1010" height="590"></div>
+    <figcaption><b>Every line is a collision:</b> two trades that need the same item, so at most one can happen.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>The obvious way to pick, taking the biggest trade first and then the biggest one that still fits, gets <strong>37</strong>. The best set gets <strong>43</strong>. The biggest trade (worth 9) knocks out neighbors that were worth more together. To get it right, every trade has to be weighed against all the others at once.</p>
+    <div class="compare">
+      <div><span class="k">Grab the biggest first</span><span class="v off">37</span></div>
+      <div><span class="k">The best set</span><span class="v on">43</span></div>
+    </div>
+
+    <h3>Why it's hard</h3>
+    <p>Mathematicians call this the <strong>maximum-weight independent set</strong> problem. In general it's NP-hard: there's no known shortcut that stays fast as it grows. Each strip is on or off, so 17 strips make 2<sup>17</sup> = 131,072 patterns. Only 1,134 are valid (nothing moves twice). Most are middling, and the very top is thin and nearly tied.</p>
+  </div>
+  <figure>
+    <div class="plate"><img src="../figs/machine/landscape.svg" alt="Histogram of all 1,134 valid trade sets by value, a bell curve peaking near 23 with a thin tail up to the best at 43." width="760" height="420"></div>
+    <figcaption>On night 1, <b>two different sets tie for the best (43)</b>, and six are within 2 of it. Those near-ties are the trap: a set worth 41 can be many strip flips away from the 43, with worse sets in between.</figcaption>
+  </figure>
+  <div class="col">
+    <div class="aside">
+      <span class="label">The honest part</span>
+      <p>At 17 strips an ordinary computer can check all 1,134 valid sets in a blink, and the game does, to know the best possible and score the machine against it. That's why the board is capped at 20 strips. The machine isn't in the game because it beats a laptop at 17 strips. It's there because it's how a whole family of real hardware works, and because you can watch it think.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="energy">
+  <div class="sec-head col"><span class="sec-num">02</span><h2>Turning the puzzle into energy</h2></div>
+  <div class="col flow">
+    <p>Give any on/off pattern a <strong>score</strong>: add up what every "on" trade is worth, and subtract a big penalty for every pair of colliding trades that are both on. The penalty is bigger than any single trade, so a collision never pays. The best set has the highest score.</p>
+    <p>Now flip the sign and call it <strong>energy</strong>. The best set becomes the lowest-energy pattern. Nature is very good at finding low energy: water runs downhill, and hot metal cooled slowly settles into a tidy crystal. So if we build something whose energy is this score, physics does the searching.</p>
+    <p>This recipe, rewards on single bits and penalties on pairs, is called a <strong>QUBO</strong>. It maps one-to-one onto an <strong>Ising model</strong>: a lattice of little magnets that point up or down and push or pull on their neighbors. A huge range of hard problems can be written this way (Lucas, "Ising formulations of many NP problems", 2014). The exact formulas are in <a href="#math">the math</a>.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="strips">
+  <div class="sec-head col"><span class="sec-num">03</span><h2>The strips</h2></div>
+  <div class="col flow">
+    <p>Each strip is a thin piece of spring steel, clamped at both ends and buckled, like the lid of a snap-top jar. It has two stable shapes: bent down (<strong>off</strong>) or bent up (<strong>on</strong>). Getting from one to the other means pushing it over a hump. In the game they're called slap bits, and the board cam in the bottom left of the screen shows them live.</p>
+  </div>
+  <figure>
+    <div class="plate"><img src="../figs/machine/strip.svg" alt="Energy curves for one strip: two equal dips alone; tilted toward on by tonight's best trade; tipped back toward off when a colliding trade is on." width="900" height="400"></div>
+    <figcaption>One strip's energy, using CortenForge's <b>DoubleWellPotential</b> and night 1's real fields.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>Three forces act on each strip:</p>
+    <ol>
+      <li><strong>The double well:</strong> the two dips and the 5 kT hump between them (<code>DoubleWellPotential</code>).</li>
+      <li><strong>A tilt</strong> toward on, as strong as the trade is valuable (<code>ExternalField</code>).</li>
+      <li><strong>Springs</strong> between strips whose trades collide (<code>PairwiseCoupling</code>). When one strip goes on, its springs tip each colliding neighbor back toward off. In the red curve, tonight's best trade has a colliding trade switched on, and its "on" dip is now the shallow one.</li>
+    </ol>
+    <p>Then the drum shakes them. CortenForge's <code>LangevinThermostat</code> gives every strip random kicks plus friction, balanced so the strips jiggle exactly as much as real objects at temperature kT would (the fluctuation-dissipation theorem). Turn the drum up and the kicks get stronger. A Hall-effect sensor under each strip reads which dip it's in.</p>
+    <p>All of it is a real CortenForge model, built like this:</p>
+<pre><code>let xml = generate_mjcf(n, 1, dt, (0.0, 10.0));      // n strips, one control: the drum
+let mut model = load_model(&amp;xml)?;
+let mut b = PassiveStack::builder();
+for i in 0..n {
+    b = b.with(DoubleWellPotential::new(delta_v, 1.0, i)); // the two dips
+}
+b = b.with(PairwiseCoupling::new(j, edges));               // springs between colliding trades
+b = b.with(ExternalField::new(h));                         // each trade's tilt toward on
+b = b.with(LangevinThermostat::new(gammas, k_b_t, seed, 0)
+    .with_ctrl_temperature(0));                            // the drum: kT follows ctrl[0]
+b.build().install(&amp;mut model);</code></pre>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="spin">
+  <div class="sec-head col"><span class="sec-num">04</span><h2>The spin: shake hot, cool slowly</h2></div>
+  <div class="col flow">
+    <p>Shake the drum hard and the strips hop over their humps all the time, trying everything. Shake it gently and they mostly stay put. The trick is to start hot and cool slowly. While it's hot the board explores. As it cools, hopping out of a good arrangement gets rarer than hopping into one, until the strips freeze into a set that doesn't collide and makes a lot of Goo.</p>
+    <p>That's <strong>annealing</strong>. Blacksmiths do it to steel (CortenForge is named after one, Corten), and computers have done it in software since 1983 (Kirkpatrick, Gelatt and Vecchi, "Optimization by Simulated Annealing"). The drum does it in physics.</p>
+    <p>How fast does a strip hop? Hendrik Kramers worked it out in 1940: the rate falls off like e<sup>−hump/kT</sup>, so each tenfold drop in hopping takes only a modest drop in temperature. CortenForge ships Kramers' formula, so the simulation can be checked against it:</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../figs/machine/freeze.svg" alt="Two log-log plots of hops per strip per time unit against drum kT. Left: lone strips measured in CortenForge sit on the crate's Kramers curves. Right: the real board hops less and freezes below about kT 0.6." width="980" height="430"></div>
+    <figcaption><b>Left:</b> lone strips (no springs, no tilt) measured in CortenForge, against the crate's own Kramers formulas. They agree within about 12% where the theory applies (drum at 1.25 kT or below). <b>Right:</b> the real board during real spins. Tilts and springs deepen each strip's favorite dip, so it hops less, and it freezes solid below about 0.6 kT.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>Now watch a whole spin: one real Normal cycle on night 1, every strip, every time unit.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../figs/machine/spin.svg" alt="One real spin in four panels: the drum cooling from 4 to 0.35 kT; 17 strip lanes flickering early then freezing by t of about 500; a close-up of one strip's position; and the score the i9 reads, latching the best at t = 101." width="1010" height="815"></div>
+    <figcaption>One real spin, top to bottom: the drum, every strip (green on, grey off, gold mid-hop), one strip close up, and the score the i9 reads.</figcaption>
+  </figure>
+  <div class="col flow">
+    <ul>
+      <li><strong>The drum</strong> (red) cools geometrically from 4 kT to 0.35 kT over 1,000 time units, then stops for 20 so every strip drops into a dip.</li>
+      <li><strong>The strips</strong> flicker for the first ~300 units, commit one by one between 300 and 500, and after ~500 nothing moves. The green rows are tonight's trades.</li>
+      <li><strong>The close-up</strong> is one strip's actual position. It rattles inside its dip the whole time (that's the heat), hops between dips while the drum is hot, and settles for good at t ≈ 410.</li>
+      <li><strong>The score</strong> is what the strips spell out whenever all of them sit in a dip. It climbs as the board cools.</li>
+    </ul>
+    <p>Cool too fast and the strips freeze wherever they happen to be: a <strong>quench</strong>, which lands in a mediocre set. In the game that's Quick Wash ("You spun it too fast, Daddy"). Cooling slower helps, but only logarithmically: three times longer buys a few points.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="i9">
+  <div class="sec-head col"><span class="sec-num">05</span><h2>The i9 watches</h2></div>
+  <div class="col flow">
+    <p>Upddayett wired an old i9 to the Hall sensors. Once every time unit it reads the board. Whenever every strip sits in a dip, it scores what it sees and remembers the best set so far: the gold line in the spin figure. This one latched the best set at t = 101, long before the strips stopped moving.</p>
+    <p>The latch matters because the strips don't always finish on the best set. Near the end of a spin the board can freeze into one of those near-ties, and the i9 has usually seen something better on the way down. On night 1, out of 48 Normal spins:</p>
+    <div class="compare">
+      <div><span class="k">Strips came to rest on a best set</span><span class="v off">27 / 48</span></div>
+      <div><span class="k">The i9 latched one along the way</span><span class="v on">48 / 48</span></div>
+    </div>
+    <p>Real probabilistic computers (p-bits) are read the same way: sample the bits as they fluctuate, and keep the best.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="programs">
+  <div class="sec-head col"><span class="sec-num">06</span><h2>Wash programs</h2></div>
+  <div class="col flow">
+    <p>The program picker is a choice of cooling schedules. Longer and gentler finds the best set more often, but each doubling of time buys less.</p>
+  </div>
+  <figure>
+    <div class="plate"><img src="../figs/machine/programs.svg" alt="Hit rate against drum time on a log scale: Quick Wash 26%, Permanent Press 46%, Normal 81%, Delicates 95%; Smart 88% and Row of 4 washers 95% at Normal's time." width="760" height="420"></div>
+    <figcaption>Measured on nights 1-10, 48 spins each, as the game's program picker shows them.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>Two programs beat the clock instead of just taking longer:</p>
+    <ul>
+      <li><strong>Smart (learned).</strong> It spends Normal's time but watches the board as it spins: how far through the cool-down it is, how many strips are mid-hop, and how long since the i9 last found something better. When the strips freeze and the latch stops improving, it reheats and cools again. Nobody hand-wrote that schedule: CortenForge's CEM (the cross-entropy method in sim-rl) learned it on 11 hard nights. On fresh nights it never trained on, it lands the best set 95% of the time against Normal's 83%.</li>
+      <li><strong>Row of 4 washers.</strong> Normal's electricity, split across four drums held at different temperatures. Every so often neighbors offer to swap loads, so a load stuck in a bad set on a cold drum can ride up to a hot one, get shaken loose and come back down. This is <strong>parallel tempering</strong> (replica exchange). On held-out nights it beats the smart wash, 96.8% to 93.1%.</li>
+    </ul>
+    <p>You can also run the drum by hand: the SPIN CYCLE panel's manual dial sets kT directly. Freeze it, melt it, and watch the strips.</p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="hands">
+  <div class="sec-head col"><span class="sec-num">07</span><h2>Your hands on the machine</h2></div>
+  <div class="col flow">
+    <p>Everything you do in the game changes the board, and so the physics.</p>
+    <ul>
+      <li><strong>I WANT...</strong> Every strip that delivers the wanted item gets an extra tilt toward on, sized to pin it like a thumb holding it down. Past a tilt of about 7.7 (for a hump of 5) the "off" dip disappears entirely. The rest of the board settles around it, and the panel tells you what the want costs everyone else, in Goo.</li>
+      <li><strong>Give-aways.</strong> A gift strip, scored in Karma. The drum decides who gets it, sending it where it does the most good.</li>
+      <li><strong>Prints.</strong> Upddayett designs a part in code and CortenForge checks it will print. It becomes a new item: new loops, new strips.</li>
+      <li><strong>The counter (escrow).</strong> While the drum spins, the counter holds every item. When it stops, it hands every trade over at once or not at all, so nobody in a loop is left holding nothing.</li>
+      <li><strong>Yuck.</strong> Some nights some people are yucky: they need 2 extra Goo out of any trade before it's worth it to them. Two yucky people cut an average night from 11.5 trades to 7.2, and the best set from 41.6 Goo to 31.1 (nights 1-30). The board gets easier, with fewer strips fighting, but poorer. The trades yuck killed show up as ghost strips.</li>
+      <li><strong>The Salties</strong>, saboteurs who mess with the physics:
+        <ul>
+          <li>A <strong>magnet</strong> under the counter is a stray field: an extra tilt the i9 didn't install, pushing strips the wrong way. A <strong>coil</strong> does the same, but only while the drum shakes. A <strong>power cut</strong> stops the drum early: a quench.</li>
+          <li>Your defenses are physics too. The <strong>idle check</strong> stops the drum and reads every strip at rest. The force from its dip has to balance the springs and tilts the i9 put there, so anything left over is a field it didn't put there. A <strong>steel shield</strong> blocks a magnet if it covers it. <strong>The battery</strong> (Vape Lady's cells) keeps the drum running through a cut, but then those cells can't be traded tonight.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="real">
+  <div class="sec-head col"><span class="sec-num">08</span><h2>Is this real?</h2></div>
+  <div class="col flow">
+    <p>The physics is real. The machine is made up: nobody builds trade computers out of buckled steel strips. What's real:</p>
+    <ul>
+      <li><strong>The simulation is faithful.</strong> CortenForge integrates every strip's motion with the proper noise, and the hop rates match Kramers' theory within about 12% where that theory applies. That check was run for this page.</li>
+      <li><strong>The method is real.</strong> Simulated annealing, parallel tempering and learned schedules are everyday tools for hard optimization problems.</li>
+      <li><strong>The hardware family is real.</strong> Ising machines solve problems written exactly like this one, as bits with tilts and couplings settling into low energy: quantum annealers (D-Wave), digital annealers (Fujitsu), probabilistic-bit circuits, and a new wave of thermodynamic computing chips that use noise on purpose, like this drum does.</li>
+      <li><strong>The economics is real.</strong> Swap loops with all-or-nothing hand-offs are how kidney exchange works.</li>
+    </ul>
+    <p>The limits: 20 strips at most, so the game can always check the answer exactly. One spin is 102,000 physics steps, about 0.4 s of CPU. Below 20 strips a brute-force check is faster. The machine is the interesting way to do it, and the way that scales.</p>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="math">
+  <div class="sec-head col"><span class="sec-num">09</span><h2>For the curious: the math</h2></div>
+  <div class="col flow">
+    <p><strong>The energy.</strong> With x<sub>i</sub> ∈ {0, 1} for strip i (1 = on), v<sub>i</sub> the trade's value scaled so the largest is 1.5, and P the collision penalty (1.6 × 1.5 = 2.4):</p>
+<pre><code>E(x) = − Σ_i v_i x_i  +  P Σ_{i,k collide} x_i x_k</code></pre>
+    <p>P is larger than any v<sub>i</sub>, so turning on a second colliding trade always costs more than it earns. The lowest-energy pattern is the best valid set.</p>
+    <p><strong>To Ising.</strong> With spins s = 2x − 1 (on = +1) and the crate's convention H = −Σ J<sub>ik</sub> s<sub>i</sub> s<sub>k</sub> − Σ h<sub>i</sub> s<sub>i</sub>, take H = β E + const with β = 5 (how many kT one unit of score is worth):</p>
+<pre><code>J_ik = −β P / 4                          (colliding pairs push apart)
+h_i  = β v_i / 2  −  Σ_k β P / 4         (the tilt, less the collision bookkeeping)</code></pre>
+    <p><strong>The strip.</strong> Each strip is a particle of mass 1 at position x<sub>i</sub>:</p>
+<pre><code>m ẍ_i = −V′(x_i) + h_i + Σ_k J_ik x_k − γ ẋ_i + √(2 γ kT / dt) · z_i
+V(x)  = ΔV (x² − 1)²</code></pre>
+    <p>ΔV = 5 (the hump), γ = 1 (friction), z<sub>i</sub> is fresh unit Gaussian noise each step, and dt = 0.01. A tilt above 8ΔV / (3√3) ≈ 7.7 erases the far dip; that's the want's thumb clamp.</p>
+    <p><strong>The schedule.</strong> Normal's kT runs 4 → 0.35 geometrically over 1,000 units, then 0 for 20. The i9 samples every unit. The hop rate (Kramers, with the crate's turnover correction Υ):</p>
+<pre><code>k ≈ (ω_a / 2π) · (λ_r / ω_b) · e^(−ΔV / kT) · Υ</code></pre>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Setting</th><th>Value</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td>ΔV</td><td class="n">5</td><td>The hump between off and on</td></tr>
+          <tr><td>β</td><td class="n">5</td><td>kT per unit of score</td></tr>
+          <tr><td>P</td><td class="n">2.4</td><td>Collision penalty (1.6 × the largest value)</td></tr>
+          <tr><td>γ</td><td class="n">1</td><td>Friction</td></tr>
+          <tr><td>dt</td><td class="n">0.01</td><td>Physics step</td></tr>
+          <tr><td>Normal</td><td class="n">4 → 0.35 kT</td><td>1,000 units, then 20 at rest</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col flow">
+    <h2>Try it yourself</h2>
+    <p>Everything runs from the <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">source</a> (always <code>--release</code>):</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>cargo run --release</code></td><td>The game. Pick a program, press Run, watch the board cam. F1 opens the picture book.</td></tr>
+          <tr><td><code>cargo run --release --example machine_figs</code></td><td>Redraws every figure on this site (<code>-- spin --night 7</code> for one figure on another night).</td></tr>
+          <tr><td><code>cargo run --release --example trade_cli -- cycles</code></td><td>Lists tonight's candidate trades.</td></tr>
+          <tr><td><code>cargo run --release --example trade_cli -- run</code></td><td>One spin, printed as it settles.</td></tr>
+          <tr><td><code>cargo run --release --example trade_cli -- bench</code></td><td>Many spins: how often each answer lands.</td></tr>
+          <tr><td><code>UPD_SCOPE=3 cargo run --release</code></td><td>Opens the scope on strip 3: its position, its hops and the drum's kT, live.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Next:</strong> <a href="../lessons/transaction-costs/">Lesson 1, the fee that ate the street →</a></p>
+  </div>
+</section>
+
+<footer class="col">
+  <p>From <em>Upddayett's School of Biddness</em>, built on the published <a href="https://crates.io/crates/cortenforge">CortenForge</a> 0.9.0 crates. The full build history, with every measurement, is in the repo's <code>docs/PLAN.md</code>.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="760" height="420" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="760" height="420" fill="#ffffff"/>
+<text x="80.0" y="28.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">Wash programs: a longer, gentler cool-down finds the best set more often</text>
+<line x1="126.2" y1="50.0" x2="126.2" y2="340.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="126.2" y="356.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">150</text>
+<line x1="205.1" y1="50.0" x2="205.1" y2="340.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="205.1" y="356.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">300</text>
+<line x1="342.2" y1="50.0" x2="342.2" y2="340.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="342.2" y="356.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">1000</text>
+<line x1="467.2" y1="50.0" x2="467.2" y2="340.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="467.2" y="356.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">3000</text>
+<line x1="80.0" y1="340.0" x2="500.0" y2="340.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="344.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">0%</text>
+<line x1="80.0" y1="267.5" x2="500.0" y2="267.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="271.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">25%</text>
+<line x1="80.0" y1="195.0" x2="500.0" y2="195.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="199.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">50%</text>
+<line x1="80.0" y1="122.5" x2="500.0" y2="122.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="126.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">75%</text>
+<line x1="80.0" y1="50.0" x2="500.0" y2="50.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="54.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">100%</text>
+<rect x="80.0" y="50.0" width="420.0" height="290.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
+<text x="290.0" y="374.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">drum time (units, log scale)</text>
+<text transform="translate(38.0,195.0) rotate(-90)" font-size="12" fill="#1d2026" text-anchor="middle">the i9 lands the best set</text>
+<path d="M126.2,264.6 L205.1,206.6 L342.2,105.1 L467.2,64.5 " fill="none" stroke="#aab0bb" stroke-width="2" stroke-opacity="1" stroke-linejoin="round"/>
+<circle cx="126.2" cy="264.6" r="6.0" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.5"/>
+<text x="135.2" y="279.6" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">Quick Wash 26%</text>
+<circle cx="205.1" cy="206.6" r="6.0" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.5"/>
+<text x="214.1" y="221.6" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">Permanent Press 46%</text>
+<circle cx="342.2" cy="105.1" r="6.0" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.5"/>
+<text x="351.2" y="120.1" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">Normal 81%</text>
+<circle cx="467.2" cy="64.5" r="6.0" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.5"/>
+<text x="457.2" y="79.5" font-size="11.5" fill="#1d2026" text-anchor="end" font-weight="normal">Delicates 95%</text>
+<circle cx="342.2" cy="84.8" r="7.0" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.5"/>
+<text x="332.2" y="88.8" font-size="11.5" fill="#8a4fc2" text-anchor="end" font-weight="bold">Smart 88%</text>
+<rect x="335.2" y="57.5" width="14.0" height="14.0" rx="2" fill="#3f9a12" stroke="#ffffff" stroke-width="1.5"/>
+<text x="330.2" y="68.5" font-size="11.5" fill="#3f9a12" text-anchor="end" font-weight="bold">Row of 4 washers 95%</text>
+<text x="530.0" y="70.0" font-size="12" fill="#1d2026" text-anchor="start" font-weight="normal">Blue: one washer, cooling on a clock.</text>
+<text x="530.0" y="89.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal">Every doubling of time buys less.</text>
+<text x="530.0" y="108.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal"></text>
+<text x="530.0" y="127.0" font-size="12" fill="#8a4fc2" text-anchor="start" font-weight="normal">Purple: the Smart program spends</text>
+<text x="530.0" y="146.0" font-size="12" fill="#8a4fc2" text-anchor="start" font-weight="normal">Normal's time but watches the strips</text>
+<text x="530.0" y="165.0" font-size="12" fill="#8a4fc2" text-anchor="start" font-weight="normal">and reheats when they freeze. A</text>
+<text x="530.0" y="184.0" font-size="12" fill="#8a4fc2" text-anchor="start" font-weight="normal">schedule CortenForge's CEM learned.</text>
+<text x="530.0" y="203.0" font-size="12" fill="#7a808c" text-anchor="start" font-weight="normal"></text>
+<text x="530.0" y="222.0" font-size="12" fill="#3f9a12" text-anchor="start" font-weight="normal">Green: four washers, each a quarter</text>
+<text x="530.0" y="241.0" font-size="12" fill="#3f9a12" text-anchor="start" font-weight="normal">of Normal's time, swapping loads</text>
+<text x="530.0" y="260.0" font-size="12" fill="#3f9a12" text-anchor="start" font-weight="normal">between hot and cold drums</text>
+<text x="530.0" y="279.0" font-size="12" fill="#3f9a12" text-anchor="start" font-weight="normal">(parallel tempering).</text>
+<text x="80.0" y="395.0" font-size="11" fill="#7a808c" text-anchor="start" font-weight="normal">Measured on nights 1-10, 48 spins each, as the game's program picker shows them. Row: 4 x 235 units + settles, the same total as Normal.</text>
+</svg>

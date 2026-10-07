@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 432" width="1000" height="432" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1000" height="432" fill="#ffffff"/>
+<text x="80.0" y="28.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">Settlement risk in a swap loop: hand over in turn, or everything through the counter</text>
+<line x1="80.0" y1="60.0" x2="80.0" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="80.0" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">2</text>
+<line x1="166.7" y1="60.0" x2="166.7" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="166.7" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">3</text>
+<line x1="253.3" y1="60.0" x2="253.3" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="253.3" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">4</text>
+<line x1="340.0" y1="60.0" x2="340.0" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="340.0" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">5</text>
+<line x1="426.7" y1="60.0" x2="426.7" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="426.7" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">6</text>
+<line x1="513.3" y1="60.0" x2="513.3" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="513.3" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">7</text>
+<line x1="600.0" y1="60.0" x2="600.0" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="600.0" y="366.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">8</text>
+<line x1="80.0" y1="350.0" x2="600.0" y2="350.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="354.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">0%</text>
+<line x1="80.0" y1="277.5" x2="600.0" y2="277.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="281.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">25%</text>
+<line x1="80.0" y1="205.0" x2="600.0" y2="205.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="209.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">50%</text>
+<line x1="80.0" y1="132.5" x2="600.0" y2="132.5" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="136.5" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">75%</text>
+<line x1="80.0" y1="60.0" x2="600.0" y2="60.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="74.0" y="64.0" font-size="11" fill="#7a808c" text-anchor="end" font-weight="normal">100%</text>
+<rect x="80.0" y="60.0" width="520.0" height="290.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
+<text x="340.0" y="384.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">people in the loop</text>
+<text transform="translate(38.0,205.0) rotate(-90)" font-size="12" fill="#1d2026" text-anchor="middle">probability</text>
+<rect x="80.0" y="60.0" width="173.3" height="290.0" rx="0" fill="#fbf3dc" stroke="#fbf3dc" stroke-width="1.5"/>
+<text x="166.7" y="76.0" font-size="11.5" fill="#d99a00" text-anchor="middle" font-weight="bold">the game's loops (2-4)</text>
+<path d="M80.0,88.3 L166.7,101.4 L253.3,113.8 L340.0,125.6 L426.7,136.8 L513.3,147.5 L600.0,157.6 " fill="none" stroke="#3f9a12" stroke-width="3" stroke-opacity="1" stroke-linejoin="round"/>
+<path d="M80.0,336.2 L166.7,323.1 L253.3,310.7 L340.0,298.9 L426.7,287.7 L513.3,277.0 L600.0,266.9 " fill="none" stroke="#d8392b" stroke-width="3" stroke-opacity="1" stroke-linejoin="round"/>
+<path d="M80.0,350.0 L166.7,350.0 L253.3,350.0 L340.0,350.0 L426.7,350.0 L513.3,350.0 L600.0,350.0 " fill="none" stroke="#3d8fd6" stroke-width="3" stroke-opacity="1" stroke-linejoin="round" stroke-dasharray="7 4"/>
+<circle cx="80.0" cy="88.3" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="166.7" cy="101.4" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="253.3" cy="113.8" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="340.0" cy="125.6" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="426.7" cy="136.8" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="513.3" cy="147.5" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="600.0" cy="157.6" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="80.0" cy="336.2" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="166.7" cy="323.1" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="253.3" cy="310.7" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="340.0" cy="298.9" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="426.7" cy="287.7" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="513.3" cy="277.0" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<circle cx="600.0" cy="266.9" r="3.5" fill="#ffffff" stroke="#1d2026" stroke-width="1.2"/>
+<line x1="630.0" y1="80.0" x2="654.0" y2="80.0" stroke="#3f9a12" stroke-width="3"/>
+<text x="662.0" y="84.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">The whole loop completes</text>
+<text x="662.0" y="102.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Same either way: every extra person is one</text>
+<text x="662.0" y="118.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">more chance it breaks.</text>
+<line x1="630.0" y1="152.0" x2="654.0" y2="152.0" stroke="#d8392b" stroke-width="3"/>
+<text x="662.0" y="156.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">Someone is left holding nothing</text>
+<text x="662.0" y="174.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Handing over in turn: whoever goes first</text>
+<text x="662.0" y="190.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">gives, then waits on everyone else.</text>
+<line x1="630.0" y1="224.0" x2="654.0" y2="224.0" stroke="#3d8fd6" stroke-width="3" stroke-dasharray="7 4"/>
+<text x="662.0" y="228.0" font-size="12.5" fill="#1d2026" text-anchor="start" font-weight="bold">...if it all goes through the counter</text>
+<text x="662.0" y="246.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Zero. If anyone fails to deliver, the counter</text>
+<text x="662.0" y="262.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">hands everything back.</text>
+<text x="80.0" y="414.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">A simple model, not a game measurement: each person independently fails to deliver 1 time in 20 (p = 5%).</text>
+</svg>

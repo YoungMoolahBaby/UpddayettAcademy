@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Fee That Ate the Street · Upddayett Academy</title>
+<meta name="description" content="Lesson 1: transaction costs. A flat 2-Goo fee raises 9 Goo a night and destroys 19. Measured on 30 nights of the game's real market.">
+<meta property="og:title" content="The Fee That Ate the Street">
+<meta property="og:description" content="A 2-Goo fee raises 9 Goo a night and destroys 19. Transaction costs, measured.">
+<meta property="og:image" content="https://upddayettacademy.com/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="eyebrow">Lesson 1 · Transaction costs · In the game: yuck</div>
+  <h1>The fee that ate the street</h1>
+  <p class="lede">Put a 2-Goo fee on everyone in every trade on Market St. The fees raise 9 Goo a night. The street loses 28. The other 19 just vanish: trades that would have helped everyone, never made. This lesson measures where the money goes, and why thin edges die first.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>The setup</h2></div>
+  <div class="col flow">
+    <p>On Market St, a <strong>trade</strong> is a loop of 2 to 4 people, each handing one thing on and getting one back. It only happens if <em>everyone</em> in it gains, measured in Goo: what a thing is worth to that person, tonight. (If that's new, <a href="../../machine/">The Machine</a> explains it.) Every night, the best set of trades is the one that makes the most Goo without moving any item twice.</p>
+    <p>Now add a cost. In the game it's called <strong>yuck</strong>: some nights, some people are in such a mood that a trade has to clear an extra 2 Goo before it's worth it to them. Here we do the clean version: a <strong>flat fee</strong> of <em>f</em> Goo, paid by every person in every trade. A trade survives only if each person's gain is still above zero <em>after</em> the fee.</p>
+    <p>Then, for 30 nights and every fee from 0 to 3.5 Goo, we find the exact best set of trades and split the Goo three ways: what the street <strong>keeps</strong>, what it <strong>pays in fees</strong>, and what is <strong>destroyed</strong>, because the trades that made it never happen.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/fees.svg" alt="Stacked area chart: as the fee per person rises from 0 to 3.5 Goo, the Goo kept by the street (green) falls from 33.8, fees paid (gold) rise and fall in steps, and destroyed value (pink) grows until everything is destroyed at a fee of 3. A small inset shows trades per night falling from 5.4 to 0 in steps." width="1000" height="470"></div>
+    <figcaption>Exact best sets on nights 1-30 at each fee, averaged per night. <b>Green</b>: kept by the street. <b>Gold</b>: paid in fees. <b>Pink</b>: destroyed. Without a fee the street makes <b>33.8 Goo</b> a night.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>What the figure says</h2></div>
+  <div class="col flow">
+    <h3>Costs destroy more than they collect</h3>
+    <div class="compare">
+      <div><span class="k">Kept by the street</span><span class="v on">5.6</span></div>
+      <div><span class="k">Paid in fees</span><span class="v off">9.1</span></div>
+      <div><span class="k">Destroyed</span><span class="v bad">19.1</span></div>
+    </div>
+    <p>That's a fee of 2 Goo, per night, out of 33.8. The fees collected are the smaller part of the damage. Most of what the street loses goes to no one: trades that were good for everybody fail the fee test and never happen. Economists call this <strong>deadweight loss</strong>. It's why a tax, a commission or a spread can cost a market much more than it raises.</p>
+
+    <h3>The weakest member kills the trade</h3>
+    <p>A loop needs every person in it to gain. So a trade doesn't die when its <em>total</em> gain is small. It dies when its <em>smallest</em> gain falls below the fee. A 4-way loop worth 9 Goo, split 3 + 3 + 2 + 1, dies at a fee of 1, because of the one person who only gains 1. Longer loops pay more fees and have more people who can be the weak link, so they go first.</p>
+
+    <h3>The staircase</h3>
+    <p>Gains on Market St are whole Goo, so nothing changes until the fee crosses a whole number. Then every trade whose thinnest gain was that number dies at once. Between steps, the same trades happen and the fees just transfer more Goo out of the street. At a fee of 3, no trade on any of the 30 nights survives: the market closes.</p>
+
+    <h3>The fee that raises the most</h3>
+    <p>Revenue (the gold band) peaks at <strong>19.5 Goo a night at a fee of 1.95</strong>, just under a step. At exactly 2 a whole tier of trades dies and revenue crashes to 9.1. Push a cost a hair too far and you lose the very activity you were charging for.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>On a trading desk</h2></div>
+  <div class="col flow">
+    <p>Swap "a trade" for "a trading strategy" and nothing changes:</p>
+    <ul>
+      <li><strong>Every trade has costs:</strong> commissions, the bid-ask spread, and market impact (your own order moving the price against you). A strategy's <em>edge</em> is what it expects to make per trade before costs, and it only works if the edge beats the costs.</li>
+      <li><strong>Thin edges die first.</strong> Many strategies that look great on paper earn a sliver per trade. Add realistic costs and they flip to losing money. That's why every serious backtest is reported <em>net of costs</em>, and why a strategy that trades less often can beat one with a better gross edge.</li>
+      <li><strong>The weakest link is real.</strong> A trade that needs several legs to work (a pair trade, an arbitrage across three markets) has to clear the costs on every leg, just like a 4-way loop.</li>
+      <li><strong>Costs are nonlinear.</strong> Small changes in a fee can wipe out whole classes of trades at once, like the staircase. Exchanges and market makers watch exactly this when they set fees and spreads.</li>
+    </ul>
+    <div class="aside">
+      <span class="label">In the game</span>
+      <p>Yuck is this lesson's fee, applied to some people instead of everyone. Measured on 30 nights, 48 spins each: two yucky people at a tax of 2 cut the candidate trades on an average night from 11.5 to 7.2. Each yucky person costs the street about 5 Goo, two and a half times their tax. The game shows the trades yuck killed as <strong>ghost strips</strong>, and part of playing is working out who's spreading it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+    <p>From the <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">source</a>:</p>
+<pre><code># this lesson's figure (and the numbers it prints)
+cargo run --release --example machine_figs -- fees
+
+# yuck in the trade computer: two yucky people, or a pump
+cargo run --release --example trade_cli -- run --yuck upd,vape --tax 2
+cargo run --release --example trade_cli -- yuck --nights 1..30 --runs 48</code></pre>
+    <p>The fee model is <code>best_trades</code> in <code>examples/machine_figs.rs</code>. Each person's gain is computed in <code>src/trade/cycles.rs</code> as the value of what they get, minus the value of what they give, minus their fee.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>A fee of 0.5 Goo barely changes which trades happen. Why not, and what does it change?</p>
+        <details><summary>Answer</summary><p>Every gain is a whole number of Goo, at least 1, so a 0.5 fee never pushes a gain to zero and no trade dies. It just moves 6.7 Goo a night from the street to the fees. (Trades per night even tick up slightly, 5.4 to 5.6. The fee is charged per person, so it can tip the best set toward shorter loops.)</p></details></div></li>
+      <li><div><p>Two trades are each worth 8 Goo in total. One is a 2-way swap split 4 + 4, the other a 4-way loop split 5 + 1 + 1 + 1. Which survives a fee of 1.5? How much does each pay in fees if it survives?</p>
+        <details><summary>Answer</summary><p>The 2-way swap survives (4 − 1.5 > 0 for both) and pays 2 × 1.5 = 3 Goo, keeping 5. The 4-way loop dies: three of its people gain only 1, less than the fee. Had it survived, it would have paid 4 × 1.5 = 6 Goo of its 8 in fees.</p></details></div></li>
+      <li><div><p>You run the counter and keep the fees. What fee do you charge, and what happens to the street if you're greedy by 0.05 Goo?</p>
+        <details><summary>Answer</summary><p>1.95 raises the most, 19.5 Goo a night, and the street keeps 6.4. At 2.0 every trade whose thinnest gain was 2 dies: revenue falls to 9.1 and the street keeps 5.6. Both of you lose.</p></details></div></li>
+      <li><div><p>A strategy makes 0.08% per trade before costs and trades 250 times a year. Costs are 0.05% per trade. Roughly what does it make a year, before and after costs? What if it trades twice as often for the same edge per trade?</p>
+        <details><summary>Answer</summary><p>Before costs about 250 × 0.08% = 20%; after, 250 × 0.03% = 7.5% (ignoring compounding). Trading twice as often doubles both: 40% before, 15% after. But if trading more means a thinner edge per trade, say 0.06%, the net per trade falls to 0.01% and the year to 5%. The edge has to clear the cost on every single trade.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../../machine/">← The Machine</a>
+    <a href="../overfitting/">Lesson 2: 48 spins or it didn't happen →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Figures from <code>cargo run --release --example machine_figs -- fees</code> on <em>Upddayett's School of Biddness</em>, built on <a href="https://crates.io/crates/cortenforge">CortenForge</a>. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

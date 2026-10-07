@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nobody Walks Off with the Hub Motor · Upddayett Academy</title>
+<meta name="description" content="Lesson 3: settlement risk. Why every trade on Market St goes through the counter, a German bank that failed mid-afternoon in 1974, and why swap loops stop at four.">
+<meta property="og:title" content="Nobody Walks Off with the Hub Motor">
+<meta property="og:description" content="Settlement risk, escrow, and why swap loops stop at four.">
+<meta property="og:image" content="https://upddayettacademy.com/img/spin-locked.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="eyebrow">Lesson 3 · Market plumbing · In the game: the counter</div>
+  <h1>Nobody walks off with the hub motor</h1>
+  <p class="lede">Before every spin, everything on the market goes onto a folding counter. When the drum stops, the counter hands every chosen trade over at once, or not at all. That isn't fussiness. It's the fix for settlement risk, the danger that once took down a bank in an afternoon.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>The problem: someone has to go first</h2></div>
+  <div class="col flow">
+    <p>Take a 3-way loop from night 1. Upddayett gives Shopping-Cart Guy a 12-pack of Mtn Goo, Shopping-Cart Guy gives Bike Kitchen Dave a 350 W scooter hub motor, and Dave gives Upddayett a soldering iron. Everyone comes out ahead, if everyone delivers.</p>
+    <p>Now do it without a counter, one hand-off at a time. Somebody has to go first. Upddayett hands over the Mtn Goo, then waits. If anyone down the line changes their mind, walks off or just doesn't show, Upddayett has given something and got nothing. Everyone who goes later is protected, because they receive before they give. All the risk lands on whoever goes first, and it grows with every person they're waiting on.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/settle.svg" alt="Line chart against people in the loop from 2 to 8: the chance the whole loop completes falls from 90% to 66%; handing over in turn, the chance someone is left holding nothing rises from 5% to 29%; through the counter it stays at zero." width="1000" height="432"></div>
+    <figcaption>A simple model: each person fails to deliver 1 time in 20, independently. <b>Green</b>: the loop completes. <b>Red</b>: handing over in turn, someone gives and gets nothing back. <b>Blue</b>: through the counter, nobody ever does.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>The counter doesn't make people more reliable. The chance the whole loop completes is the same either way. What it removes is the <em>bad</em> failure: when someone doesn't deliver, the trade is called off and everyone gets their own things back.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>How the counter works</h2></div>
+  <div class="col flow">
+    <ol>
+      <li><strong>Everything goes on the counter</strong> before the drum spins. While it's there, nobody can hand it to anyone directly.</li>
+      <li><strong>The i9 calls the trades</strong> when the drum stops.</li>
+      <li><strong>The most valuable trade claims its items first.</strong> If a later trade needs an item that's already claimed (two strips that collide both ended on), that trade is called off <em>whole</em>, and everyone in it keeps their own things.</li>
+      <li><strong>The counter checks its books.</strong> Every item must end with exactly one person, and an item may only have moved if a trade that was carried out moved it. If that ever fails, the game stops rather than lose or duplicate anything.</li>
+    </ol>
+    <p>Step 4 is <strong>reconciliation</strong>: the books must balance before anything is final. It's <code>settle</code> in <code>src/trade/escrow.rs</code>, about a hundred lines. In the game you'll see it as a line after every spin: "The counter held all 17 items through the spin, then 8 changed hands in 3 trades and 1 gift."</p>
+    <div class="aside">
+      <span class="label">The price of safety</span>
+      <p>While the drum spins, nothing on the counter can be used for anything else. In markets this is real money: collateral and margin sit idle so that trades can settle safely. In the game, when Upddayett runs the drum on Vape Lady's battery cells to survive a power cut, those cells can't be traded that night. Safety is never free.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>The bank that failed at lunchtime</h2></div>
+  <div class="col flow">
+    <p>On 26 June 1974, German regulators closed <strong>Bankhaus Herstatt</strong> in Cologne at the end of the German business day. That morning, banks trading currencies with Herstatt had paid it Deutsche Marks in Germany. The US dollars Herstatt owed them in return were due in New York, hours later, and they never came. Those banks had gone first and got nothing back.</p>
+    <p>The risk that one side of a trade settles and the other doesn't is still called <strong>Herstatt risk</strong>. The industry's fixes are the counter, scaled up:</p>
+    <ul>
+      <li><strong>Payment versus payment.</strong> Since 2002, CLS Bank settles both currencies of a foreign-exchange trade together, or neither. That's the counter for currencies.</li>
+      <li><strong>Delivery versus payment.</strong> For stocks and bonds, the security moves only if the cash does.</li>
+      <li><strong>Clearing houses</strong> step into the middle of trades as the counterparty to both sides, and hold collateral so a failure doesn't cascade.</li>
+      <li><strong>Shorter settlement.</strong> The less time between agreeing a trade and settling it, the less can go wrong in between. US stocks moved to settling one business day after the trade in May 2024.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>Why loops stop at four</h2></div>
+  <div class="col flow">
+    <p>Even with the counter, a loop only completes if <em>everyone</em> in it delivers. At 1 failure in 20 per person, a 2-way swap completes 90% of the time and an 8-way loop 66%. A long loop fails often, and when it fails, everyone in it misses out. So the game's machine only considers loops of 2 to 4 people.</p>
+    <p><strong>Kidney exchange</strong> faces the same trade-off with much higher stakes. A patient whose willing donor doesn't match swaps donors with another pair. In a loop, all the surgeries happen at once, so no donor gives a kidney before their own patient has received one. That takes several operating rooms and surgical teams at the same moment, so exchanges keep loops short, usually 2 or 3 pairs.</p>
+    <p>Chains get around the limit by starting with an altruistic donor, someone who gives without needing anything back. Each pair's donor then gives only <em>after</em> their own patient has received, so nobody ever goes first with something to lose, and the surgeries can happen days apart (Rees et al., <em>New England Journal of Medicine</em>, 2009). It's the same trick as the counter: arrange things so nobody hands over before getting theirs.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+<pre><code># this lesson's figure (a model; the formulas are in the code)
+cargo run --release --example machine_figs -- settle
+
+# the game: the counter's line appears on the trade board after every spin
+cargo run --release
+
+# the counter's own tests: every item conserved, a clash called off whole
+cargo test --release --lib -- the_counter a_clash</code></pre>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">06</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>Each of 4 people fails to deliver with probability 5%. What's the chance the loop completes? Handing over in turn, what's the chance the first person is left holding nothing?</p>
+        <details><summary>Answer</summary><p>Completes: 0.95<sup>4</sup> ≈ 81.5%. The first person loses if they deliver (95%) and any of the other three doesn't (1 − 0.95<sup>3</sup> ≈ 14.3%): 0.95 × 0.143 ≈ 13.5%.</p></details></div></li>
+      <li><div><p>Without a counter, who should go first in a loop, and why does a kidney chain start with an altruistic donor?</p>
+        <details><summary>Answer</summary><p>Whoever has the least to lose by not being paid back. An altruistic donor wants nothing in return, so they lose nothing if the chain breaks after them. Every later donor gives only after their own patient has received.</p></details></div></li>
+      <li><div><p>Two trades the i9 called both need Vape Lady's battery cells. One is worth 7 Goo, the other 5. What does the counter do?</p>
+        <details><summary>Answer</summary><p>The 7-Goo trade claims the cells first and is carried out. The 5-Goo trade is called off whole: everyone in it keeps their own things, and nobody is left half-traded.</p></details></div></li>
+      <li><div><p>A clearing house protects traders from each other. What new risk does it create?</p>
+        <details><summary>Answer</summary><p>It concentrates risk: if the clearing house itself fails, everyone is exposed at once. That's why clearing houses are tightly regulated and hold large pools of collateral, and why the counter in the game checks its own books after every spin.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../overfitting/">← Lesson 2: 48 spins or it didn't happen</a>
+    <a href="../../#lessons">All lessons →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>From <em>Upddayett's School of Biddness</em>, built on <a href="https://crates.io/crates/cortenforge">CortenForge</a>. The settlement figure is a simple model, labeled as one. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

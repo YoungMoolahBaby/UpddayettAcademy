@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Upddayett Academy</title>
+<meta name="description" content="A free, open-source game where a laundromat washer is a physics computer that clears a street's barter market, and lessons that take its systems to the ideas quants use: optimization, stochastic processes, transaction costs, honest statistics and settlement.">
+<meta property="og:title" content="Upddayett Academy">
+<meta property="og:description" content="Learn the ideas under a trading desk from a laundromat that trades with physics. Every number is measured.">
+<meta property="og:image" content="https://upddayettacademy.com/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="./"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="./" aria-current="page">Home</a>
+    <a href="machine/">The Machine</a>
+    <a href="#lessons">Lessons</a>
+    <a href="#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="eyebrow">A game, and the math under it</div>
+  <h1>Learn what's under a trading desk from a laundromat</h1>
+  <p class="lede">In <strong>Upddayett's School of Biddness</strong>, the big washer at the back of a Market St laundromat is a physics computer. Every night it works out who should swap what with whom, by shaking a drum of steel strips hot and cooling it slowly until they settle on the answer. Everything in the game is measured, and these pages take its systems to the ideas quants use every day.</p>
+</div>
+
+<figure class="screen">
+  <img src="img/spin-hot.jpg" alt="The game mid-spin: the laundromat with customers labeled by name and condition, colored arcs for the trades the strips are considering, the trade board, and a live camera on the steel strips." width="1600" height="900">
+  <figcaption>Night 1, mid-spin. The colored arcs are trades the strips are considering, the board cam (bottom left) shows the strips themselves, and the trade board (top right) lists every candidate.</figcaption>
+</figure>
+
+<section>
+  <div class="col flow">
+    <h2>Who this is for</h2>
+    <p>Students who like math, physics or code and keep hearing about quant finance. A trading desk runs on a few big ideas: optimization under constraints, randomness you can model, costs that eat thin edges, statistics that don't fool you, and getting paid without getting robbed. You don't need a Bloomberg terminal to learn them. A laundromat full of people who want each other's stuff has all of them.</p>
+    <p>This won't teach you to trade. It teaches the ideas under the hood, with experiments you can rerun yourself. Every figure on this site comes from the game's real code: the physics is <a href="https://crates.io/crates/cortenforge">CortenForge</a>, an open-source simulation engine, and the commands to reproduce each one are on its page.</p>
+    <div class="readout" aria-label="Night 1 at a glance">
+      <span>Night <b>1</b></span><span>Candidate trades <b>17</b></span><span>Patterns <b>131,072</b></span><span>Valid <b>1,134</b></span><span>Greedy <b>37</b></span><span>Best <b>43 Goo</b></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col flow">
+    <div class="eyebrow">Start here</div>
+    <h2>The Machine</h2>
+    <p>How the washer solves the street's trades: the puzzle, turning it into energy, the strips, the spin, freeze-out, the i9 that watches, and the wash programs, including one that CortenForge's reinforcement learning taught to reheat when it gets stuck. Every figure is a real run.</p>
+    <p><a href="machine/"><strong>Read The Machine →</strong></a></p>
+  </div>
+  <figure>
+    <div class="plate wide"><a href="machine/"><img src="figs/machine/spin.svg" alt="One real spin: the drum cooling, every strip's on/off history, one strip close up, and the score the i9 reads." width="1010" height="815"></a></div>
+    <figcaption>One real spin, strip by strip. The strips flicker while the drum is hot, commit one by one, then freeze on tonight's trades.</figcaption>
+  </figure>
+</section>
+
+<section id="lessons">
+  <div class="col flow">
+    <h2>Lessons</h2>
+    <p>Each lesson takes one system in the game to the idea it shares with a trading desk, with a figure from real runs, the commands to rerun it, and a few exercises.</p>
+  </div>
+  <div class="lessons">
+    <a class="lesson" href="lessons/transaction-costs/">
+      <span class="tag">Lesson 1 · Costs</span>
+      <h3>The fee that ate the street</h3>
+      <p>A 2-Goo fee raises 9 Goo a night and destroys 19. Why thin edges die to costs, why the weakest member kills a trade, and the fee that raises the most.</p>
+      <span class="game">In the game: yuck</span>
+    </a>
+    <a class="lesson" href="lessons/overfitting/">
+      <span class="tag">Lesson 2 · Statistics</span>
+      <h3>48 spins or it didn't happen</h3>
+      <p>One night, 480 real spins: a 12-spin experiment can read 33% or 92%. Paired tests, held-out nights, and the time training harder made it worse.</p>
+      <span class="game">In the game: the wash programs</span>
+    </a>
+    <a class="lesson" href="lessons/settlement/">
+      <span class="tag">Lesson 3 · Market plumbing</span>
+      <h3>Nobody walks off with the hub motor</h3>
+      <p>Why every trade goes through the counter: settlement risk, a German bank that failed mid-afternoon in 1974, and why swap loops stop at four.</p>
+      <span class="game">In the game: the counter</span>
+    </a>
+    <div class="lesson soon">
+      <span class="tag">Coming · Stochastic processes</span>
+      <h3>Rare events and the hump</h3>
+      <p>Kramers escape: why hop rates fall off a cliff as things cool, and what barrier crossing has to do with default and first-passage times.</p>
+      <span class="game">In the game: the strips</span>
+    </div>
+    <div class="lesson soon">
+      <span class="tag">Coming · Optimization</span>
+      <h3>Greedy is not a strategy</h3>
+      <p>Picking the best set under constraints: independent sets, QUBOs, and why the biggest trade first gets 37 when 43 was there.</p>
+      <span class="game">In the game: the board</span>
+    </div>
+    <div class="lesson soon">
+      <span class="tag">Coming · Risk</span>
+      <h3>Somebody put a magnet under the counter</h3>
+      <p>Model risk and reconciliation: how the idle check finds a field nobody installed, using nothing but force balance.</p>
+      <span class="game">In the game: the Salties</span>
+    </div>
+  </div>
+</section>
+
+<section id="play">
+  <div class="col flow">
+    <h2>Play it</h2>
+    <p>The game is free and open source. It's built in Rust with Bevy for the graphics and CortenForge for the physics. It's developed on Windows 11 with a recent NVIDIA card; other platforms should build but are untested.</p>
+<pre><code>git clone https://github.com/YoungMoolahBaby/UpddayettAcademy
+cd UpddayettAcademy
+cargo run --release</code></pre>
+    <p>You need <a href="https://rustup.rs">Rust</a>. The first build compiles everything and takes a few minutes. In the game, pick a wash program, press Run, and watch the board cam. <strong>F1</strong> opens the picture book that explains it all.</p>
+  </div>
+  <figure class="screen">
+    <img src="img/spin-locked.jpg" alt="The game after a spin: the trade board lists the trades the i9 called, with what each person gained." width="1600" height="900" loading="lazy">
+    <figcaption>The cycle is done: the i9 calls the trades, the counter hands them out, and the board says who gained what. Nobody loses.</figcaption>
+  </figure>
+</section>
+
+<footer class="col">
+  <p><strong>Upddayett Academy</strong> is the companion site to <em>Upddayett's School of Biddness</em>, a game built on the published <a href="https://crates.io/crates/cortenforge">CortenForge</a> crates. Source and every measurement: <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">github.com/YoungMoolahBaby/UpddayettAcademy</a>.</p>
+  <p>Rated M: crude humor, mild thermodynamics. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

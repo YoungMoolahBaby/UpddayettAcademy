@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>48 Spins or It Didn't Happen · Upddayett Academy</title>
+<meta name="description" content="Lesson 2: honest statistics. One night, 480 real spins: a 12-spin experiment can read 33% or 92%. Paired tests, held-out nights, and the time training harder made it worse.">
+<meta property="og:title" content="48 Spins or It Didn't Happen">
+<meta property="og:description" content="Noise, paired tests and overfitting, measured on a machine that learns.">
+<meta property="og:image" content="https://upddayettacademy.com/img/spin-hot.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a34a1f'/%3E%3Cpath d='M7 22c3-9 6-9 9 0s6 9 9 0' fill='none' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<div class="page">
+
+<header class="site-head">
+  <a class="wordmark" href="../../"><b>Upddayett Academy</b><span>School of Biddness</span></a>
+  <nav class="nav" aria-label="Site">
+    <a href="../../">Home</a>
+    <a href="../../machine/">The Machine</a>
+    <a href="../../#lessons" aria-current="page">Lessons</a>
+    <a href="../../#play">Play</a>
+    <a href="https://github.com/YoungMoolahBaby/UpddayettAcademy">Source</a>
+  </nav>
+</header>
+
+<div class="hero col">
+  <div class="eyebrow">Lesson 2 · Statistics · In the game: the wash programs</div>
+  <h1>48 spins or it didn't happen</h1>
+  <p class="lede">On night 2 the machine finds the best set of trades 62% of the time, measured over 480 real spins. Run only 12 and you could read anything from 33% to 92%. This lesson is about not fooling yourself: noise, comparing fairly, and what happened when we trained a program harder and it got worse.</p>
+</div>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">01</span><h2>One experiment can lie</h2></div>
+  <div class="col flow">
+    <p>A spin either lands the best set or it doesn't, a coin flip with an unknown bias. The <strong>hit rate</strong> is the share of spins that land it. (If the machine is new to you, start with <a href="../../machine/">The Machine</a>.) To see how much a hit rate can mislead, we ran 480 real spins on one night and cut them into experiments: forty of 12 spins, and ten of 48.</p>
+  </div>
+  <figure>
+    <div class="plate wide"><img src="../../figs/lessons/noise.svg" alt="Dot plot of measured hit rates on night 2. Forty 12-spin experiments range from 33% to 92%; ten 48-spin experiments range from 54% to 71%; all 480 spins give 62%." width="1000" height="400"></div>
+    <figcaption>Every dot is a real experiment on the same night with the same program. The only difference between them is luck.</figcaption>
+  </figure>
+  <div class="col flow">
+    <p>The spread follows a simple rule. A hit rate measured over <em>n</em> spins has a <strong>standard error</strong> of √(p(1−p)/n), where p is the true rate. At p = 0.62 that's 14 points for 12 spins and 7 for 48. Roughly 95% of experiments land within two standard errors, the grey bands. Four times the spins only halves the error, so certainty gets expensive fast.</p>
+    <p>Early in the project, programs were compared at 12 spins a night, and a night's score could swing 15 points either way. Every number on this site since then is at least 48 spins a board, and usually many boards.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">02</span><h2>Compare on the same dice</h2></div>
+  <div class="col flow">
+    <p>Two learned programs, run 3 and run 5, looked tied in 20-night tests. So we ran both on 60 fresh nights, 48 spins each, <em>with the same boards and the same random seeds</em>, and asked whether run 5 is really better. Here is the same data, analyzed two ways:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Analysis</th><th>Run 5 − run 3</th><th>95% interval</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="win"><td>Paired: compare per board, then average</td><td class="n">+2.7 points</td><td class="n">[+1.5, +4.1]</td><td>Run 5 is better</td></tr>
+          <tr><td>Unpaired: compare the two averages</td><td class="n">+2.7 points</td><td class="n">[−0.1, +5.7]</td><td>Can't tell</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Same difference, opposite verdicts. Some nights are easy and some are brutal, and that night-to-night swing is far bigger than the gap between the programs. The unpaired analysis counts all of it as noise. The paired one subtracts it out: on each board, both programs faced the same night with the same luck, so the difference is just the programs. Run 5 won on 32 boards, run 3 on 8, and 20 were ties.</p>
+    <p>Running both candidates on identical randomness is called <strong>common random numbers</strong>, and pairing the results is what makes it pay. The intervals come from a <strong>bootstrap</strong>: resample the 60 per-board differences thousands of times and see how much the average moves (CortenForge's sim-opt does this).</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">03</span><h2>Training harder made it worse</h2></div>
+  <div class="col flow">
+    <p>The game's Smart program is a cooling schedule that CortenForge's <strong>CEM</strong> (the cross-entropy method, a simple reinforcement-learning algorithm) learned by trial and error on 11 hard training nights. Every version was then judged on nights it had never seen. That last step is the one that saved us.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Version</th><th>What changed</th><th>On nights it never trained on</th></tr></thead>
+        <tbody>
+          <tr><td>Run 1</td><td>Reward included a small cost for heat</td><td>Abandoned: on easy nights every candidate tied, so the heat cost alone ranked them, and CEM learned to run cold</td></tr>
+          <tr><td>Run 2</td><td>No heat cost</td><td class="n">80% vs Normal's 81%: no better</td></tr>
+          <tr class="win"><td>Run 5 (ships)</td><td>Restarts, and memory: it reheats when the strips freeze</td><td class="n">95% vs Normal's 83%</td></tr>
+          <tr><td>Run 6</td><td>From run 5, trained 50% longer on 3× the boards (with wants and give-aways)</td><td class="n">Worse everywhere: 91% vs 94%, and 84% vs 88%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Run 6 had more data and more training, and it got worse. CEM scores each candidate schedule by one spin on one board, and we just saw how noisy one spin is. Run 5 was already near the ceiling, so the noise in those scores was bigger than any real improvement left to find. CEM followed the noise, and nothing in training told it to stop. Only the held-out nights showed it.</p>
+    <h3>The hand-tuned schedule's suspicious win</h3>
+    <p>A schedule tuned by hand, by trying settings and keeping the best on nights 1-10, scored 91% there, beating CEM's 88%. On fresh nights 61-80 it scored 94% to run 5's 95%. Its lead on nights 1-10 came from being picked on the same nights it was scored on. Pick the best of many tries on one set of data, and some of its score is luck that won't repeat.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">04</span><h2>On a trading desk</h2></div>
+  <div class="col flow">
+    <ul>
+      <li><strong>Backtest overfitting</strong> is run 6 and the hand sweep. Try enough strategies on the same history and one will look brilliant by luck. Bailey and López de Prado's <em>deflated Sharpe ratio</em> (2014) corrects a strategy's score for how many were tried to find it.</li>
+      <li><strong>Hold data out.</strong> Fit on one period, judge on a later one you never touched (walk-forward testing). Then keep a final test set you look at once.</li>
+      <li><strong>Pair your comparisons.</strong> Compare two strategies over the same days, not their separate averages over different days. Market swings dwarf most edges, and pairing cancels them.</li>
+      <li><strong>Know your error bars before you celebrate.</strong> A few months of returns has a huge standard error. The 12-spin dots are what a short track record looks like.</li>
+      <li><strong>You get what you reward.</strong> Run 1 optimized the tie-breaker instead of the goal. Incentives built into a model, a bonus or a fee schedule do the same.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">05</span><h2>Run it yourself</h2></div>
+  <div class="col flow">
+<pre><code># this lesson's figure: 480 spins on one night (~45 s)
+cargo run --release --example machine_figs -- noise
+
+# run 5 vs run 3 vs Normal, paired bootstrap, 60 fresh nights (~17 min)
+cargo run --release --example trade_cli -- rematch --nights 81..140 --runs 48 --seed 2000
+
+# the learned program vs Normal, night by night
+cargo run --release --example trade_cli -- versus --smart --nights 61..80 --seed 1000</code></pre>
+    <p>The learned program is <code>src/trade/smart.rs</code>, and the full training log, failed runs included, is "Step 4" in the repo's <code>docs/PLAN.md</code>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head col"><span class="sec-num">06</span><h2>Exercises</h2></div>
+  <div class="col">
+    <ol class="exercises">
+      <li><div><p>On night 2, about how many spins do you need for a 95% interval of ±5 points on the hit rate?</p>
+        <details><summary>Answer</summary><p>Solve 1.96 × √(0.62 × 0.38 / n) = 0.05: n ≈ 3.84 × 0.236 / 0.0025 ≈ 362 spins. That's for one night. A claim about all nights needs many nights too.</p></details></div></li>
+      <li><div><p>You test 20 tweaks of a strategy, none of which is actually better, each at the 95% level. How many "significant" winners do you expect? What's the chance of at least one?</p>
+        <details><summary>Answer</summary><p>One expected false positive (20 × 5%). At least one: 1 − 0.95<sup>20</sup> ≈ 64%. Odds are you'll find a "winner" in pure noise.</p></details></div></li>
+      <li><div><p>Why did pairing shrink the interval so much here, when it's the same 60 boards either way?</p>
+        <details><summary>Answer</summary><p>Each program's hit rate varies a lot from board to board, because nights differ in difficulty. Both programs see the same difficulty on the same board, so the per-board differences vary much less than the scores themselves. The unpaired analysis treats the difficulty swing as noise in each average.</p></details></div></li>
+      <li><div><p>At four times the compute, the row of washers and the best of four run-5 washers both land the best set 100% of the time. Which is better?</p>
+        <details><summary>Answer</summary><p>The test can't say. Both hit the ceiling, so it has no room to show a difference. You need a harder test (less compute or harder boards) where neither is perfect. At equal compute the row won, 96.8% to 93.1%.</p></details></div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col lesson-nav">
+    <a href="../transaction-costs/">← Lesson 1: the fee that ate the street</a>
+    <a href="../settlement/">Lesson 3: nobody walks off with the hub motor →</a>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Measurements from <em>Upddayett's School of Biddness</em>, built on <a href="https://crates.io/crates/cortenforge">CortenForge</a>; bootstrap intervals from its sim-opt crate. Not financial advice; Goo is not a currency.</p>
+</footer>
+
+</div>
+</body>
+</html>

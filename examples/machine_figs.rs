@@ -1,9 +1,11 @@
-//! Figures for `docs/MACHINE.md` ("How the machine works"), plotted from the
-//! real machine: every curve and dot is a CortenForge run or the night's real
-//! board, not a drawing.
+//! Figures for `docs/MACHINE.md` ("How the machine works") and the site's
+//! lessons (`site/`, upddayettacademy.com), plotted from the real machine:
+//! every curve and dot is a CortenForge run or the night's real board, not a
+//! drawing (the settlement figure is a labeled model).
 //!
-//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs] [--night N]`
-//! writes `docs/machine/*.svg`. Without `--night` it picks the first night
+//! `cargo run --release --example machine_figs -- [all|pipeline|strip|board|landscape|spin|freeze|programs|fees|noise|settle] [--night N]`
+//! writes the machine figures to `docs/machine/*.svg` (and copies to
+//! `site/figs/machine/`), the lessons to `site/figs/lessons/`. Without `--night` it picks the first night
 //! (from 1) where grabbing the best trade first loses Goo, so the board figure
 //! has something to show.
 
@@ -14,6 +16,9 @@ use cortenforge::sim::thermostat::{DoubleWellPotential, WellState};
 use cortenforge_play::trade::{self, Anneal, Cycle, Ising, Machine, Physics, TradeComputer, qubo};
 
 const OUT: &str = "docs/machine";
+/// The site (upddayettacademy.com) keeps its own copies.
+const SITE_MACHINE: &str = "site/figs/machine";
+const SITE_LESSONS: &str = "site/figs/lessons";
 const BETA: f64 = 5.0;
 const PENALTY: f64 = 1.6;
 
@@ -120,8 +125,14 @@ impl Svg {
         );
     }
 
+    /// A machine figure: for `docs/MACHINE.md` and the site's machine page.
     fn save(&self, name: &str) {
-        std::fs::create_dir_all(OUT).expect("docs/machine");
+        self.save_to(OUT, name);
+        self.save_to(SITE_MACHINE, name);
+    }
+
+    fn save_to(&self, dir: &str, name: &str) {
+        std::fs::create_dir_all(dir).expect("figure dir");
         let svg = format!(
             "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {w} {h}\" width=\"{w}\" height=\"{h}\" \
              font-family=\"Segoe UI, Helvetica, Arial, sans-serif\">\n<rect width=\"{w}\" height=\"{h}\" fill=\"#ffffff\"/>\n{}</svg>\n",
@@ -129,7 +140,7 @@ impl Svg {
             w = self.w,
             h = self.h
         );
-        let path = format!("{OUT}/{name}.svg");
+        let path = format!("{dir}/{name}.svg");
         std::fs::write(&path, svg).expect("write svg");
         println!("wrote {path}");
     }
@@ -901,4 +912,257 @@ fn main() {
     if all || what == "programs" {
         programs();
     }
+    // The site's lessons (site/figs/lessons).
+    if all || what == "fees" {
+        fees();
+    }
+    if all || what == "noise" {
+        noise();
+    }
+    if all || what == "settle" {
+        settle();
+    }
+}
+
+// ---- lesson figures (upddayettacademy.com) ----
+
+/// Tonight's best trades (trades only, no gifts) with a flat fee of `fee`
+/// Goo on everyone in every trade: (net Goo kept, trades, people in them).
+fn best_trades(night: u64, fee: f64) -> (f64, usize, usize) {
+    let mut w = trade::world::laundromat(night);
+    if fee > 0.0 {
+        for k in 0..w.npcs.len() {
+            w.set_yuck(k, fee);
+        }
+    }
+    // Gains come out net of the fee; a trade where anyone would lose is gone.
+    let mut c = trade::cycles::enumerate(&w, trade::MAX_LOOP);
+    c.sort_by(|a, b| b.goo().total_cmp(&a.goo()));
+    c.truncate(trade::MAX_BITS);
+    if c.is_empty() {
+        return (0.0, 0, 0);
+    }
+    let masks = qubo::conflict_masks(&c);
+    let weights: Vec<f64> = c.iter().map(Cycle::goo).collect();
+    let (set, net) = qubo::best_valid_set(&weights, &masks);
+    let on = qubo::chosen(set, c.len());
+    (net, on.len(), on.iter().map(|&i| c[i].len()).sum())
+}
+
+/// One fee level, averaged per night: (fee, net kept, fees paid, destroyed, trades).
+type FeeRow = (f64, f64, f64, f64, f64);
+
+/// Transaction costs: a flat fee per person per trade, across nights 1-30.
+fn fees() {
+    let nights: Vec<u64> = (1..=30).collect();
+    // Gains are whole Goo, so the picture is a staircase: sample it finely.
+    let steps: Vec<f64> = (0..=70).map(|k| k as f64 * 0.05).collect();
+    let k = nights.len() as f64;
+    let gross0 = nights.iter().map(|&n| best_trades(n, 0.0).0).sum::<f64>() / k;
+    let rows: Vec<FeeRow> = steps
+        .iter()
+        .map(|&f| {
+            let (mut net, mut paid, mut trades) = (0.0, 0.0, 0.0);
+            for &n in &nights {
+                let (v, t, legs) = best_trades(n, f);
+                net += v;
+                paid += f * legs as f64;
+                trades += t as f64;
+            }
+            let (net, paid, trades) = (net / k, paid / k, trades / k);
+            (f, net, paid, gross0 - net - paid, trades)
+        })
+        .collect();
+    let most = rows.iter().max_by(|a, b| a.2.total_cmp(&b.2)).unwrap();
+    println!("  most fee revenue: {:.1} Goo a night at a fee of {:.2} (street keeps {:.1}, destroyed {:.1})", most.2, most.0, most.1, most.3);
+    for r in rows.iter().step_by(10) {
+        println!("  fee {:.1}: net {:.1}, fees {:.1}, destroyed {:.1}, trades {:.1}", r.0, r.1, r.2, r.3, r.4);
+    }
+    let fmax = *steps.last().unwrap();
+    let top = (gross0 / 10.0).ceil() * 10.0;
+    let mut s = Svg::new(1000.0, 470.0);
+    s.text((80.0, 28.0), "A flat fee on every trader: where the Goo goes (nights 1-30, average per night)", 15.0, INK, "start", "bold");
+    let a = Axes::new((80.0, 60.0, 520.0, 320.0), (0.0, fmax), (0.0, top + 5.0));
+    let xt: Vec<(f64, String)> = (0..=(fmax * 2.0) as usize).map(|k| (k as f64 * 0.5, format!("{}", k as f64 * 0.5))).collect();
+    let xt: Vec<(f64, &str)> = xt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    let yt: Vec<(f64, String)> = (0..=(top / 10.0) as usize).map(|k| ((k * 10) as f64, (k * 10).to_string())).collect();
+    let yt: Vec<(f64, &str)> = yt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    a.draw(&mut s, &xt, &yt, "fee per person per trade (Goo)", "Goo per night");
+    // Stacked areas: net (bottom), fees, destroyed (up to the no-fee total).
+    let band = |s: &mut Svg, lo: &dyn Fn(&FeeRow) -> f64, hi: &dyn Fn(&FeeRow) -> f64, color: &str| {
+        let mut d = String::new();
+        for (k, r) in rows.iter().enumerate() {
+            let p = a.p(r.0, hi(r));
+            let _ = write!(d, "{}{:.1},{:.1} ", if k == 0 { "M" } else { "L" }, p.0, p.1);
+        }
+        for r in rows.iter().rev() {
+            let p = a.p(r.0, lo(r));
+            let _ = write!(d, "L{:.1},{:.1} ", p.0, p.1);
+        }
+        let _ = writeln!(s.body, r#"<path d="{d}Z" fill="{color}" stroke="none"/>"#);
+    };
+    band(&mut s, &|_| 0.0, &|r| r.1, GOO);
+    band(&mut s, &|r| r.1, &|r| r.1 + r.2, GOLD);
+    band(&mut s, &|r| r.1 + r.2, &|_| gross0, "#f2b8b0");
+    s.line(a.p(0.0, gross0), a.p(fmax, gross0), RED, 1.5, Some("6 4"));
+    // The game's yuck tax.
+    let at2 = rows.iter().find(|r| (r.0 - 2.0).abs() < 1e-9).copied().unwrap();
+    s.line(a.p(2.0, 0.0), a.p(2.0, gross0), INK, 1.2, Some("3 3"));
+    s.text((a.fx(2.0) + 4.0, a.y + 14.0), "fee 2: the game's yuck tax", 11.0, INK, "start", "normal");
+    let lx = 630.0;
+    let legend: [(&str, String, String); 3] = [
+        (GOO, "Kept by the street".into(), format!("{:.1} Goo at a fee of 2 (no fee: {gross0:.1})", at2.1)),
+        (GOLD, "Paid in fees".into(), format!("{:.1} Goo at a fee of 2", at2.2)),
+        ("#f2b8b0", "Destroyed: trades that never happen".into(), format!("{:.1} Goo at a fee of 2", at2.3)),
+    ];
+    for (k, (c, a1, b1)) in legend.iter().enumerate() {
+        let y = 80.0 + k as f64 * 54.0;
+        s.rect((lx, y - 11.0), (16.0, 16.0), 2.0, c, c);
+        s.text((lx + 26.0, y + 2.0), a1, 12.5, INK, "start", "bold");
+        s.text((lx + 26.0, y + 20.0), b1, 12.0, DIM, "start", "normal");
+    }
+    // Trades per night, small.
+    let t0 = rows[0].4;
+    let b = Axes::new((lx + 30.0, 270.0, 300.0, 110.0), (0.0, fmax), (0.0, t0.ceil() + 1.0));
+    let t0s = format!("{t0:.1}");
+    let half = format!("{}", fmax / 2.0);
+    let full = format!("{fmax}");
+    b.draw(&mut s, &[(0.0, "0"), (fmax / 2.0, half.as_str()), (fmax, full.as_str())], &[(0.0, "0"), (t0, t0s.as_str())], "fee", "");
+    let pts: Vec<_> = rows.iter().map(|r| b.p(r.0, r.4)).collect();
+    s.path(&pts, INK, 2.0, 1.0, None);
+    s.text((b.x, b.y - 8.0), "Trades per night", 12.0, INK, "start", "bold");
+    s.text(
+        (80.0, 430.0),
+        "Exact best sets (trades only, the board's 20 best loops) for each of 30 nights at each fee. A trade survives only if every person",
+        11.0,
+        DIM,
+        "start",
+        "normal",
+    );
+    s.text((80.0, 446.0), "in it still gains after paying. The pink band is value nobody gets: not the traders, and not whoever collects the fee.", 11.0, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "fees");
+}
+
+/// Whether Normal's i9 latch lands a best set on `tc`, one entry per seed.
+fn hits(tc: &TradeComputer, seeds: std::ops::RangeInclusive<u64>) -> Vec<bool> {
+    let seeds: Vec<u64> = seeds.collect();
+    let out = Mutex::new(vec![]);
+    std::thread::scope(|sc| {
+        for chunk in seeds.chunks(seeds.len().div_ceil(12).max(1)) {
+            let out = &out;
+            sc.spawn(move || {
+                for &seed in chunk {
+                    let mut m = tc.machine(Physics::default(), seed).expect("machine");
+                    let l = tc.spin(&mut m, &Anneal::default(), 1.0, f64::INFINITY, |_, _| {}).expect("spin");
+                    out.lock().unwrap().push((seed, tc.is_optimal(l.best_bits)));
+                }
+            });
+        }
+    });
+    let mut v = out.into_inner().unwrap();
+    v.sort();
+    v.into_iter().map(|x| x.1).collect()
+}
+
+/// Sampling noise: 480 real spins on one hard night, cut into 12-spin and
+/// 48-spin "experiments".
+fn noise() {
+    // A night where Normal lands the best set about half the time.
+    let night = (1..=60u64)
+        .find(|&n| {
+            let h = hits(&computer(n), 1..=24);
+            let r = h.iter().filter(|x| **x).count() as f64 / 24.0;
+            println!("  night {n}: {:.0}% in 24 spins", r * 100.0);
+            (0.4..=0.65).contains(&r)
+        })
+        .expect("a middling night");
+    let h = hits(&computer(night), 1001..=1480);
+    let p = h.iter().filter(|x| **x).count() as f64 / h.len() as f64;
+    let est = |n: usize| -> Vec<f64> { h.chunks(n).map(|c| c.iter().filter(|x| **x).count() as f64 / n as f64).collect() };
+    let (e12, e48) = (est(12), est(48));
+    let range = |v: &[f64]| (v.iter().cloned().fold(1.0, f64::min), v.iter().cloned().fold(0.0, f64::max));
+    println!("  night {night}: {:.1}% over 480; 12-spin range {:?}, 48-spin range {:?}", p * 100.0, range(&e12), range(&e48));
+
+    let mut s = Svg::new(1000.0, 400.0);
+    s.text((80.0, 28.0), &format!("One night, 480 real spins: how much can one experiment lie? (night {night}, Normal program)"), 15.0, INK, "start", "bold");
+    let a = Axes::new((190.0, 60.0, 760.0, 240.0), (0.0, 1.0), (0.0, 3.0));
+    a.draw(&mut s, &[(0.0, "0%"), (0.25, "25%"), (0.5, "50%"), (0.75, "75%"), (1.0, "100%")], &[], "measured hit rate (how often the i9 latched the best set)", "");
+    for (y, e, n, c) in [(2.2, &e12, 12usize, ICE), (0.8, &e48, 48usize, PURPLE)] {
+        let sd = (p * (1.0 - p) / n as f64).sqrt();
+        let (lo, hi) = ((p - 1.96 * sd).max(0.0), (p + 1.96 * sd).min(1.0));
+        let (x0, x1) = (a.fx(lo), a.fx(hi));
+        s.rect((x0, a.fy(y) - 30.0), (x1 - x0, 60.0), 4.0, "#eef0f4", "#eef0f4");
+        // Stack equal estimates so every experiment shows.
+        let mut seen: std::collections::HashMap<i64, usize> = Default::default();
+        for v in e.iter() {
+            let k = seen.entry((v * 1000.0).round() as i64).or_default();
+            let dy = (*k as f64 * 9.0 - 22.0).min(26.0);
+            *k += 1;
+            s.circle((a.fx(*v), a.fy(y) + dy), 4.2, c, "#ffffff", 1.2);
+        }
+        s.text((a.x - 12.0, a.fy(y) - 4.0), &format!("{} experiments", e.len()), 12.5, INK, "end", "bold");
+        s.text((a.x - 12.0, a.fy(y) + 13.0), &format!("of {n} spins each"), 12.0, DIM, "end", "normal");
+        let (mn, mx) = range(e);
+        s.text((a.x + a.w - 6.0, a.fy(y) - 36.0), &format!("they read anywhere from {:.0}% to {:.0}%", mn * 100.0, mx * 100.0), 11.5, c, "end", "bold");
+    }
+    s.line(a.p(p, 0.0), a.p(p, 3.0), RED, 2.0, None);
+    s.text((a.fx(p) + 5.0, a.y + 14.0), &format!("all 480: {:.0}%", p * 100.0), 12.0, RED, "start", "bold");
+    s.text((80.0, 352.0), "Each dot is one experiment: a batch of real spins and the share that found the best set. The grey band is where 95% of", 11.5, DIM, "start", "normal");
+    s.text((80.0, 369.0), "experiments that size should land (binomial). Four times the spins only halves the spread.", 11.5, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "noise");
+}
+
+/// Settlement risk: a loop of k people where each fails to deliver with
+/// probability `p` (a model, not a game measurement).
+fn settle() {
+    let mut s = Svg::new(1000.0, 432.0);
+    s.text((80.0, 28.0), "Settlement risk in a swap loop: hand over in turn, or everything through the counter", 15.0, INK, "start", "bold");
+    let a = Axes::new((80.0, 60.0, 520.0, 290.0), (2.0, 8.0), (0.0, 1.0));
+    let xt: Vec<(f64, String)> = (2..=8).map(|k| (k as f64, k.to_string())).collect();
+    let xt: Vec<(f64, &str)> = xt.iter().map(|(v, s)| (*v, s.as_str())).collect();
+    a.draw(&mut s, &xt, &[(0.0, "0%"), (0.25, "25%"), (0.5, "50%"), (0.75, "75%"), (1.0, "100%")], "people in the loop", "probability");
+    let p: f64 = 0.05;
+    let ks: Vec<f64> = (2..=8).map(|k| k as f64).collect();
+    // Everyone has to show up and deliver.
+    let done: Vec<_> = ks.iter().map(|&k| a.p(k, (1.0 - p).powf(k))).collect();
+    // In turn: the first person delivers, then waits on the other k - 1.
+    let stranded: Vec<_> = ks.iter().map(|&k| a.p(k, (1.0 - p) * (1.0 - (1.0 - p).powf(k - 1.0)))).collect();
+    let escrow: Vec<_> = ks.iter().map(|&k| a.p(k, 0.0)).collect();
+    s.rect((a.fx(2.0), a.y), (a.fx(4.0) - a.fx(2.0), a.h), 0.0, "#fbf3dc", "#fbf3dc");
+    s.text((a.fx(3.0), a.y + 16.0), "the game's loops (2-4)", 11.5, GOLD, "middle", "bold");
+    s.path(&done, GOO, 3.0, 1.0, None);
+    s.path(&stranded, RED, 3.0, 1.0, None);
+    s.path(&escrow, ICE, 3.0, 1.0, Some("7 4"));
+    for pts in [&done, &stranded] {
+        for q in pts.iter() {
+            s.circle(*q, 3.5, "#ffffff", INK, 1.2);
+        }
+    }
+    let lx = 630.0;
+    let lines: [(&str, &str, &str); 3] = [
+        (GOO, "The whole loop completes", "Same either way: every extra person is one more chance it breaks."),
+        (RED, "Someone is left holding nothing", "Handing over in turn: whoever goes first gives, then waits on everyone else."),
+        (ICE, "...if it all goes through the counter", "Zero. If anyone fails to deliver, the counter hands everything back."),
+    ];
+    for (k, (c, t, d)) in lines.iter().enumerate() {
+        let y = 80.0 + k as f64 * 72.0;
+        s.line((lx, y), (lx + 24.0, y), c, 3.0, if k == 2 { Some("7 4") } else { None });
+        s.text((lx + 32.0, y + 4.0), t, 12.5, INK, "start", "bold");
+        // Wrap the explanation by hand at ~44 characters.
+        let (mut line, mut row) = (String::new(), 0);
+        for word in d.split(' ') {
+            if line.len() + word.len() > 44 {
+                s.text((lx + 32.0, y + 22.0 + row as f64 * 16.0), &line, 11.5, DIM, "start", "normal");
+                line.clear();
+                row += 1;
+            }
+            if !line.is_empty() {
+                line.push(' ');
+            }
+            line.push_str(word);
+        }
+        s.text((lx + 32.0, y + 22.0 + row as f64 * 16.0), &line, 11.5, DIM, "start", "normal");
+    }
+    s.text((80.0, 414.0), "A simple model, not a game measurement: each person independently fails to deliver 1 time in 20 (p = 5%).", 11.5, DIM, "start", "normal");
+    s.save_to(SITE_LESSONS, "settle");
 }

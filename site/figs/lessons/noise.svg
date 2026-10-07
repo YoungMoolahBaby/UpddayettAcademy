@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1000" height="400" fill="#ffffff"/>
+<text x="80.0" y="28.0" font-size="15" fill="#1d2026" text-anchor="start" font-weight="bold">One night, 480 real spins: how much can one experiment lie? (night 2, Normal program)</text>
+<line x1="190.0" y1="60.0" x2="190.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="190.0" y="316.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">0%</text>
+<line x1="380.0" y1="60.0" x2="380.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="380.0" y="316.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">25%</text>
+<line x1="570.0" y1="60.0" x2="570.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="570.0" y="316.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">50%</text>
+<line x1="760.0" y1="60.0" x2="760.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="760.0" y="316.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">75%</text>
+<line x1="950.0" y1="60.0" x2="950.0" y2="300.0" stroke="#e6e8ec" stroke-width="1"/>
+<text x="950.0" y="316.0" font-size="11" fill="#7a808c" text-anchor="middle" font-weight="normal">100%</text>
+<rect x="190.0" y="60.0" width="760.0" height="240.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
+<text x="570.0" y="334.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">measured hit rate (how often the i9 latched the best set)</text>
+<rect x="455.0" y="94.0" width="416.8" height="60.0" rx="4" fill="#eef0f4" stroke="#eef0f4" stroke-width="1.5"/>
+<circle cx="633.3" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="760.0" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="111.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="120.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="129.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="111.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="443.3" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="120.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="760.0" cy="111.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="129.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="111.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="138.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="120.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="129.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="760.0" cy="120.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="138.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="760.0" cy="129.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="138.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="147.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="147.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="147.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="760.0" cy="138.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="823.3" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="886.7" cy="102.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="633.3" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="570.0" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="150.0" r="4.2" fill="#3d8fd6" stroke="#ffffff" stroke-width="1.2"/>
+<text x="178.0" y="120.0" font-size="12.5" fill="#1d2026" text-anchor="end" font-weight="bold">40 experiments</text>
+<text x="178.0" y="137.0" font-size="12" fill="#7a808c" text-anchor="end" font-weight="normal">of 12 spins each</text>
+<text x="944.0" y="88.0" font-size="11.5" fill="#3d8fd6" text-anchor="end" font-weight="bold">they read anywhere from 33% to 92%</text>
+<rect x="559.2" y="206.0" width="208.4" height="60.0" rx="4" fill="#eef0f4" stroke="#eef0f4" stroke-width="1.5"/>
+<circle cx="665.0" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="649.2" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="649.2" cy="223.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="601.7" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="680.8" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="617.5" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="728.3" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="680.8" cy="223.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="665.0" cy="223.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<circle cx="696.7" cy="214.0" r="4.2" fill="#8a4fc2" stroke="#ffffff" stroke-width="1.2"/>
+<text x="178.0" y="232.0" font-size="12.5" fill="#1d2026" text-anchor="end" font-weight="bold">10 experiments</text>
+<text x="178.0" y="249.0" font-size="12" fill="#7a808c" text-anchor="end" font-weight="normal">of 48 spins each</text>
+<text x="944.0" y="200.0" font-size="11.5" fill="#8a4fc2" text-anchor="end" font-weight="bold">they read anywhere from 54% to 71%</text>
+<line x1="663.4" y1="300.0" x2="663.4" y2="60.0" stroke="#d8392b" stroke-width="2"/>
+<text x="668.4" y="74.0" font-size="12" fill="#d8392b" text-anchor="start" font-weight="bold">all 480: 62%</text>
+<text x="80.0" y="352.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Each dot is one experiment: a batch of real spins and the share that found the best set. The grey band is where 95% of</text>
+<text x="80.0" y="369.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">experiments that size should land (binomial). Four times the spins only halves the spread.</text>
+</svg>
