@@ -6,7 +6,10 @@ edition = "2024"
 [dependencies]
 cortenforge = "0.9.0"
 nalgebra = "0.34"
-bevy = { version = "0.19.1", features = ["area_light_luts"] }
+bevy = { version = "0.19.1", features = ["area_light_luts", "mp3", "flac", "wav"] }
+# The tape deck (Step 8) checks a dropped file with the same decoder Bevy uses
+# (Bevy unwraps it: a bad file would crash the game). Same version as Bevy.
+rodio = { version = "0.22", default-features = false }
 bevy_egui = "0.42.0"
 
 [features]

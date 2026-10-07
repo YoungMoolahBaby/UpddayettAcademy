@@ -12,6 +12,7 @@ mod scene;
 mod shots;
 mod tv;
 mod sim;
+mod tape;
 mod ui;
 
 use bevy::prelude::*;
@@ -28,12 +29,13 @@ impl Plugin for GamePlugin {
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()
-            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup), drum::setup.after(scene::setup), printer::setup, tv::setup))
+            .add_systems(Startup, (scene::setup, arrows::configure, counter::setup.after(scene::setup), drum::setup.after(scene::setup), printer::setup, tape::setup, tv::setup))
             .add_systems(
                 Update,
                 (
                     sim::step_sim,
                     printer::update,
+                    tape::update,
                     (
                         scene::shake_washer,
                         scene::run_row,
@@ -53,13 +55,15 @@ impl Plugin for GamePlugin {
                 )
                     .chain(),
             )
-            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear)).chain());
+            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear), tape::ui.run_if(cards::clear)).chain());
         #[cfg(feature = "solari")]
         app.add_plugins(rt::RtPlugin);
         if cards::shots_enabled() {
             app.add_systems(Update, cards::shots);
         } else if shots::enabled() {
             app.add_systems(Update, shots::drive.after(sim::step_sim));
+        } else if tape::shots_enabled() {
+            app.add_systems(Update, tape::shots.after(tape::update));
         }
     }
 }

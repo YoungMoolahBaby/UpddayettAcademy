@@ -36,6 +36,10 @@ on a worker thread (see "Step 5" below).
 parts in cf-design; the i9 rejects his first draft with the printability
 checker's numbers, he fixes it, and the print joins the board and the drum
 (see "Step 7" below; FINDINGS cf-design and mesh). The backlog is empty.
+**Step 8 done** (2026-10-06): bring your own tape. A boombox on the floor by
+the printer plays the player's own music, dropped on the window or put in
+`music/`. It's optional: silent until given a tape, no autoplay, and it
+switches off to a prop (see "Step 8" below).
 **Step 6 done** (2026-10-06): backlog item 3, a row of washers (parallel
 tempering). Four washers share one Normal cycle's compute and trade loads.
 On 60 fresh nights they beat the learned run 5 by +3.7 points (96.8% vs
@@ -461,6 +465,52 @@ no music, and nobody hears songs they don't like.
     `validate_for_printing`).
   - **bring your own voice:** record the pugs' lines.
   - **bring your own ad:** an image on PromiseTV.
+
+### Step 8 result (2026-10-06)
+
+Built in `src/game/tape.rs`:
+- **The prop:** a cf-design boombox on the floor between Amir and the
+  printer's stool. It has a case with speaker wells and a cassette bay,
+  grilles punched with `repeat_bounded`, a handle, an antenna and piano
+  keys. While a tape plays, the cassette shows in the window and its reels
+  turn. The tape winds from the left reel to the right, so the packs
+  show how far into the track it is.
+- **Drop-in:**
+  - Files or folders dropped on the window are scanned for
+    MP3/Ogg/FLAC/WAV at any depth and copied into `music/` on a worker
+    thread. `music/` is scanned at launch and git-ignored.
+  - Each file is read and handed to rodio's decoder on a worker before
+    Bevy sees it. Bevy unwraps the decoder (bevy_audio
+    audio_source.rs:97-101), so a bad file would crash the game. Instead
+    it gets a note, "can't play broken: the format of the data has not
+    been recognized", and drops out of the list.
+  - The clunk of a tape going in is synthesized in code, so we ship no
+    sound files.
+- **Controls:**
+  - The cream label under the boombox shows the track, "N TAPES - press
+    play" or "BYO TAPE". Click it for play/pause, next, shuffle, volume and
+    "switch the deck off". The controls open upward, and the label keeps
+    clear of the board-cam inset, which draws over egui.
+  - M pauses and N skips, only while the deck is on and egui isn't typing.
+  - Volume, shuffle and power live in `music/deck.txt`.
+  - At the end of the list it auto-reverses to the first tape.
+- **Optional:** nothing plays at launch, even with tapes in `music/`. Off,
+  the label is a dim "tape deck: off" switch, and the hotkeys and drops do
+  nothing.
+- **Not done:** ducking under the ads and pugs (neither has sound yet), and
+  clicking the 3D prop itself (the label does it).
+- **Checks:**
+  - `UPD_TAPE=<file or folder>` loads tapes as if dropped (nothing
+    copied), shoots `tape_1_playing`, presses N twice and shoots
+    `tape_2_next` and `tape_3_off`.
+  - `UPD_TAPE=empty` shoots `tape_0_empty`.
+  - The test tones played: 3.5 s into a 6 s tape, then N to the next.
+  - A junk ".mp3" was skipped with the note. The unit test
+    `clunk_decodes_and_junk_does_not` covers the same.
+  - The compact window (960x600) is checked too.
+- **FINDINGS** (cf-design): `Solid::mesh` silently gives an empty mesh for
+  a finite solid thinner than the cell. The 7 mm tape pack at a 5 cm cell
+  did, and Bevy Solari panicked on it.
 
 ## Backlog (2026-10-06; not planned yet, best first)
 

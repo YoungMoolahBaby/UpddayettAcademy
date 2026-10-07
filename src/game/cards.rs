@@ -33,7 +33,7 @@ pub struct Cards {
 impl Cards {
     pub fn new(night: u64) -> Self {
         // Screenshot runs and the render bench skip the title.
-        let shooting = super::shots::enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
+        let shooting = super::shots::enabled() || super::tape::shots_enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
         Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0, night, ads: !shooting, reel: false }
     }
 }

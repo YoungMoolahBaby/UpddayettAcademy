@@ -361,6 +361,24 @@ trade or give away.
   feet. It tumbles in the drum as the very same shape that was checked.
   The STLs land in `prints/` and are real files for a real slicer.
 
+### The boombox (built in Step 8)
+
+Bring your own tape: everyone's taste in music differs, so the game
+ships none. A beat-up boombox sits on the floor by the printer, its
+label hand-lettered "BYO TAPE".
+- Drop MP3, Ogg, FLAC or WAV files (or a folder) on the window, and the
+  tape goes in with a clunk. The cassette shows in the window and the
+  reels turn, winding from left to right as the song plays. The files are
+  kept in `music/` for next time.
+- Click the label for play/pause, next, shuffle and volume. M pauses, N
+  skips.
+- It never plays on its own. Plenty of players will have music going in
+  another app, so the deck switches off to a plain prop: no controls, no
+  hotkeys.
+- The same theme, later: drop an STL for Upddayett to print (checked by
+  CortenForge's printability tools), record the pugs' voices, put your own
+  ad on PromiseTV.
+
 ### The TVs (built in Step 3.5)
 
 Every laundromat has a TV bolted in the corner. The Suds & Duds has two

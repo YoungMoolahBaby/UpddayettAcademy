@@ -1760,6 +1760,21 @@ Found by `probe_print` (Step 7.0; paths under cf-design's `src/`):
   min hole; the doc example says FDM 0.8 mm walls) and mesh-printability's
   `PrinterConfig::fdm_default()` (1.0 mm walls, 0.8 mm features) describe
   the same printer twice, with different defaults and no conversion.
+- **docs** (2026-10-06): `Solid::mesh` silently returns an empty mesh for a
+  finite solid thinner than the cell. Its doc says it "Returns an empty mesh
+  for infinite geometry (bare `Plane`)" (solid/query.rs:70-80), so a
+  newcomer expects something for anything finite. A 1 m disc 7 mm thick
+  gives 0 faces at a 50 mm cell, 32k at 20 mm (a grid line happens to
+  cross it), and 259k at 7 mm. In the game (the boombox's tape pack, Step
+  8) the empty mesh went to Bevy, and Bevy Solari panicked building a BLAS
+  for it ("Use-after-free ... unallocated key", bevy_solari blas.rs:61),
+  far from the cause. A `warn!`, or an `Err` when a finite solid meshes to
+  nothing, would point at the right line. (Same family as the wall check
+  above: features under one cell vanish.)
+- **works** (2026-10-06): the boombox (Step 8) is ~40 lines of CSG: a
+  rounded case with speaker wells and a cassette bay cut out, `pipe`
+  for the handle and antenna, and grilles punched with `repeat_bounded`
+  (a 9 x 9 grid of holes in one call). Nine parts, ~110k triangles.
 
 ### `mesh` (printability, repair, io)
 
