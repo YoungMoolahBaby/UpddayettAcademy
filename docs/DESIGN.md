@@ -509,6 +509,76 @@ systematic oppression, and "oppression" is an understatement.
   - three goats in a trench coat doing laundry;
   - the pug anchors (3.2) shrugging it all off on air.
 
+### Lesson 4 (proposed, 2026-10-06): the underground
+
+The user's question: some people collaborate with the farm underground on
+psyops to make eating animals obsolete. Do you gain karma for it? There
+are side missions to make, research and design, starting with little
+compute. Superintelligence for dogs is the first step, and it leaks to
+other animals underground. The laundry machine stays as it is, in its
+infancy. And add friction, so it feels realistic. A proposal; nothing is
+built yet.
+- **Who's in:** Upddayett recruits the player.
+  - Librarian Tamara gives the farm its first computer: the library's
+    public PC (the game is already "streamed live from the Market St
+    library computer").
+  - Pigeon Lady's birds carry the messages without her knowing.
+  - Bike Kitchen Dave builds things.
+  - Amir becomes the test kitchen once he learns why his supplier changed.
+- **The psyops** are the scheme's steps 3-5 (above): out-make the product,
+  keep the counts with decoys, and let the backlash help.
+- **Karma: for outcomes, never for siding.** Karma already means doing
+  real good, like Amir's gifts.
+  - A mission earns karma only for what it actually does, honestly
+    counted: an animal not bred, a decoy that holds its count.
+  - Joining earns nothing, and nuts stay karma-neutral.
+  - The game never tells the player which camp is right (the clash of yuck
+    skewers both); it rewards what works.
+- **Compute starts where it is today.** The ad's "SUPER INTELLIGENCE" is a
+  phone in a collar running today's AI (STILL IN BETA, literally).
+  - Collars leak from dogs to pigs through the truffle trade, then
+    onward.
+  - The farm's compute is the library PC. A night's budget is real wall
+    time on the player's machine, so a mission costs what the CortenForge
+    sim really costs.
+  - Capability grows only through research the player runs, never by
+    decree.
+- **Missions, each a real CortenForge job:**
+  1. **A decoy pig** (cf-design + mesh-printability):
+     - a pig is bigger than the 200 mm bed, so it's a multi-part kit
+       (`Mechanism`, STL kit);
+     - it must pass the inspector's silhouette check from the fence and
+       fails up close.
+  2. **A pigeon message capsule** (cf-design mass properties): light
+     enough for a pigeon to carry (Cher Ami's leg tube). The payload limit
+     needs a real source before it's used.
+  3. **The bite test** (sim-soft): match a plant nugget's compression
+     curve to chicken's.
+     - sim-soft is accurate but slow, so a night affords only a few
+       recipes.
+     - Taste panels are noisy, so "better" needs a sim-opt bootstrap CI,
+       as Step 4 learned (±15 points at 12 spins).
+  4. **Routing the underground** (sim-thermostat): which barn moves which
+     animals tonight is a matching problem like tonight's trades, on a
+     bigger board.
+     - The laundry machine is in its infancy, so at first it solves the
+       big boards only partly.
+     - The row of washers (Step 6) is the first upgrade.
+- **Friction:**
+  - **Heat:** a flawed decoy or a sloppy route raises suspicion. Too much
+    brings the backlash: Big Ham pushes laws, like the butter lobby's
+    margarine bans.
+  - **Money:** truffles are seasonal.
+  - **Trust:** animals don't trust people; dogs are the go-betweens.
+  - **Time:** the win is a market-share curve that creeps up night by
+    night, as the horses took 40 years.
+- **Open questions:**
+  - the lesson's name (in the school's style, e.g. "Lesson 4: Disrupting
+    an Industry (Politely)");
+  - which mission first (the decoy pig reuses Upddayett's printer, so it's
+    the cheapest start);
+  - whether Heat replaces the Salties or joins them.
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone
