@@ -674,7 +674,8 @@ of power.
     blamed for bringing AIDS to North America. Worobey's 2016 study in
     *Nature* showed he didn't; the virus had reached New York around 1970.
 - **Decided** (the user left these to us, 2026-10-06):
-  - **Diagnosis works through ghost strips.** The i9 knows what tonight's
+  - **Diagnosis works through ghost strips** (built: PLAN "Ghost strips,
+    built"). The i9 knows what tonight's
     board would be without the yuck, so it shows the trades that *didn't*
     happen as faint ghost strips, each with what it would have paid. Where
     the ghosts cluster (around one person, or around everyone touched by

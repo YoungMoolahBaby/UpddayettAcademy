@@ -554,6 +554,40 @@ with `trade_cli bench`, and a pump.
 - **FINDINGS** (sim-opt): `classify()` calls a CI wholly below zero
   `Null`. The yuck mode prints its own up/down verdict.
 
+### Ghost strips, built (2026-10-06)
+
+The user asked for the ghost strips in the game.
+- **The roll** (`src/trade/yuck.rs`): `Source::roll` gives each night
+  its yuck from the night's seed, on its own stream:
+  - about a third of nights are clean;
+  - a third have one or two carriers (never a business);
+  - a third have a pump (cold on cold nights, else hunger).
+
+  `world::laundromat` stays clean, so every trade_cli number above
+  stands. The tax is `yuck::TAX` = 2 Goo.
+- **The ghosts:** `Ghosts::find` builds the same board without the yuck
+  and keeps the trades from its best set that aren't possible tonight,
+  with what they would have paid. It also reports what the yuck cost the
+  street (the clean best set minus tonight's).
+- **In the game** (`Laundromat::ghosts`, rebuilt with the board):
+  - TRADES gets a GHOSTS section: dashed boxes, italic pale-blue rows
+    with the Goo they'd have paid, a hover that explains person vs pump,
+    and the question "Where do the ghosts gather: around one person, or
+    around everyone with the same chip?";
+  - the 3D board gets pale dashed arcs between the customers, with the
+    dashes drifting;
+  - nobody is labeled. The log names the source, for us.
+- **For checking:** `UPD_YUCK=clean|hungry|cold|upd,vape` overrides the
+  roll. Night 1 with `upd,vape` has 2 ghosts and cost 17 Goo; with
+  `hungry` it has 3 ghosts and cost 24 Goo.
+- **Tests:** `about_a_third_each_and_never_a_business`, and
+  `ghosts_are_killed_best_set_trades_and_cost_what_they_cost` (every ghost
+  touches a carrier).
+- **Note:** game boards on yucky nights are smaller and easier than the
+  clean ones the program labels ("i9 best 81%") were measured on.
+- **Not built yet:** the person-or-pump call, spread along trades,
+  Upddayett giving to cure his own, and the TV's off switch.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

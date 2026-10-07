@@ -72,6 +72,8 @@ Read first:
 - Yuck (DESIGN "Yuck: the one enemy", PLAN "Yuck, measured"): any mode takes `--yuck WHO,WHO` or `--pump hungry|cold` with `--tax T`
   (Goo a trade, default 2); `trade_cli yuck --nights 1..30 --runs 48` compares clean vs 2 yucky people vs a pump per night
   with paired bootstrap CIs (~5 min). Yuck shrinks the board (fewer trades, less Goo) and makes it easier, not harder.
+  In the game each night rolls its yuck (`src/trade/yuck.rs`) and TRADES shows the ghost strips (the trades it killed);
+  `UPD_YUCK=clean|hungry|cold|upd,vape` overrides the roll.
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`
   sweep them (`magnets` takes ~4 min a night, `smart` ~20 s).

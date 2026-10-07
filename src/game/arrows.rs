@@ -52,6 +52,8 @@ fn leg_curve(a: Vec3, b: Vec3, c: usize) -> impl Fn(f32) -> Vec3 {
 const GOLD: Color = Color::srgb(1.0, 0.8, 0.2);
 /// Gifts: a warmer gold, so a wanted leg still stands out.
 const GIFT: Color = Color::srgb(1.0, 0.55, 0.15);
+/// Ghosts of trades that didn't happen: a pale blue.
+const GHOST: Color = Color::LinearRgba(LinearRgba { red: 1.6, green: 1.9, blue: 2.6, alpha: 1.0 });
 
 /// Trade colors skip the golds and oranges (wants and gifts use those).
 pub fn trade_color(c: usize, n: usize) -> Color {
@@ -91,6 +93,34 @@ pub fn draw(
                 draw_leg(&mut thin, &f, leg_base.with_alpha(0.04 + 0.9 * a * a), token, heart);
             }
         }
+    }
+    // Ghosts (DESIGN "Yuck: the one enemy"): trades the yuck killed tonight, as
+    // pale dashed arcs that drift. Where they gather is the map.
+    for (g, cycle) in lm.ghosts.trades.iter().enumerate() {
+        let alpha = 0.6 + 0.25 * (t_now * 1.3 + g as f32).sin();
+        for leg in &cycle.legs {
+            let f = leg_curve(spots.0[leg.from], spots.0[leg.to], n + g);
+            draw_ghost(&mut thin, &f, GHOST.with_alpha(alpha), t_now * 0.4 + g as f32 * 0.3);
+        }
+    }
+}
+
+/// A ghost leg: a dashed arc whose dashes drift along it, and an arrowhead.
+fn draw_ghost<G: GizmoConfigGroup>(g: &mut Gizmos<G>, f: &impl Fn(f32) -> Vec3, color: Color, drift: f32) {
+    let (t0, t1) = (0.07, 0.93);
+    let dashes = 9.0;
+    for k in 0..dashes as usize {
+        let a = t0 + (t1 - t0) * ((k as f32 + drift.fract()) / dashes).min(1.0);
+        let b = (a + (t1 - t0) * 0.5 / dashes).min(t1);
+        if a < t1 {
+            g.linestrip((0..=4).map(|i| f(a + (b - a) * i as f32 / 4.0)), color);
+        }
+    }
+    let tip = f(t1);
+    let dir = (tip - f(t1 - 0.04)).normalize_or_zero();
+    let side = dir.cross(Vec3::Y).normalize_or_zero();
+    for s in [-1.0, 1.0] {
+        g.line(tip, tip - dir * 0.2 + side * s * 0.09, color);
     }
 }
 

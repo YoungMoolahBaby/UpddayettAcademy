@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use cortenforge::sim::thermostat::WellState;
 use cortenforge_play::trade::salties::SpinCheck;
-use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, print, salties, world};
+use cortenforge_play::trade::{Anneal, Latch, Machine, Magnet, Physics, Sabotage, TradeComputer, escrow, machine, print, salties, world, yuck};
 use cortenforge_play::trade::row::{Row, RowSpin};
 use cortenforge_play::trade::smart::{self, SmartWash};
 
@@ -89,6 +89,8 @@ pub struct Laundromat {
     /// What Upddayett printed tonight (an index into `print::CATALOG`): his
     /// item on tonight's board.
     pub printed: Option<usize>,
+    /// Trades tonight's yuck killed (the ghost strips), and what it cost.
+    pub ghosts: yuck::Ghosts,
 }
 
 /// One scope sample: sim time, the drum's kT, every strip's deflection.
@@ -133,9 +135,9 @@ fn upddayett(w: &world::World) -> usize {
     w.find_npc("upddayett").expect("Upddayett runs the place")
 }
 
-/// Tonight's trade computer for night `night`, with Upddayett giving `give`
+/// Night `night`'s world without its yuck, with Upddayett giving `give`
 /// away (if anything) and the battery holding its cells (if it runs).
-fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
+fn clean_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> world::World {
     let mut w = world::laundromat(night);
     // The print first: it is an item Upddayett could also give away.
     if let Some(k) = printed {
@@ -147,12 +149,28 @@ fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usi
     if battery {
         w.set_held(w.find_item(salties::BATTERY_CELLS).expect("Vape Lady's cells"), true);
     }
-    TradeComputer::new(w, 5.0, 1.6)
+    w
 }
 
-/// [`board_for`], logged.
-fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
-    let tc = board_for(night, give, battery, printed);
+/// Tonight's yuck (DESIGN "Yuck: the one enemy"): rolled from the night, or
+/// `UPD_YUCK=clean|hungry|cold|upd,vape` for checking.
+fn yucky_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> (world::World, yuck::Source) {
+    yuck::tonight(clean_world(night, give, battery, printed), std::env::var("UPD_YUCK").ok().as_deref())
+}
+
+/// Tonight's trade computer: the night's world with its yuck.
+fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> TradeComputer {
+    TradeComputer::new(yucky_world(night, give, battery, printed).0, 5.0, 1.6)
+}
+
+/// [`board_for`], logged, with the ghosts: the trades tonight's yuck killed,
+/// against the same board without it.
+fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> (TradeComputer, yuck::Ghosts) {
+    let (w, source) = yucky_world(night, give, battery, printed);
+    let tc = TradeComputer::new(w, 5.0, 1.6);
+    let ghosts = yuck::Ghosts::find(&TradeComputer::new(clean_world(night, give, battery, printed), 5.0, 1.6), &tc);
+    let carriers: Vec<&str> = source.carriers(&tc.world).iter().map(|&k| tc.world.npcs[k].name).collect();
+    info!("yuck: {source:?} (carriers {carriers:?}), {} ghost trade(s), cost {:.0} Goo", ghosts.trades.len(), ghosts.cost);
     let gifts = tc.cycles.iter().filter(|c| c.is_gift()).count();
     info!(
         "night {night} (UPD_SEED={night} replays it): {}{}{}{}, {} trades + {gifts} gifts{}",
@@ -163,7 +181,7 @@ fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) 
         tc.cycles.len() - gifts,
         if tc.dropped > 0 { format!(" ({} more left off the board)", tc.dropped) } else { String::new() }
     );
-    tc
+    (tc, ghosts)
 }
 
 /// Watch speed for the manual dial at 1x (sim time units per real second).
@@ -184,7 +202,7 @@ impl Laundromat {
         let night = std::env::var("UPD_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or_else(|| {
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(1, |d| d.as_secs() % 1_000_000)
         });
-        let tc = open(night, None, false, None);
+        let (tc, ghosts) = open(night, None, false, None);
         let machine = tc.machine(physics, night).expect("build the slap-bit board");
         let mut lm = Self {
             want_menu: vec![],
@@ -210,6 +228,7 @@ impl Laundromat {
             swapped_at: vec![],
             printed: None,
             tc,
+            ghosts,
             machine,
             physics,
             anneal: Anneal::default(),
@@ -486,7 +505,7 @@ impl Laundromat {
         if self.give.is_some_and(|item| !tonight.giveable(upd).contains(&item)) {
             self.give = None;
         }
-        self.tc = open(self.night, self.give, self.battery, self.printed);
+        (self.tc, self.ghosts) = open(self.night, self.give, self.battery, self.printed);
         self.idle = None;
         self.cut_at = None;
         self.spin_check = SpinCheck::default();

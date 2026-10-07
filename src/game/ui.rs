@@ -639,6 +639,7 @@ pub fn panels(
                         ui.end_row();
                     }
                 });
+                ghost_rows(ui, &lm, small);
             });
         });
     if clicked.is_some() {
@@ -647,6 +648,48 @@ pub fn panels(
     // The scope sits bottom center, clear of the board cam and the rules.
     scope(ctx, &mut lm, 12.0);
     Ok(())
+}
+
+/// Pale blue for the ghosts of trades that didn't happen.
+pub const GHOST: egui::Color32 = egui::Color32::from_rgb(160, 185, 235);
+const GHOST_WHY: &str = "Yuck is a tax on trades: someone needs a little more before a trade is worth it to them, so some \
+trades die. These are trades from tonight's best set that didn't survive, with what they would have paid.\n\n\
+Nobody gets labeled. Read the map: if the ghosts gather around one person, that's a person. If they gather around \
+everyone with the same chip (hungry, cold), that's a pump, and fixing the pump helps them all.";
+
+/// Ghost strips (DESIGN "Yuck: the one enemy"): the trades tonight's yuck
+/// killed, faint, with what they would have paid. Where they cluster is
+/// the map; nobody is labeled.
+fn ghost_rows(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
+    if lm.ghosts.trades.is_empty() {
+        return;
+    }
+    ui.add_space(6.0);
+    let head = if small {
+        format!("GHOSTS: yuck cost {:.0} Goo", lm.ghosts.cost)
+    } else {
+        format!("GHOSTS  -  trades the yuck killed tonight (it cost the street {:.0} Goo)", lm.ghosts.cost)
+    };
+    ui.label(egui::RichText::new(head).small().strong().color(GHOST)).on_hover_text(GHOST_WHY);
+    let w = &lm.tc.world;
+    egui::Grid::new("ghosts").num_columns(3).spacing([8.0, 2.0]).show(ui, |ui| {
+        for g in &lm.ghosts.trades {
+            // A dashed outline where a strip's color would be.
+            let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
+            let dash = egui::Stroke::new(1.2, GHOST);
+            for (a, b) in [(rect.left_top(), rect.right_top()), (rect.right_top(), rect.right_bottom()), (rect.right_bottom(), rect.left_bottom()), (rect.left_bottom(), rect.left_top())] {
+                ui.painter().add(egui::Shape::dashed_line(&[a, b], dash, 2.0, 2.0));
+            }
+            ui.label(egui::RichText::new(format!("{:>2.0} Goo", g.goo())).italics().color(GHOST));
+            let text = if small { initials_chain(g, w) } else { g.short(w) };
+            ui.label(egui::RichText::new(text).small().italics().color(GHOST))
+                .on_hover_text(format!("{}.\nWould have paid: {}\nTonight it doesn't happen.", g.describe(w), g.gains_text(w)));
+            ui.end_row();
+        }
+    });
+    if !small {
+        ui.label(egui::RichText::new("Where do the ghosts gather: around one person, or around everyone with the same chip?").small().color(GHOST));
+    }
 }
 
 /// THE i9 CALLS IT: the trades it latched, the totals, and the AI's lines.

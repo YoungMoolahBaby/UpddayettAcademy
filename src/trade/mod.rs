@@ -17,6 +17,7 @@ pub mod salties;
 pub mod smart;
 pub mod tv;
 pub mod world;
+pub mod yuck;
 
 pub use cycles::{Cycle, Kind, Leg};
 pub use machine::{Anneal, Error, Machine, Physics};
