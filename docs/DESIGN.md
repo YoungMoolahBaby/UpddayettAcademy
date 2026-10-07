@@ -458,6 +458,19 @@ only help. The game shows it in corners, fine print and TV shrugs.
      - Nobody wins the clash of yuck. It just goes to space with everyone
        else, and the Shrug Network shrugs ("a pig named a rocket after
        itself. Again.").
+     - So the real fight isn't side against side. In the user's words,
+       "clash against yuck itself". The yuck is the behavior, on every
+       side:
+       - the cruelty of the kill floor;
+       - eating meat in someone's face to prove a point;
+       - the three-hour lecture;
+       - the TV's shrug;
+       - the empty promise.
+
+       The animals, Upddayett and the player fight the yuck, never a
+       camp. This is the same rule PromiseTV already follows (skewer
+       behavior, not policy), now as the whole game's theme. Karma
+       measures less yuck in the world, not which team you're on.
      - "Until the power runs out" is the game's own physics at full
        scale. The drum cools until the strips stop moving; the universe
        cools until nothing does. It's the same thermodynamics as the
