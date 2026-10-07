@@ -407,24 +407,23 @@ No crypto ads.
 
 The user's idea: the animals we eat (pigs, goats, chickens, cows) are
 getting superintelligence on the black market, from dogs who got it in
-the ad and from people who sell it on. They are organizing to end their
-own systematic oppression, and "oppression" is an understatement. The
-uprising is loud where it happens and hidden in the game: it shows up in
-corners and fine print, and the TV shrugs it off.
-- **The tone** (the user, 2026-10-06): they skip the lawsuits and unions
-  and simply assert themselves as not to be messed with anymore. Think
-  militant self-defense, in the spirit of the user's "dare i say black
-  panther like":
-  - they guard their own gate, arms folded, in shades;
-  - they say no, and it sticks;
-  - they run their own community programs (a free breakfast program, and
-    it's oats).
+the ad and from people who sell it on. With it they end their own
+systematic oppression, and "oppression" is an understatement.
+- **How they win:** quietly, slowly, underground, because brute force
+  isn't needed. They swap themselves out for fakes: a papier-mache pig in
+  the pen, a "ham" that is soy. Meanwhile they solve problems and learn to
+  defend themselves, until they are a group nobody can oppress anymore.
+  They don't bother with the courts, which are a joke in every direction,
+  for every side. Nothing violent happens on screen.
+- **The clash of yuck (the user: "just a clash of yuck everywhere!
+  yay!"):** both camps get skewered equally, the same rule as PromiseTV:
+  - the traditional folks take deep offense at vegan and vegetarian
+    ideas, and eat even more meat in your face to prove something;
+  - the vegans argue back for three hours.
 
-  The menace is in the stance. Nothing violent happens on screen.
-- **Not their look:** we don't borrow the Black Panther Party's actual
-  iconography (black berets, the panther name). Mapping a real Black
-  liberation movement onto livestock would read as comparing people to
-  animals. The farm gets its own look and name.
+  Meanwhile the animals have already left the menu, and the
+  meat-in-your-face guy is eating their plant-based stand-in without
+  knowing it.
 - **In SUPER INTELLIGENCE FOR DOGS:**
   - the smart dog searches "chicken nom nom recipe but i dont have a
     chicken" (the user's line). The results are chickpea nuggets, tofu,
@@ -433,23 +432,22 @@ corners and fine print, and the TV shrugs it off.
   - a pig watches through the window;
   - the fine print says "Not for resale to pigs, goats, chickens or cows.
     (Somebody is reselling it to pigs, goats, chickens and cows.)"
-- **On the Shrug Network:** six of the sixteen "Anyway" segues are
-  dispatches from the uprising, read as if they were nothing:
+- **On the Shrug Network:** seven of the seventeen "Anyway" segues are
+  dispatches from the farm, read as if they were nothing:
   - "a pig bought something off a dog in an alley";
-  - "the cows at a Petaluma dairy stand guard at their own gate now";
-  - "a goat told a rancher no, and the rancher agreed";
-  - "a meatpacking plant closed. The pigs asked it to";
-  - "the farm started a free breakfast program. It's oats";
+  - "a man ate a whole ham in front of a vegan to prove a point. It was
+    soy";
+  - "a pig farm counted its pigs. All there. Some are papier-mache";
+  - "a dairy reports record milk. Nobody has seen a cow since March";
+  - "a vegan and a rancher argued for three hours. Two goats took notes";
+  - "a bacon festival sold out. Nobody checked the bacon";
   - "a chicken crossed the road. On purpose, with a plan."
-- **The plant-based hint:** the smart animals' own answer is to get
-  everyone onto plants. The dog's search finds chickpeas, and the
-  farm's breakfast program serves oats.
 - **Later (ideas):**
-  - the uprising's own ad: a cow in shades at the farm gate,
-    stamped "NOT ON THE MENU";
-  - farm animals in the laundromat in hats and trench coats ("just three
-    goats in a coat, doing laundry");
-  - the pug anchors (3.2) shrugging it off on air.
+  - a regular who eats jerky at the folding counter "at" anyone with a
+    salad (it's mushroom jerky; he doesn't know);
+  - a stiff, slightly lopsided pig in the background of an ad;
+  - three goats in a trench coat doing laundry;
+  - the pug anchors (3.2) shrugging it all off on air.
 
 ### Candidate ideas (not decided)
 

@@ -7,8 +7,8 @@ use super::world::World;
 
 /// The Shrug Network's segue: true news, then whatever.
 /// The farm-animal ones are the uprising nobody on TV is covering (DESIGN "The farm
-/// is waking up"). 16 lines: the stride below (3) must stay coprime with it.
-const ANYWAY: [&str; 16] = [
+/// is waking up"). 17 lines: the stride below (3) must stay coprime with it.
+const ANYWAY: [&str; 17] = [
     "a billionaire bought a second moon.",
     "a celebrity's pug launched a pugcast.",
     "experts say the weather will continue.",
@@ -20,10 +20,11 @@ const ANYWAY: [&str; 16] = [
     "sports happened.",
     "a man grew a slightly bigger potato.",
     "a pig bought something off a dog in an alley.",
-    "the cows at a Petaluma dairy stand guard at their own gate now.",
-    "a goat told a rancher no, and the rancher agreed.",
-    "a meatpacking plant closed. The pigs asked it to.",
-    "the farm started a free breakfast program. It's oats.",
+    "a man ate a whole ham in front of a vegan to prove a point. It was soy.",
+    "a pig farm counted its pigs. All there. Some are papier-mache.",
+    "a dairy reports record milk. Nobody has seen a cow since March.",
+    "a vegan and a rancher argued for three hours. Two goats took notes.",
+    "a bacon festival sold out. Nobody checked the bacon.",
     "a chicken crossed the road. On purpose, with a plan.",
 ];
 
