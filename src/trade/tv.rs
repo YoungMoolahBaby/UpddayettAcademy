@@ -20,10 +20,10 @@ const ANYWAY: [&str; 16] = [
     "sports happened.",
     "a man grew a slightly bigger potato.",
     "a pig bought something off a dog in an alley.",
-    "a goat passed the bar exam.",
-    "the chickens at a Petaluma farm unionized.",
-    "a cow asked for a lawyer and a salad.",
-    "a meatpacking plant was bought out by its pigs.",
+    "the cows at a Petaluma dairy stand guard at their own gate now.",
+    "a goat told a rancher no, and the rancher agreed.",
+    "a meatpacking plant closed. The pigs asked it to.",
+    "the farm started a free breakfast program. It's oats.",
     "a chicken crossed the road. On purpose, with a plan.",
 ];
 

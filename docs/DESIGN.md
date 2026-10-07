@@ -410,8 +410,21 @@ getting superintelligence on the black market, from dogs who got it in
 the ad and from people who sell it on. They are organizing to end their
 own systematic oppression, and "oppression" is an understatement. The
 uprising is loud where it happens and hidden in the game: it shows up in
-corners and fine print, and the TV shrugs it off. They win by out-thinking
-the system, not by violence: unions, lawsuits, buyouts, salads.
+corners and fine print, and the TV shrugs it off.
+- **The tone** (the user, 2026-10-06): they skip the lawsuits and unions
+  and simply assert themselves as not to be messed with anymore. Think
+  militant self-defense, in the spirit of the user's "dare i say black
+  panther like":
+  - they guard their own gate, arms folded, in shades;
+  - they say no, and it sticks;
+  - they run their own community programs (a free breakfast program, and
+    it's oats).
+
+  The menace is in the stance. Nothing violent happens on screen.
+- **Not their look:** we don't borrow the Black Panther Party's actual
+  iconography (black berets, the panther name). Mapping a real Black
+  liberation movement onto livestock would read as comparing people to
+  animals. The farm gets its own look and name.
 - **In SUPER INTELLIGENCE FOR DOGS:**
   - the smart dog searches "chicken nom nom recipe but i dont have a
     chicken" (the user's line). The results are chickpea nuggets, tofu,
@@ -423,17 +436,17 @@ the system, not by violence: unions, lawsuits, buyouts, salads.
 - **On the Shrug Network:** six of the sixteen "Anyway" segues are
   dispatches from the uprising, read as if they were nothing:
   - "a pig bought something off a dog in an alley";
-  - "a goat passed the bar exam";
-  - "the chickens at a Petaluma farm unionized";
-  - "a cow asked for a lawyer and a salad";
-  - "a meatpacking plant was bought out by its pigs";
+  - "the cows at a Petaluma dairy stand guard at their own gate now";
+  - "a goat told a rancher no, and the rancher agreed";
+  - "a meatpacking plant closed. The pigs asked it to";
+  - "the farm started a free breakfast program. It's oats";
   - "a chicken crossed the road. On purpose, with a plan."
 - **The plant-based hint:** the smart animals' own answer is to get
-  everyone onto plants. The dog's search finds chickpeas, and the cow
-  wants a salad.
+  everyone onto plants. The dog's search finds chickpeas, and the
+  farm's breakfast program serves oats.
 - **Later (ideas):**
-  - the uprising's own ad (a goat lawyer's billboard: "Eaten? You may be
-    entitled to compensation");
+  - the uprising's own ad: a cow in shades at the farm gate,
+    stamped "NOT ON THE MENU";
   - farm animals in the laundromat in hats and trench coats ("just three
     goats in a coat, doing laundry");
   - the pug anchors (3.2) shrugging it off on air.
