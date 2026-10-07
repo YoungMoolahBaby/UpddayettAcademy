@@ -197,7 +197,7 @@ pub fn draw(
             p.rect_filled(screen, 0.0, egui::Color32::from_black_alpha(185));
             chunky(&p, &family, c + egui::vec2(0.0, -h * 0.24), "UPDDAYETT'S", h * 0.07, egui::Color32::WHITE, egui::Color32::from_gray(60));
             chunky(&p, &family, c + egui::vec2(0.0, -h * 0.12), "SCHOOL OF BIDDNESS", h * 0.1, GOO, GOO_DARK);
-            let pill = "LESSON 3: MONEY LAUNDERING (LEGALLY)";
+            let pill = "LESSON 3: THE LAUNDROMAT";
             let size = fit(&p, &family, pill, screen.width() * 0.8, h * 0.032);
             let text_w = p.layout_no_wrap(pill.to_string(), egui::FontId::new(size, family.clone()), egui::Color32::WHITE).size().x;
             let lesson = egui::Rect::from_center_size(c + egui::vec2(0.0, h * 0.02), egui::vec2(text_w + size * 1.6, size * 2.2));

@@ -1,4 +1,4 @@
-//! Lesson 3, "Money Laundering (Legally)": a laundromat trade computer.
+//! Lesson 3, "The Laundromat": a laundromat trade computer.
 //!
 //! Customers bring haves and wants ([`world`]). Every closed giving loop in
 //! which everybody comes out ahead is a candidate trade ([`cycles`]). Picking

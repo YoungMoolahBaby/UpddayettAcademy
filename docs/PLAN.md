@@ -1,6 +1,6 @@
 # Build plan: the few-hour slice
 
-Slice = Lesson 3, **Money Laundering (Legally)**: a laundromat trade computer
+Slice = Lesson 3, **The Laundromat** (named "Money Laundering (Legally)" until 2026-10-07): a laundromat trade computer
 whose bits are simulated by `cortenforge::sim::thermostat`. See `DESIGN.md`.
 
 Status (2026-10-06): **Steps 1 and 2 done** (trade computer in `src/trade/`,

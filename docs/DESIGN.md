@@ -94,7 +94,7 @@ Sample voice:
 | --- | --- | --- | --- | --- |
 | 1. Tentzhen | The Loin | Two-channel scope from the scrap i9; now he can see volts | (instrument; probes every later build) | Dumpster Intern |
 | 2. Hub Motor Hustle | The Loin | Balance bot from a dead scooter motor; carries groceries for tent 4 | `sim::core` derivatives, LQR | Tent Entrepreneur |
-| 3. Money Laundering (Legally) | Laundromat | Trade computer of salvaged slap bits | `sim::thermostat` | Library Card Holder |
+| 3. The Laundromat | Laundromat | Trade computer of salvaged slap bits | `sim::thermostat` | Library Card Holder |
 | 4. Pimpin' | Shenzhen | Companion bots, ENIG gold boards, bots run the biz | `sim::coupling` | Small Biddness Owner, then Pimpin' (ENIG Certified) |
 
 - ENIG in-game = "Ever Notice I'm Gold". Cane = soldering iron, cup = flux pot,
@@ -233,7 +233,7 @@ AI roasts the rest with a real result.
 - **Endgame (optional):** one Saltie gets a bench kit too. No speech; they
   quietly start building something.
 
-## The slice lesson: Money Laundering (Legally)
+## The slice lesson: The Laundromat
 
 Portland bike-part trades almost work but rarely match one-to-one. Customers
 drop off laundry with haves and wants. Each candidate trade is a bit; springs
@@ -575,8 +575,8 @@ the player helps it along. A proposal; nothing is built yet.
   - the barn's power budget;
   - time: the market-share curve creeps up night by night.
 - **Open questions:**
-  - the lesson's name ("Lesson 4: Shell Companies (Legally)" would echo
-    Lesson 3);
+  - the lesson's name ("Lesson 4: Shell Companies (Legally)" echoed
+    Lesson 3's old name; Lesson 3 is now plainly "The Laundromat");
   - the cores' names (the brand names above are placeholders);
   - which request first (the barn computer reuses Upddayett's printer);
   - whether heat joins the Salties or replaces them.

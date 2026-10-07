@@ -252,7 +252,7 @@ pub fn panels(
             let room = board_cam_top - 12.0 - ui.cursor().min.y;
             egui::ScrollArea::vertical().max_height(room).min_scrolled_height(room).show(ui, |ui| {
                 if !small {
-                    ui.label(egui::RichText::new("Lesson 3: Money Laundering (Legally)").strong());
+                    ui.label(egui::RichText::new("Lesson 3: The Laundromat").strong());
                 }
                 ui.label(egui::RichText::new(format!("DRUM  {:.2} kT", lm.temperature() * lm.physics.k_b_t)).monospace().size(side(22.0, 18.0)));
                 match lm.mode {
