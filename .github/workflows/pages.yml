@@ -1,10 +1,12 @@
-# Deploys site/ (upddayettacademy.com) to GitHub Pages.
-# Manual for now: Pages isn't switched on yet. Once it is, add
-#   push: { branches: [master], paths: ['site/**', '.github/workflows/pages.yml'] }
-# under `on:` so every push to the site deploys.
+# Deploys site/ (upddayettacademy.com) to GitHub Pages on every push that
+# touches the site, or by hand. The custom domain is set in the repo's Pages
+# settings (site/CNAME records it too).
 name: Deploy site
 
 on:
+  push:
+    branches: [master]
+    paths: ['site/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

@@ -14,7 +14,7 @@ Read first:
 - `site/`: upddayettacademy.com, the companion site (static HTML, no build step): home, `machine/`,
   `lessons/{transaction-costs,overfitting,settlement}/`, shared `assets/site.css`. Figures in `site/figs/`
   come from `machine_figs` (machine figures are copied there; `-- fees|noise|settle` draw the lessons'). Deployed by
-  `.github/workflows/pages.yml` (manual until Pages is switched on). Every number on it must come from a real run
+  `.github/workflows/pages.yml` on every push that touches `site/`. Every number on it must come from a real run
   or PLAN; models are labeled as models.
 
 ## Rules of the role-play
