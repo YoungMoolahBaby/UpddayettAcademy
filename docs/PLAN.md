@@ -45,8 +45,7 @@ tempering). Four washers share one Normal cycle's compute and trade loads.
 On 60 fresh nights they beat the learned run 5 by +3.7 points (96.8% vs
 93.1%, 95% CI [+2.4, +5.1]), and +8.2 on the hardest quarter. The swaps
 themselves are worth +3.3 [+2.3, +4.3]. In the game it's the sixth
-program, "Row of 4 washers" (see "Step 6" below). Next: pick from the
-backlog.
+program, "Row of 4 washers" (see "Step 6" below). **What's left: `docs/TODO.md`** (one checklist of open work).
 
 ## Step 5: the drum tumbler (plan, 2026-10-06)
 
@@ -850,7 +849,7 @@ CortenForge pieces the game doesn't use yet:
    it prints, and it becomes a new item on the board. Fits the
    "Build your own safety net" lore. The biggest of the four.
 
-Also open:
+Also open (tracked in `docs/TODO.md` since 2026-10-07):
 - 3.2 voice and music, with the Shrug Network's two pug anchors and the
   ad-lib script (see 3.2).
 - When 0.9.2 ships: bump every crate, rerun the `gaps_*` probes, drop the

@@ -6,6 +6,7 @@ as an outside user would: someone who has only the published crates.
 
 Read first:
 - `docs/PLAN.md`: the build plan and current status. **Start here.**
+- `docs/TODO.md`: what's left to do, one checklist. Tick items as they ship.
 - `docs/DESIGN.md`: the game design (repo snapshot of the living Claude Doc
   linked at its top).
 - `docs/FINDINGS.md`: end-user findings about CortenForge. Add new friction here.
