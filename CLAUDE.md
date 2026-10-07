@@ -11,7 +11,7 @@ Read first:
 - `docs/FINDINGS.md`: end-user findings about CortenForge. Add new friction here.
 - `docs/MACHINE.md`: how the trade machine works, for players, with figures from real runs
   (`docs/machine/*.svg`, redrawn by `cargo run --release --example machine_figs [-- <figure>] [--night N]`).
-- `site/`: upddayettacademy.com, the companion site (static HTML, no build step): home, `machine/`,
+- `site/`: the companion site, live at https://youngmoolahbaby.github.io/UpddayettAcademy/ (upddayettacademy.com is reserved for later; `404.html` uses absolute `/UpddayettAcademy/` paths, change them if it moves to the domain) (static HTML, no build step): home, `machine/`,
   `lessons/{transaction-costs,overfitting,settlement}/`, shared `assets/site.css`. Figures in `site/figs/`
   come from `machine_figs` (machine figures are copied there; `-- fees|noise|settle` draw the lessons'). Deployed by
   `.github/workflows/pages.yml` on every push that touches `site/`. Every number on it must come from a real run
