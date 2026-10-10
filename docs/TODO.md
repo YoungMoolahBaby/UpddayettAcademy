@@ -15,7 +15,7 @@ arcs the user named, then smaller items.
   - [x] open straight into the laundromat; ads move to the TV (click to watch)
   - [x] Upddayett's heckles turn on himself; the AI says "we"
   - [x] soften the pimp framing (DESIGN)
-  - [x] the dog ad's pig becomes a pigeon (no farm animal is free yet)
+  - [x] the dog ad loses the pig at the window and the bulk tab to The Farm (no farm animal is free yet)
   - [ ] Karma first at the end of a night: who went to bed fed, quietly
   - [ ] review the Shrug Network's shrugs (billionaires, yachts) for punching down
   - [ ] the site's tone: lessons as what the washer taught him, plain words

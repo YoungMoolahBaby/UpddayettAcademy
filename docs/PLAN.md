@@ -60,8 +60,9 @@ is in DESIGN "Humble, karma first". First cut:
 - The AI's miss line is "We spun it too fast" (game, `trade_cli`, MACHINE, site).
 - The pimp framing is softened in DESIGN: he thinks he's the boss, the bots
   call him "Boss" fondly, Lesson 4 is "Ever Notice I'm Gold".
-- The dog ad's pig at the window is now a pigeon with a letter on the sill,
-  and two Shrug lines changed ("a pig bought something off a dog in an
+- The dog ad's cooking beat is just the dog and the laptop with one tab
+  (user: no window, no pigeon, no extra tab; the pig at the window and the
+  bulk-order tab to The Farm are gone), and two Shrug lines changed ("a pig bought something off a dog in an
   alley", "a chicken crossed the road"). User: none of the farm animals
   are free yet, so none can be at a window or in an alley.
 

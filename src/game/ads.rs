@@ -310,29 +310,6 @@ fn toilet(st: &Stage, at: Pos2, s: f32, swirl: Option<f32>) {
     }
 }
 
-/// A pigeon on a sill in profile, facing right, a message tube on its leg.
-/// The farm animals aren't free yet; the pigeons carry their mail (DESIGN
-/// "The farm is waking up").
-fn pigeon(st: &Stage, at: Pos2, s: f32) {
-    let gray = Color32::from_rgb(150, 155, 170);
-    let dark = Color32::from_rgb(95, 100, 115);
-    // Tail, body, wing.
-    st.p.add(Shape::convex_polygon(vec![at + vec2(-s * 0.3, -s * 0.02), at + vec2(-s * 0.62, s * 0.1), at + vec2(-s * 0.58, s * 0.2), at + vec2(-s * 0.25, s * 0.12)], dark, Stroke::NONE));
-    st.p.add(Shape::ellipse_filled(at, vec2(s * 0.38, s * 0.22), gray));
-    st.p.add(Shape::ellipse_filled(at + vec2(-s * 0.06, -s * 0.01), vec2(s * 0.24, s * 0.12), dark));
-    // Legs, and the tube on one.
-    for dx in [-0.04, 0.08] {
-        st.p.line_segment([at + vec2(dx * s, s * 0.18), at + vec2(dx * s, s * 0.3)], Stroke::new(s * 0.03, Color32::from_rgb(220, 110, 110)));
-    }
-    st.p.rect_filled(Rect::from_center_size(at + vec2(s * 0.08, s * 0.24), vec2(s * 0.07, s * 0.1)), 2.0, Color32::from_rgb(235, 225, 190));
-    // The green-and-purple neck, the head, the beak, the eye.
-    let head = at + vec2(s * 0.3, -s * 0.24);
-    st.p.add(Shape::ellipse_filled(at + vec2(s * 0.24, -s * 0.1), vec2(s * 0.13, s * 0.14), Color32::from_rgb(110, 150, 130)));
-    st.p.circle_filled(head, s * 0.12, gray);
-    st.p.add(Shape::convex_polygon(vec![head + vec2(s * 0.1, -s * 0.03), head + vec2(s * 0.24, s * 0.01), head + vec2(s * 0.1, s * 0.04)], Color32::from_rgb(70, 60, 60), Stroke::NONE));
-    st.p.circle_filled(head + vec2(s * 0.04, -s * 0.02), s * 0.025, Color32::from_rgb(230, 120, 40));
-}
-
 /// A laptop with a search open: two tabs, the query being typed, and (once
 /// it's in) the results.
 fn laptop(st: &Stage, t: f32, at: Pos2, typed: &str, done: bool) {
@@ -342,13 +319,10 @@ fn laptop(st: &Stage, t: f32, at: Pos2, typed: &str, done: bool) {
     st.p.rect_filled(screen, 2.0, Color32::WHITE);
     let base = vec![screen.left_bottom() + vec2(-h * 0.06, h * 0.02), screen.right_bottom() + vec2(h * 0.06, h * 0.02), screen.right_bottom() + vec2(h * 0.12, h * 0.08), screen.left_bottom() + vec2(-h * 0.12, h * 0.08)];
     st.p.add(Shape::convex_polygon(base, Color32::from_gray(80), Stroke::NONE));
-    // Tabs: tonight's dinner, and a bulk order nobody is supposed to see.
-    let tab_font = FontId::proportional(h * 0.018);
-    for (k, (label, open)) in [("chicken nom nom recipe...", true), ("SUPER INTELLIGENCE (bulk) - ship to: The Farm", false)].iter().enumerate() {
-        let r = Rect::from_min_size(screen.left_top() + vec2(h * 0.01 + k as f32 * h * 0.32, h * 0.01), vec2(if k == 0 { h * 0.31 } else { h * 0.5 }, h * 0.04));
-        st.p.rect_filled(r, 4.0, if *open { Color32::from_gray(225) } else { Color32::from_gray(245) });
-        st.p.with_clip_rect(r.shrink(h * 0.006)).text(r.left_center() + vec2(h * 0.01, 0.0), Align2::LEFT_CENTER, *label, tab_font.clone(), Color32::from_gray(if *open { 30 } else { 120 }));
-    }
+    // The one tab: tonight's dinner.
+    let tab = Rect::from_min_size(screen.left_top() + vec2(h * 0.01, h * 0.01), vec2(h * 0.31, h * 0.04));
+    st.p.rect_filled(tab, 4.0, Color32::from_gray(225));
+    st.p.with_clip_rect(tab.shrink(h * 0.006)).text(tab.left_center() + vec2(h * 0.01, 0.0), Align2::LEFT_CENTER, "chicken nom nom recipe...", FontId::proportional(h * 0.018), Color32::from_gray(30));
     // The search bar, with a blinking caret.
     let bar = Rect::from_min_size(screen.left_top() + vec2(h * 0.04, h * 0.09), vec2(h * 0.92, h * 0.07));
     st.p.rect(bar, h * 0.035, Color32::WHITE, Stroke::new(2.0, Color32::from_gray(190)), egui::StrokeKind::Middle);
@@ -494,13 +468,8 @@ const DOG_BEATS: [Beat; 7] = [
     Beat {
         secs: 3.4,
         paint: |st, t| {
-            // He looks up dinner. A pigeon waits on the sill with a letter.
+            // He looks up dinner.
             st.fill(Color32::from_rgb(235, 225, 205));
-            let win = Rect::from_center_size(st.at(-0.62, -0.3), vec2(st.h() * 0.3, st.h() * 0.24));
-            st.p.rect_filled(win, 3.0, Color32::from_rgb(120, 170, 220));
-            pigeon(st, win.center() + vec2(st.h() * 0.075, st.h() * 0.075), st.h() * 0.13);
-            st.p.rect_stroke(win, 3.0, Stroke::new(st.h() * 0.012, Color32::from_rgb(120, 90, 60)), egui::StrokeKind::Middle);
-            st.p.line_segment([win.center_top(), win.center_bottom()], Stroke::new(st.h() * 0.008, Color32::from_rgb(120, 90, 60)));
             dog(st, st.at(-0.6, 0.2), st.h() * 0.3, true, t);
             let query = "chicken nom nom recipe but i dont have a chicken";
             let typed: String = query.chars().take((t * 22.0) as usize).collect();

@@ -547,10 +547,11 @@ only help. The game shows it in corners, fine print and TV shrugs.
   court ban, which the European Court of Human Rights upheld in 2012.
 - **Already in the game:**
   - the dog ad's search for "chicken nom nom recipe but i dont have a
-    chicken", its plant results, the bulk tab to The Farm, a pigeon with a
-    letter on the window sill, and the resale fine print (it was a pig at
-    the window until 2026-10-09; the user caught it: none of the farm
-    animals are free yet, so none can be out at a window or in an alley);
+    chicken", its plant results, and the resale fine print. (Until
+    2026-10-09 it also had a pig at the window and a bulk-order tab
+    shipping to The Farm. The user cut both, and then the pigeon that
+    briefly replaced the pig: no window, no extra tab. None of the farm
+    animals are free yet, so none can be out at a window or in an alley.)
   - DEE'S NUTS and its fine print;
   - seven Shrug Network shrugs.
 
