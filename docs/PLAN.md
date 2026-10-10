@@ -46,6 +46,24 @@ On 60 fresh nights they beat the learned run 5 by +3.7 points (96.8% vs
 93.1%, 95% CI [+2.4, +5.1]), and +8.2 on the hardest quarter. The swaps
 themselves are worth +3.3 [+2.3, +4.3]. In the game it's the sixth
 program, "Row of 4 washers" (see "Step 6" below). **What's left: `docs/TODO.md`** (one checklist of open work).
+**Humble pass started** (2026-10-09; user: "since the game is about karma
+at the end of the day, let's make it more humble, vibe wise"). The rule
+is in DESIGN "Humble, karma first". First cut:
+- The game opens straight into the laundromat (title, splash, play). The
+  ad reel before the game and the every-third-night break-in are gone.
+  All six ads are kept (user's pick) and come on the laundromat TV every
+  fourth visit (`src/game/tv.rs` `ROTATION`), the attack ads as a pair
+  (`Ad::then`). Clicking the TV plays the ad full screen; any key goes back.
+  `UPD_TV=ad` holds the TV on commercials.
+- Upddayett's PromiseTV heckles turn on himself (`trade::tv::Promise::heckle`,
+  test `the_joke_is_on_him`); his mean heckles stay as his yuck tell.
+- The AI's miss line is "We spun it too fast" (game, `trade_cli`, MACHINE, site).
+- The pimp framing is softened in DESIGN: he thinks he's the boss, the bots
+  call him "Boss" fondly, Lesson 4 is "Ever Notice I'm Gold".
+- The dog ad's pig at the window is now a pigeon with a letter on the sill,
+  and two Shrug lines changed ("a pig bought something off a dog in an
+  alley", "a chicken crossed the road"). User: none of the farm animals
+  are free yet, so none can be at a window or in an alley.
 
 ## Step 5: the drum tumbler (plan, 2026-10-06)
 
@@ -1142,7 +1160,7 @@ the player brings their own (see "Step 8: bring your own tape").
   the i9 (the "I caught it, you didn't" line), found a 4-way, clash at rest,
   want delivered/cost, fresh-load quips, a few live lines during the spin
   (first latch, freeze-out as the drum cools past ~0.15 dV).
-- Upddayett gets replies ("...I'm still the pimp though."). Shown as a
+- Upddayett gets replies ("...So I'm close, though."). Shown as a
   Comedy Central-style caption bar at the bottom.
 - The user reviews and edits the line list before it ships (tone).
 - Done when: each category triggers in a deliberately provoked run (Quick

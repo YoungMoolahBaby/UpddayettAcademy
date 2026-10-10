@@ -1,15 +1,20 @@
 //! The laundromat TV: a wall set under the neon sign whose screen is Bevy UI
 //! rendered to a texture. It flips between The Shrug Network (tonight's real
 //! numbers, shrugged off) and PromiseTV (fictional candidates promising
-//! everyone something Market St has one of). The copy is `trade::tv`.
-//! `UPD_TV=shrug|promise` holds one channel (for screenshots).
+//! everyone something Market St has one of), with a commercial (`ads`) now
+//! and then: click the TV while one is on to watch it. The copy is `trade::tv`.
+//! `UPD_TV=shrug|promise|ad` holds one channel (for screenshots).
 
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::RenderTarget;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
+use bevy_egui::{EguiContexts, egui};
 use cortenforge_play::trade::tv::{self, Promise};
 
+use super::ads::{ADS, SPOTS};
+use super::cards::Cards;
+use super::scene::MainCam;
 use super::sim::Laundromat;
 
 /// The screen texture, in pixels, and the screen in the room, in meters.
@@ -30,6 +35,7 @@ const CRAWL: f32 = 90.0;
 pub enum Channel {
     Shrug,
     Promise,
+    Commercial,
 }
 
 #[derive(Resource)]
@@ -37,6 +43,8 @@ pub struct Tv {
     pub channel: Channel,
     /// The PromiseTV ad on the air (None on the Shrug Network).
     pub promise: Option<Promise>,
+    /// The commercial on the air (an index into `ADS`), to watch on a click.
+    pub commercial: Option<usize>,
     hold: Option<Channel>,
 }
 
@@ -45,9 +53,10 @@ impl Default for Tv {
         let hold = match std::env::var("UPD_TV").ok().as_deref() {
             Some("shrug") => Some(Channel::Shrug),
             Some("promise") => Some(Channel::Promise),
+            Some("ad") => Some(Channel::Commercial),
             _ => None,
         };
-        Tv { channel: hold.unwrap_or(Channel::Shrug), promise: None, hold }
+        Tv { channel: hold.unwrap_or(Channel::Shrug), promise: None, commercial: None, hold }
     }
 }
 
@@ -167,8 +176,7 @@ pub fn setup(
         opaque_render_method: bevy::material::OpaqueRendererMethod::Forward,
         ..default()
     });
-    let frame = Transform::from_translation(AT).with_rotation(Quat::from_rotation_x(TILT));
-    commands.spawn((frame, Visibility::default())).with_children(|p| {
+    commands.spawn((frame(), Visibility::default())).with_children(|p| {
         p.spawn((Mesh3d(meshes.add(Cuboid::new(SCREEN.x + 0.14, SCREEN.y + 0.14, 0.1))), MeshMaterial3d(plastic.clone()), Transform::default()));
         p.spawn((Mesh3d(meshes.add(Rectangle::from_size(SCREEN))), MeshMaterial3d(screen), Transform::from_xyz(0.0, 0.0, 0.051)));
         let reach = -5.95 - AT.z;
@@ -178,16 +186,30 @@ pub fn setup(
     });
 }
 
-/// What the screen shows at time `t`: the channel, and which story on it.
+/// Where the set hangs in the room.
+fn frame() -> Transform {
+    Transform::from_translation(AT).with_rotation(Quat::from_rotation_x(TILT))
+}
+
+/// The channels in turn: news, a promise, news, a commercial.
+const ROTATION: [Channel; 4] = [Channel::Shrug, Channel::Promise, Channel::Shrug, Channel::Commercial];
+
+/// What the screen shows at time `t`: the channel, and which story on it
+/// (for a commercial, which of the `SPOTS`).
 fn schedule(t: f32, hold: Option<Channel>) -> (Channel, usize, f32) {
     let visit = (t / VISIT) as usize;
     let into = t % VISIT;
-    let channel = hold.unwrap_or(if visit.is_multiple_of(2) { Channel::Shrug } else { Channel::Promise });
-    // Two stories per Shrug visit, one ad per PromiseTV visit.
-    let story = match channel {
-        Channel::Shrug => visit * 2 + (into / STORY) as usize,
-        Channel::Promise => visit,
+    let Some(channel) = hold else {
+        let channel = ROTATION[visit % ROTATION.len()];
+        let round = visit / ROTATION.len();
+        // Two stories per Shrug visit, one ad per PromiseTV or commercial visit.
+        let story = match channel {
+            Channel::Shrug => (round * 2 + visit % ROTATION.len() / 2) * 2 + (into / STORY) as usize,
+            Channel::Promise | Channel::Commercial => round,
+        };
+        return (channel, story, into);
     };
+    let story = if channel == Channel::Shrug { visit * 2 + (into / STORY) as usize } else { visit };
     (channel, story, into)
 }
 
@@ -209,10 +231,21 @@ pub fn update(
     let gold = Color::srgb(1.0, 0.8, 0.2);
     // Switched off (a yuck pump fix): a dark screen, no news, no promises.
     let off = || (String::new(), String::new(), String::new(), String::new(), String::new(), [Color::BLACK; 3]);
+    tv.commercial = None;
     let (logo, bug, big, sub, ticker, colors) = match channel {
         _ if !lm.yuck.tv_on => {
             tv.promise = None;
             off()
+        }
+        Channel::Commercial => {
+            tv.promise = None;
+            let k = SPOTS[story % SPOTS.len()];
+            tv.commercial = Some(k);
+            let ad = &ADS[k];
+            let rgb = |[r, g, b]: [u8; 3]| Color::srgb_u8(r, g, b);
+            let ticker = "Click the TV to watch the whole thing.   ///   Any key brings you back.".to_string();
+            let colors = [rgb(ad.colors[0]), Color::srgb(0.08, 0.08, 0.08), rgb(ad.colors[1])];
+            ("COMMERCIAL".to_string(), "click to watch".to_string(), ad.title.to_string(), ad.teaser.to_string(), ticker, colors)
         }
         Channel::Shrug => {
             tv.promise = None;
@@ -240,11 +273,13 @@ pub fn update(
         }
     };
 
+    // A commercial's name in its own ink.
+    let ink = if channel == Channel::Commercial { colors[2] } else { Color::WHITE };
     for (mut text, mut color, part) in &mut texts {
         let (want, tint) = match part {
             Part::Logo => (&logo, if channel == Channel::Promise { gold } else { Color::WHITE }),
             Part::Bug => (&bug, Color::srgb(1.0, 0.3, 0.3)),
-            Part::Big => (&big, if channel == Channel::Promise { gold } else { Color::WHITE }),
+            Part::Big => (&big, if channel == Channel::Promise { gold } else { ink }),
             Part::Sub => (&sub, Color::srgb(0.85, 0.85, 0.85)),
             Part::Crawl => (&ticker, Color::srgb(0.05, 0.05, 0.08)),
         };
@@ -269,5 +304,77 @@ pub fn update(
         let width = computed.size().x.max(1.0);
         let x = TEX.x as f32 - (into * CRAWL) % (TEX.x as f32 + width);
         node.left = px(x);
+    }
+}
+
+/// While a commercial is on, the TV is a button: click it to watch the ad
+/// full screen. A small tag under the set says so.
+pub fn watch(
+    mut contexts: EguiContexts,
+    tv: Res<Tv>,
+    mut cards: ResMut<Cards>,
+    guide: Res<super::guide::Guide>,
+    time: Res<Time>,
+    camera: Single<(&Camera, &GlobalTransform), With<MainCam>>,
+) -> Result {
+    let Some(k) = tv.commercial else {
+        return Ok(());
+    };
+    if guide.open {
+        return Ok(());
+    }
+    let ctx = contexts.ctx_mut()?;
+    let (cam, cam_tf) = *camera;
+    // The screen's corners, on the window.
+    let f = frame();
+    let corners: Vec<_> = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
+        .iter()
+        .filter_map(|&(x, y)| cam.world_to_viewport(cam_tf, f.transform_point(Vec3::new(x * SCREEN.x / 2.0, y * SCREEN.y / 2.0, 0.051))).ok())
+        .map(|p| egui::pos2(p.x, p.y))
+        .collect();
+    if corners.len() < 4 {
+        return Ok(());
+    }
+    let rect = egui::Rect::from_points(&corners);
+    // Behind the panels, so a panel over the TV keeps its clicks.
+    let clicked = egui::Area::new(egui::Id::new("tv_watch"))
+        .order(egui::Order::Background)
+        .fixed_pos(rect.min)
+        .show(ctx, |ui| {
+            let r = ui.allocate_rect(egui::Rect::from_min_size(rect.min, rect.size()), egui::Sense::click());
+            r.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text(format!("Watch {} (any key brings you back)", ADS[k].title)).clicked()
+        })
+        .inner;
+    let tag = ctx.layer_painter(egui::LayerId::new(egui::Order::Background, egui::Id::new("tv_tag")));
+    let galley = tag.layout_no_wrap("▶ click the TV to watch".to_string(), egui::FontId::proportional(13.0), egui::Color32::WHITE);
+    // On the crawl bar along the screen's bottom, clear of the name tags below.
+    let at = egui::Rect::from_center_size(rect.center_bottom() - egui::vec2(0.0, rect.height() * 25.0 / TEX.y as f32), galley.size() + egui::vec2(12.0, 6.0));
+    tag.rect_filled(at, 4.0, egui::Color32::from_black_alpha(190));
+    tag.galley(at.min + egui::vec2(6.0, 3.0), galley, egui::Color32::WHITE);
+    if clicked {
+        cards.watch(k, time.elapsed_secs());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Unheld, the TV runs news, a promise, news, a commercial, and every
+    /// commercial and promise visit takes the next one in turn.
+    #[test]
+    fn a_commercial_every_fourth_visit_in_turn() {
+        let visits: Vec<_> = (0..40).map(|v| schedule(v as f32 * VISIT + 0.5, None)).collect();
+        for (v, (ch, ..)) in visits.iter().enumerate() {
+            assert_eq!(*ch, ROTATION[v % 4], "visit {v}");
+        }
+        let ads: Vec<_> = visits.iter().filter(|(c, ..)| *c == Channel::Commercial).map(|(_, s, _)| *s).collect();
+        assert_eq!(ads, (0..10).collect::<Vec<_>>());
+        let promises: Vec<_> = visits.iter().filter(|(c, ..)| *c == Channel::Promise).map(|(_, s, _)| *s).collect();
+        assert_eq!(promises, (0..10).collect::<Vec<_>>());
+        // News stories never repeat back to back.
+        let news: Vec<_> = (0..80).map(|h| schedule(h as f32 * STORY + 0.5, None)).filter(|(c, ..)| *c == Channel::Shrug).map(|(_, s, _)| s).collect();
+        assert!(news.windows(2).all(|w| w[1] > w[0]), "{news:?}");
     }
 }

@@ -838,7 +838,7 @@ fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
     }
     // A miss on a sabotaged night has its own explanation above.
     if !lm.tc.is_optimal(best) && matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
-        ui.label(egui::RichText::new("AI: \"You spun it too fast. The strips froze before they could agree.\"").italics().color(ai));
+        ui.label(egui::RichText::new("AI: \"We spun it too fast. The strips froze before they could agree.\"").italics().color(ai));
     }
 }
 

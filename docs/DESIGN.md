@@ -1,6 +1,6 @@
 # Upddayett's School of Biddness: Design
 
-*From 0 to Pimpin'. From the Tenderloin to Shenzhen.*
+*From a tent on Market St to a bench in Shenzhen.*
 
 Living copy with diagrams: https://claude.ai/code/artifact/bcf97f8d-fc64-4549-bf76-72fb6b728e6c
 This file is the repo snapshot as of 2026-10-05 (the Claude Doc above was last
@@ -29,10 +29,12 @@ tent to the PCB fabs of Shenzhen.
   arrived, everyone outsourced their brains, society went comfortably
   Idiocracy. Upddayett can't afford to build anything twice, so the sim on his
   laptop has to be right.
-- **Core joke:** Upddayett thinks he's the pimp. He is not the pimp. His
+- **Core joke:** Upddayett thinks he's the boss. He is not the boss. His
   superintelligent companion bots are smarter than him four seconds after boot,
-  call him "Daddy" with total sarcasm, and turn his "empire" into a legit
-  company while he picks out a cane.
+  call him "Boss" with fond, gentle teasing, and turn his "empire" into a
+  legit company that mostly gives things away, while he's still trying to
+  fix the dryer. (Softened 2026-10-09 from the pimp framing; see "Humble,
+  karma first".)
 - **Theme:** stupid and curious beats smart and incurious.
 - **Tentzhen's tagline is the game's theme:** "Build your own safety net."
 
@@ -56,6 +58,23 @@ late-night meets Idiocracy humor.
   abundance. Upddayett is resourceful and funny, never pitiful.
 - **Not only jolly:** the Salties (below) take things away. Losses are real,
   so recovering from them means something.
+- **Humble, karma first (user, 2026-10-09).** The game is about karma, so
+  it should feel humble, not smarty-pants. The test for any line, ad or
+  gag: *the game looks up at people, never down.* Jokes land on Upddayett,
+  his stuff and the universe, not on "everyone else being dumb."
+  - The game opens straight into the laundromat (title, splash, play).
+    Nobody sits through ads: the commercials come on the laundromat TV now
+    and then, and a click watches one (all six kept).
+  - Upddayett talks back to the TV, but the joke is on him ("I said I'd
+    fix the dryer in March. So who am I to talk."). His mean heckles stay,
+    as the tell that he carries yuck.
+  - The AI shares the blame ("We spun it too fast"), teases kindly, and
+    never talks down.
+  - Karma is the quiet scoreboard: a night ends on who went to bed fed,
+    not on fireworks (to build next).
+  - Clever stuff (citations, precedents, the quant lessons) stays in the
+    docs and the site, where people go looking for it; the game says it
+    in plain words.
 - **Guardrails:** crude, raunchy humor and innuendo; nothing explicit. Jokes
   punch at Upddayett, not at real people. Every roast is backed by a real
   simulation result.
@@ -83,10 +102,10 @@ clock, on a 68 x 36 mm DDR2-SODIMM LED-wall receiving card. Sources: LiteX
 
 Sample voice:
 
-> **AI:** "Upddayett, sweetie. I simulated your balance bot four hundred times.
-> It fell over four hundred times. Gravity isn't a hater, babe, it's a constant."
-> **Upddayett:** "...I'm still the pimp though."
-> **AI:** "Of course you are. Go stand by the shopping cart and look important."
+> **AI:** "Upddayett, buddy. I simulated your balance bot four hundred times.
+> It fell over four hundred times. Gravity isn't mad at you. It's just gravity."
+> **Upddayett:** "...So I'm close, though."
+> **AI:** "Closer than yesterday. Hold the shopping cart steady, that helps."
 
 ## Arc
 
@@ -95,7 +114,7 @@ Sample voice:
 | 1. Tentzhen | The Loin | Two-channel scope from the scrap i9; now he can see volts | (instrument; probes every later build) | Dumpster Intern |
 | 2. Hub Motor Hustle | The Loin | Balance bot from a dead scooter motor; carries groceries for tent 4 | `sim::core` derivatives, LQR | Tent Entrepreneur |
 | 3. The Laundromat | Laundromat | Trade computer of salvaged slap bits | `sim::thermostat` | Library Card Holder |
-| 4. Pimpin' | Shenzhen | Companion bots, ENIG gold boards, bots run the biz | `sim::coupling` | Small Biddness Owner, then Pimpin' (ENIG Certified) |
+| 4. Ever Notice I'm Gold | Shenzhen | Companion bots, ENIG gold boards, bots run the biz | `sim::coupling` | Small Biddness Owner, then ENIG Certified |
 
 - ENIG in-game = "Ever Notice I'm Gold". Cane = soldering iron, cup = flux pot,
   coat = anti-static bags.
@@ -154,7 +173,7 @@ possible.
 | Humane rat trap replaces glue traps | Rats caught alive and relocated | `sim::core` peak impact force |
 | Stringfoot pigeons | String untangled from pigeons' feet | Contact force on a fragile foot |
 | Food-rescue routing | Amir's surplus to whoever's hungry tonight (built, Lesson 3) | Lesson 3 laundromat computer |
-| Treating the bots well | Bossing them like a pimp costs karma | Story |
+| Treating the bots well | Bossing them around costs karma; a thank-you earns it | Story |
 | Colonoscopy probe (late) | Gentler screening | Wall contact force per step |
 
 Never preachy: Upddayett goes vegan obsessively; aeroponic kale is the other
@@ -172,7 +191,7 @@ tearing things down instead of building.
 
 - **Name.** "Salty" is the attitude, and salt is the one thing Corten can't
   take: chlorides stop weathering steel's protective patina from forming, so
-  it keeps corroding instead of sealing itself. AI: "They're not tough, babe.
+  it keeps corroding instead of sealing itself. AI: "They're not tough, buddy.
   They're corrosive. There's a difference." Rust that protects (patina,
   building things) versus rust that eats (salt).
 - **Not crabs.** "Crabs in a bucket" fits the attitude, but Ferris the crab
@@ -400,6 +419,12 @@ in the room:
   give it up), so a promise can be checked live. Upddayett heckles: "Who's
   giving it up, Glorb?"
 
+- **Commercials** (2026-10-09): every fourth visit the TV runs one of the
+  fake ads (the two attack ads always as a pair). It shows the ad's name
+  and a line; click the TV to watch the whole thing full screen, any key
+  to come back. This replaced the reel that played before the game and
+  the ad that broke in every third night.
+
 Parody names only: no real networks, politicians or parties. Both channels
 get skewered equally, for behavior (apathy, empty promises), not policy.
 No crypto ads.
@@ -522,8 +547,10 @@ only help. The game shows it in corners, fine print and TV shrugs.
   court ban, which the European Court of Human Rights upheld in 2012.
 - **Already in the game:**
   - the dog ad's search for "chicken nom nom recipe but i dont have a
-    chicken", its plant results, the bulk tab to The Farm, the pig at the
-    window, and the resale fine print;
+    chicken", its plant results, the bulk tab to The Farm, a pigeon with a
+    letter on the window sill, and the resale fine print (it was a pig at
+    the window until 2026-10-09; the user caught it: none of the farm
+    animals are free yet, so none can be out at a window or in an alley);
   - DEE'S NUTS and its fine print;
   - seven Shrug Network shrugs.
 

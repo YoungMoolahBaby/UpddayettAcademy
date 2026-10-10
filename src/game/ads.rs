@@ -53,6 +53,14 @@ impl Beat {
 
 pub struct Ad {
     pub beats: &'static [Beat],
+    /// What the laundromat TV shows while the ad is on: its name, a line
+    /// from it, and its colors (screen, ink).
+    pub title: &'static str,
+    pub teaser: &'static str,
+    pub colors: [[u8; 3]; 2],
+    /// The ad that always plays right after this one (the attack ads go as
+    /// a pair, so each side gets equal time).
+    pub then: Option<usize>,
 }
 
 impl Ad {
@@ -76,16 +84,20 @@ impl Ad {
     }
 }
 
-/// The reel, in order: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack
-/// ads back to back (each side on the other), SITSTILLA, DEE'S NUTS.
+/// Every ad: MTN GOO, SUPER INTELLIGENCE FOR DOGS, the two attack ads back
+/// to back (each side on the other), SITSTILLA, DEE'S NUTS. They come on the
+/// laundromat TV now and then (`SPOTS`); click it to watch one.
 pub const ADS: [Ad; 6] = [
-    Ad { beats: &GOO_BEATS },
-    Ad { beats: &DOG_BEATS },
-    Ad { beats: &ATTACK_PLINKO },
-    Ad { beats: &ATTACK_GLORBMAN },
-    Ad { beats: &SITSTILLA_BEATS },
-    Ad { beats: &DEE_BEATS },
+    Ad { beats: &GOO_BEATS, title: "MTN GOO", teaser: "Get the Goo in you.", colors: [[20, 70, 25], [150, 255, 90]], then: None },
+    Ad { beats: &DOG_BEATS, title: "SUPER INTELLIGENCE FOR DOGS", teaser: "They even flush.", colors: [[20, 40, 90], [120, 200, 255]], then: None },
+    Ad { beats: &ATTACK_PLINKO, title: "GLORBMAN VS. PLINKO", teaser: "Two attack ads. Equal time.", colors: [[110, 12, 12], [255, 255, 255]], then: Some(3) },
+    Ad { beats: &ATTACK_GLORBMAN, title: "PLINKO VS. GLORBMAN", teaser: "Two attack ads. Equal time.", colors: [[110, 12, 12], [255, 255, 255]], then: None },
+    Ad { beats: &SITSTILLA_BEATS, title: "SITSTILLA", teaser: "Childhood, managed.", colors: [[10, 70, 80], [60, 200, 190]], then: None },
+    Ad { beats: &DEE_BEATS, title: "DEE'S NUTS", teaser: "Nobody died for these.", colors: [[90, 50, 20], [250, 238, 205]], then: None },
 ];
+
+/// The ads the TV takes turns on: each one that doesn't follow another.
+pub const SPOTS: [usize; 5] = [0, 1, 2, 4, 5];
 
 // ── The style kit ──
 
@@ -298,20 +310,27 @@ fn toilet(st: &Stage, at: Pos2, s: f32, swirl: Option<f32>) {
     }
 }
 
-/// A pig's face, front on (the farm is watching).
-fn pig(st: &Stage, at: Pos2, s: f32) {
-    let pink = Color32::from_rgb(245, 170, 180);
-    let dark = Color32::from_rgb(200, 110, 125);
-    for dx in [-0.3, 0.3] {
-        let ear = vec![at + vec2(dx * s - s * 0.12, -s * 0.22), at + vec2(dx * s * 1.4, -s * 0.48), at + vec2(dx * s + s * 0.12, -s * 0.25)];
-        st.p.add(Shape::convex_polygon(ear, dark, Stroke::NONE));
+/// A pigeon on a sill in profile, facing right, a message tube on its leg.
+/// The farm animals aren't free yet; the pigeons carry their mail (DESIGN
+/// "The farm is waking up").
+fn pigeon(st: &Stage, at: Pos2, s: f32) {
+    let gray = Color32::from_rgb(150, 155, 170);
+    let dark = Color32::from_rgb(95, 100, 115);
+    // Tail, body, wing.
+    st.p.add(Shape::convex_polygon(vec![at + vec2(-s * 0.3, -s * 0.02), at + vec2(-s * 0.62, s * 0.1), at + vec2(-s * 0.58, s * 0.2), at + vec2(-s * 0.25, s * 0.12)], dark, Stroke::NONE));
+    st.p.add(Shape::ellipse_filled(at, vec2(s * 0.38, s * 0.22), gray));
+    st.p.add(Shape::ellipse_filled(at + vec2(-s * 0.06, -s * 0.01), vec2(s * 0.24, s * 0.12), dark));
+    // Legs, and the tube on one.
+    for dx in [-0.04, 0.08] {
+        st.p.line_segment([at + vec2(dx * s, s * 0.18), at + vec2(dx * s, s * 0.3)], Stroke::new(s * 0.03, Color32::from_rgb(220, 110, 110)));
     }
-    st.p.circle_filled(at, s * 0.36, pink);
-    st.p.add(Shape::ellipse_filled(at + vec2(0.0, s * 0.1), vec2(s * 0.15, s * 0.1), dark));
-    for dx in [-0.05, 0.05] {
-        st.p.circle_filled(at + vec2(dx * s, s * 0.1), s * 0.025, Color32::from_rgb(90, 40, 50));
-        st.p.circle_filled(at + vec2(dx * s * 3.0, -s * 0.1), s * 0.035, Color32::BLACK);
-    }
+    st.p.rect_filled(Rect::from_center_size(at + vec2(s * 0.08, s * 0.24), vec2(s * 0.07, s * 0.1)), 2.0, Color32::from_rgb(235, 225, 190));
+    // The green-and-purple neck, the head, the beak, the eye.
+    let head = at + vec2(s * 0.3, -s * 0.24);
+    st.p.add(Shape::ellipse_filled(at + vec2(s * 0.24, -s * 0.1), vec2(s * 0.13, s * 0.14), Color32::from_rgb(110, 150, 130)));
+    st.p.circle_filled(head, s * 0.12, gray);
+    st.p.add(Shape::convex_polygon(vec![head + vec2(s * 0.1, -s * 0.03), head + vec2(s * 0.24, s * 0.01), head + vec2(s * 0.1, s * 0.04)], Color32::from_rgb(70, 60, 60), Stroke::NONE));
+    st.p.circle_filled(head + vec2(s * 0.04, -s * 0.02), s * 0.025, Color32::from_rgb(230, 120, 40));
 }
 
 /// A laptop with a search open: two tabs, the query being typed, and (once
@@ -475,11 +494,11 @@ const DOG_BEATS: [Beat; 7] = [
     Beat {
         secs: 3.4,
         paint: |st, t| {
-            // He looks up dinner. A pig watches through the window, taking notes.
+            // He looks up dinner. A pigeon waits on the sill with a letter.
             st.fill(Color32::from_rgb(235, 225, 205));
             let win = Rect::from_center_size(st.at(-0.62, -0.3), vec2(st.h() * 0.3, st.h() * 0.24));
             st.p.rect_filled(win, 3.0, Color32::from_rgb(120, 170, 220));
-            pig(st, win.center() + vec2(0.0, st.h() * 0.03), st.h() * 0.17);
+            pigeon(st, win.center() + vec2(st.h() * 0.075, st.h() * 0.075), st.h() * 0.13);
             st.p.rect_stroke(win, 3.0, Stroke::new(st.h() * 0.012, Color32::from_rgb(120, 90, 60)), egui::StrokeKind::Middle);
             st.p.line_segment([win.center_top(), win.center_bottom()], Stroke::new(st.h() * 0.008, Color32::from_rgb(120, 90, 60)));
             dog(st, st.at(-0.6, 0.2), st.h() * 0.3, true, t);
@@ -1008,5 +1027,19 @@ mod tests {
         for (a, b) in ATTACK_PLINKO.iter().zip(&ATTACK_GLORBMAN) {
             assert_eq!(a.secs, b.secs);
         }
+    }
+
+    /// The TV reaches every ad: each is a spot or follows one, exactly once.
+    #[test]
+    fn the_tv_plays_every_ad_once() {
+        let mut seen = vec![0; ADS.len()];
+        for &k in &SPOTS {
+            let mut at = Some(k);
+            while let Some(a) = at {
+                seen[a] += 1;
+                at = ADS[a].then;
+            }
+        }
+        assert!(seen.iter().all(|&n| n == 1), "{seen:?}");
     }
 }

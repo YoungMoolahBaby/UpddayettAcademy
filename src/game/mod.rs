@@ -24,7 +24,7 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         let lm = sim::Laundromat::new();
-        app.insert_resource(cards::Cards::new(lm.night))
+        app.insert_resource(cards::Cards::new())
             .insert_resource(lm)
             .init_resource::<tv::Tv>()
             .init_resource::<guide::Guide>()
@@ -57,7 +57,7 @@ impl Plugin for GamePlugin {
                 )
                     .chain(),
             )
-            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear), tape::ui.run_if(cards::clear), guide::ui.run_if(cards::clear)).chain());
+            .add_systems(EguiPrimaryContextPass, (cards::draw, ui::panels.run_if(cards::clear), tape::ui.run_if(cards::clear), guide::ui.run_if(cards::clear), tv::watch.run_if(cards::clear)).chain());
         #[cfg(feature = "solari")]
         app.add_plugins(rt::RtPlugin);
         if cards::shots_enabled() {

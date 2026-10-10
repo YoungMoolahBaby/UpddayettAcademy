@@ -435,7 +435,7 @@ fn run(o: &Opts) -> Result<(), trade::Error> {
     } else {
         println!("\nThe best set was {}:", mask_string(ground, n));
         print_chain(&tc, ground);
-        println!("\"You spun it too fast, Daddy. The strips froze before they could agree.\"");
+        println!("\"We spun it too fast. The strips froze before they could agree.\"");
     }
     if !tc.delivers_want(latch.best_bits) {
         println!("And nobody handed over what you wanted.");

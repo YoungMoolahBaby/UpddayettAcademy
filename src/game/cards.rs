@@ -1,6 +1,7 @@
 //! Full-screen cards: the "Press Start" title, the "powered by CortenForge"
-//! splash, the opening reel of fake commercials (`ads`), and an ad between
-//! nights now and then.
+//! splash, and a fake commercial (`ads`) when the player clicks the TV while
+//! one is on. The game opens straight into the laundromat; nobody has to sit
+//! through an ad.
 //! `UPD_CARDS=1` shoots each card to `shots/card_*.png` and exits.
 
 use bevy::prelude::*;
@@ -8,7 +9,6 @@ use bevy_egui::{EguiContexts, egui};
 
 use super::ads::{ADS, Stage};
 use super::scene::BoardCam;
-use super::sim::Laundromat;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Card {
@@ -22,19 +22,19 @@ pub struct Cards {
     pub showing: Option<Card>,
     /// When the card went up (seconds since startup).
     since: f32,
-    /// The night the last ad check ran on.
-    night: u64,
-    /// Ads break in between nights (off while screenshots are taken).
-    ads: bool,
-    /// Playing the opening reel: every ad back to back, before the game.
-    reel: bool,
 }
 
 impl Cards {
-    pub fn new(night: u64) -> Self {
+    pub fn new() -> Self {
         // Screenshot runs and the render bench skip the title.
         let shooting = super::shots::enabled() || super::tape::shots_enabled() || super::guide::shots_enabled() || shots_enabled() || std::env::var_os("UPD_BENCH").is_some();
-        Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0, night, ads: !shooting, reel: false }
+        Cards { showing: if shooting && !shots_enabled() { None } else { Some(Card::Title) }, since: 0.0 }
+    }
+
+    /// Put ad `k` up full screen (the player clicked the TV).
+    pub fn watch(&mut self, k: usize, now: f32) {
+        self.showing = Some(Card::Ad(k));
+        self.since = now;
     }
 }
 
@@ -53,11 +53,6 @@ const GOO_DARK: egui::Color32 = egui::Color32::from_rgb(20, 70, 25);
 /// Weathering steel: CortenForge's namesake.
 const CORTEN: egui::Color32 = egui::Color32::from_rgb(190, 90, 40);
 const CORTEN_DARK: egui::Color32 = egui::Color32::from_rgb(70, 28, 12);
-
-/// Which ad breaks in when a night begins: every third night, in turn.
-fn ad_for(night: u64) -> Option<usize> {
-    night.is_multiple_of(3).then_some((night / 3) as usize % ADS.len())
-}
 
 /// The largest size up to `max` at which `text` fits in `width`.
 pub fn fit(p: &egui::Painter, family: &egui::FontFamily, text: &str, width: f32, max: f32) -> f32 {
@@ -114,7 +109,6 @@ fn ferris(p: &egui::Painter, at: egui::Pos2, s: f32, t: f32) {
 pub fn draw(
     mut contexts: EguiContexts,
     mut cards: ResMut<Cards>,
-    lm: Res<Laundromat>,
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -148,39 +142,21 @@ pub fn draw(
         _ => egui::FontFamily::Proportional,
     };
 
-    // A new night may bring a commercial break.
-    if lm.night != cards.night {
-        cards.night = lm.night;
-        if cards.ads
-            && cards.showing.is_none()
-            && let Some(k) = ad_for(lm.night)
-        {
-            cards.showing = Some(Card::Ad(k));
-            cards.since = now;
-        }
-    }
-
     let Some(card) = cards.showing else {
         return Ok(());
     };
     let t = now - cards.since;
     let pressed = keys.get_just_pressed().next().is_some() || mouse.just_pressed(MouseButton::Left);
-    // Like the fake ads that open Tropic Thunder: after the splash, the reel
-    // plays every ad before the game. Any key skips one ad; Esc skips the reel.
+    // After the splash, straight to the laundromat. An ad runs to its end (or
+    // its pair's end); any key skips ahead, Esc goes back to the laundromat.
     let next = match card {
         Card::Title if pressed && t > GRACE => Some(Some(Card::Splash)),
-        Card::Splash if t > SPLASH || (pressed && t > GRACE) => {
-            cards.reel = cards.ads;
-            Some(cards.reel.then_some(Card::Ad(0)))
-        }
+        Card::Splash if t > SPLASH || (pressed && t > GRACE) => Some(None),
         Card::Ad(_) if keys.just_pressed(KeyCode::Escape) => Some(None),
-        Card::Ad(k) if t > ADS[k].secs() || (pressed && t > GRACE) => Some((cards.reel && k + 1 < ADS.len()).then_some(Card::Ad(k + 1))),
+        Card::Ad(k) if t > ADS[k].secs() || (pressed && t > GRACE) => Some(ADS[k].then.map(Card::Ad)),
         _ => None,
     };
     if let Some(next) = next {
-        if next.is_none() {
-            cards.reel = false;
-        }
         cards.showing = next;
         cards.since = now;
         return Ok(());
@@ -244,7 +220,7 @@ pub fn draw(
         }
         Card::Ad(k) => {
             ADS[k].paint(&Stage { p: &p, family: family.clone(), screen }, t);
-            let hint = if cards.reel { format!("{} of {}   any key: next   Esc: skip ads", k + 1, ADS.len()) } else { "any key: skip".to_string() };
+            let hint = if ADS[k].then.is_some() { "any key: next   Esc: back to the laundromat" } else { "any key: back to the laundromat" };
             p.text(screen.right_top() + egui::vec2(-14.0, 12.0), egui::Align2::RIGHT_TOP, hint, ui_font(h * 0.018), egui::Color32::from_white_alpha(120));
         }
     }
@@ -284,7 +260,6 @@ pub fn shots(mut commands: Commands, mut cards: ResMut<Cards>, time: Res<Time>, 
     // Hold the current card still, `into` seconds in.
     if let Some((at, into, card, name)) = plan.iter().rev().find(|(at, ..)| f >= *at) {
         cards.showing = Some(*card);
-        cards.reel = matches!(card, Card::Ad(_));
         cards.since = time.elapsed_secs() - into;
         // Long enough for the chunky font to load on the first card.
         if f == at + 20 {
@@ -294,19 +269,5 @@ pub fn shots(mut commands: Commands, mut cards: ResMut<Cards>, time: Res<Time>, 
     }
     if f > at + 30 {
         exit.write(AppExit::Success);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn an_ad_every_third_night_in_turn() {
-        // Nights 3, 6, 9, ... take the ads in turn, then wrap around.
-        let n = ADS.len();
-        let ads: Vec<_> = (1..=3 * n as u64).filter_map(ad_for).collect();
-        assert_eq!(ads, (1..=n).map(|k| k % n).collect::<Vec<_>>());
-        assert!((1..100).filter_map(ad_for).all(|k| k < ADS.len()));
     }
 }

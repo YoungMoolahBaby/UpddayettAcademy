@@ -216,7 +216,7 @@ Read it top to bottom:
 
 If you cool too fast, the strips freeze wherever they happen to be: a
 **quench**, which lands in a mediocre set. In the game that's Quick Wash
-("You spun it too fast, Daddy"). Cooling slower helps, but only
+("We spun it too fast"). Cooling slower helps, but only
 logarithmically: three times longer buys a few points.
 
 ---

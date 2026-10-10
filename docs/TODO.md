@@ -10,6 +10,17 @@ arcs the user named, then smaller items.
 
 ## Next arcs (the user picks the order)
 
+- [ ] **Humble pass** (DESIGN "Humble, karma first"; PLAN "Humble pass
+  started"). The game looks up at people, never down.
+  - [x] open straight into the laundromat; ads move to the TV (click to watch)
+  - [x] Upddayett's heckles turn on himself; the AI says "we"
+  - [x] soften the pimp framing (DESIGN)
+  - [x] the dog ad's pig becomes a pigeon (no farm animal is free yet)
+  - [ ] Karma first at the end of a night: who went to bed fed, quietly
+  - [ ] review the Shrug Network's shrugs (billionaires, yachts) for punching down
+  - [ ] the site's tone: lessons as what the washer taught him, plain words
+  - [ ] the how-to-play pages written so far, same check
+
 - [ ] **How to play, the rest of the book** (PLAN "How to play, started";
   `src/game/guide.rs`). Pages 1-6 are written (the street, Goo, a trade,
   loops, collisions, the drum). Write the rest *with* the user, explaining
@@ -40,9 +51,8 @@ arcs the user named, then smaller items.
 - [ ] **The tape deck with real music**: the user hasn't tried drag-and-drop
   with their own files; MP3/FLAC decoding is untested (only synthesized WAV
   tones). (PLAN "Step 8 result")
-- [ ] **Ad pacing verdict**: default 2.1x; the user was trying 1.0. Also
-  open: play 2-3 ads per launch instead of the whole reel (~2.5 min).
-  (PLAN "Backlog", "Also open")
+- [ ] **Ad pacing verdict**: default 2.1x; the user was trying 1.0. (The
+  reel at launch is gone: ads play from the TV now. PLAN "Humble pass".)
 - [ ] **UTC dates**: notes in PLAN 3.3d / 3.6 dated 2026-10-06 mean the
   evening of 2026-10-05 (UTC). Fix offered, no answer.
 

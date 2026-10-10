@@ -19,13 +19,13 @@ const ANYWAY: [&str; 17] = [
     "a billionaire named a rocket after himself. Again.",
     "sports happened.",
     "a man grew a slightly bigger potato.",
-    "a pig bought something off a dog in an alley.",
+    "a dog mailed a package to a farm. The farm wrote back.",
     "a man ate a whole ham in front of a vegan to prove a point. It was soy.",
     "a dairy was sued by an LLC. The LLC is a cow.",
     "a dairy reports record milk. Nobody has seen a cow since March.",
     "a vegan and a rancher argued for three hours. Two goats took notes.",
     "a bacon festival sold out. Nobody checked the bacon.",
-    "a chicken crossed the road. On purpose, with a plan.",
+    "a farmer says the chickens have started holding meetings.",
 ];
 
 /// One Shrug Network story: a true fact about tonight, and the shrug.
@@ -102,12 +102,18 @@ impl Promise {
         w.items.iter().filter(|it| it.name == name).count()
     }
 
-    /// Upddayett's heckle, with the real count and owner.
+    /// Upddayett talks back to the TV with the real count and owner, and the
+    /// joke lands on him: he's made big promises too.
     pub fn heckle(&self, w: &World) -> String {
         let owner = w.npcs[w.items[self.item].owner].name;
+        let nick = self.nick;
         match self.supply(w) {
-            1 => format!("Who's giving it up, {}? There's one, and it's {owner}'s.", self.nick),
-            k => format!("Who's giving them up, {}? There are {k}.", self.nick),
+            1 => match w.night.seed % 3 {
+                0 => format!("There's one, {nick}, and it's {owner}'s. ...I said I'd fix the dryer in March. So who am I to talk."),
+                1 => format!("Who's giving it up, {nick}? There's one, and it's {owner}'s. Promising other people's stuff. I've done that too."),
+                _ => format!("There's one, and it's {owner}'s. Honestly, I'd make that promise too. That's what worries me."),
+            },
+            k => format!("There are {k}, {nick}. That's more than I've ever handed out. I should work on that."),
         }
     }
 
@@ -161,6 +167,20 @@ mod tests {
             seen.sort();
             seen.dedup();
             assert_eq!(seen.len(), lines.len(), "night {night}");
+        }
+    }
+
+    /// Upddayett's plain heckles are about himself; only the yucky ones
+    /// (his tell) go after other people.
+    #[test]
+    fn the_joke_is_on_him() {
+        for night in 1..=12 {
+            let w = world::laundromat(night);
+            for p in promises(&w) {
+                let line = p.heckle(&w);
+                assert!(line.contains(" I") || line.starts_with("I"), "night {night}: {line}");
+                assert!(!line.contains("idiot") && !line.contains("Nobody cares"), "night {night}: {line}");
+            }
         }
     }
 
