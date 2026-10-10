@@ -638,6 +638,28 @@ mod tests {
         }
     }
 
+    /// Upddayett's mesh handheld, given away, goes to whoever has no phone
+    /// (Ranchelle): a need beats purpose for people who already have one.
+    #[test]
+    fn the_mesh_handheld_goes_to_whoever_has_no_phone() {
+        for night in 1..40 {
+            let mut w = world::laundromat(night);
+            let mesh = w.add_mesh();
+            w.set_gift(mesh, true);
+            let ranchelle = w.find_npc("ranchelle").unwrap();
+            assert!(!w.npcs[ranchelle].has_phone);
+            assert_eq!(w.why(ranchelle, mesh), Some("no phone"));
+            let tc = TradeComputer::new(w, 5.0, 1.6);
+            let gift = qubo::chosen(tc.forward_best, tc.cycles.len())
+                .into_iter()
+                .map(|i| &tc.cycles[i])
+                .find(|c| c.is_gift() && c.legs[0].item == mesh)
+                .unwrap_or_else(|| panic!("night {night}: the handheld stayed home"));
+            assert_eq!(gift.legs[0].to, ranchelle, "night {night}: it went to {}", tc.world.npcs[gift.legs[0].to].name);
+            assert!(gift.relief > 0.0, "night {night}: a need met is relief");
+        }
+    }
+
     #[test]
     fn karma_puts_needs_first() {
         use world::Night;

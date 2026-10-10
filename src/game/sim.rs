@@ -46,7 +46,7 @@ pub struct Laundromat {
     /// Whose wants the picker is showing.
     pub picker_npc: usize,
     /// What Upddayett gives away tonight, if anything.
-    pub give: Option<usize>,
+    pub give: Option<Give>,
     /// What he could give away (someone wants it), with what it costs him
     /// (his own value for it tonight, in Goo).
     pub give_menu: Vec<(usize, f64)>,
@@ -143,16 +143,31 @@ fn upddayett(w: &world::World) -> usize {
     w.find_npc("upddayett").expect("Upddayett runs the place")
 }
 
+/// What Upddayett gives away tonight.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Give {
+    /// One of his items on the board.
+    Item(usize),
+    /// A mesh handheld he built for it (`world::MESH_HANDHELD`): it joins
+    /// the board only as a gift.
+    Mesh,
+}
+
 /// Night `night`'s world without its yuck, with Upddayett giving `give`
 /// away (if anything) and the battery holding its cells (if it runs).
-fn clean_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>) -> world::World {
+fn clean_world(night: u64, give: Option<Give>, battery: bool, printed: Option<usize>) -> world::World {
     let mut w = world::laundromat(night);
     // The print first: it is an item Upddayett could also give away.
     if let Some(k) = printed {
         w.add_print(&print::CATALOG[k]);
     }
-    if let Some(item) = give {
-        w.set_gift(item, true);
+    match give {
+        Some(Give::Item(item)) => w.set_gift(item, true),
+        Some(Give::Mesh) => {
+            let mesh = w.add_mesh();
+            w.set_gift(mesh, true);
+        }
+        None => {}
     }
     if battery {
         w.set_held(w.find_item(salties::BATTERY_CELLS).expect("Ranchelle's cells"), true);
@@ -169,7 +184,7 @@ fn roll_yuck(night: u64) -> yuck::Yuck {
 
 /// The night's world with `yuck` on it. Giving something away cures
 /// Upddayett's own: giving lifts the giver.
-fn yucky_world(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> world::World {
+fn yucky_world(night: u64, give: Option<Give>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> world::World {
     let mut w = clean_world(night, give, battery, printed);
     let mut y = yuck.clone();
     if give.is_some() {
@@ -180,13 +195,13 @@ fn yucky_world(night: u64, give: Option<usize>, battery: bool, printed: Option<u
 }
 
 /// Tonight's trade computer: the night's world with its yuck.
-fn board_for(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> TradeComputer {
+fn board_for(night: u64, give: Option<Give>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> TradeComputer {
     TradeComputer::new(yucky_world(night, give, battery, printed, yuck), 5.0, 1.6)
 }
 
 /// [`board_for`], logged, with the ghosts: the trades tonight's yuck killed,
 /// against the same board without it.
-fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> (TradeComputer, yuck::Ghosts) {
+fn open(night: u64, give: Option<Give>, battery: bool, printed: Option<usize>, yuck: &yuck::Yuck) -> (TradeComputer, yuck::Ghosts) {
     let tc = board_for(night, give, battery, printed, yuck);
     let ghosts = yuck::Ghosts::find(&TradeComputer::new(clean_world(night, give, battery, printed), 5.0, 1.6), &tc);
     let carriers: Vec<&str> = (0..tc.world.npcs.len()).filter(|&k| tc.world.yuck_tax(k) > 0.0).map(|k| tc.world.npcs[k].name).collect();
@@ -195,7 +210,11 @@ fn open(night: u64, give: Option<usize>, battery: bool, printed: Option<usize>, 
     info!(
         "night {night} (UPD_SEED={night} replays it): {}{}{}{}, {} trades + {gifts} gifts{}",
         tc.world.weather(),
-        give.map_or(String::new(), |item| format!(", Upddayett gives away the {}", tc.world.items[item].name)),
+        match give {
+            Some(Give::Item(item)) => format!(", Upddayett gives away the {}", tc.world.items[item].name),
+            Some(Give::Mesh) => format!(", Upddayett gives away a {}", world::MESH_HANDHELD),
+            None => String::new(),
+        },
         tc.world.night.sabotage.map_or(String::new(), |s| format!(", the Salties try {}", s.describe())),
         if battery { ", drum on the battery" } else { "" },
         tc.cycles.len() - gifts,
@@ -467,11 +486,17 @@ impl Laundromat {
             .collect();
         // What he'd give up, priced on the night as if he kept everything.
         let mut kept = tc.world.clone();
-        if let Some(item) = self.give {
+        if let Some(Give::Item(item)) = self.give {
             kept.set_gift(item, false);
         }
         let upd = upddayett(&kept);
-        self.give_menu = kept.giveable(upd).into_iter().map(|item| (item, kept.value[upd][item])).collect();
+        // (The handheld has its own line in the menu.)
+        self.give_menu = kept
+            .giveable(upd)
+            .into_iter()
+            .filter(|&item| kept.items[item].name != world::MESH_HANDHELD)
+            .map(|item| (item, kept.value[upd][item]))
+            .collect();
         // What the battery takes off tonight's best set.
         let best = |tc: &TradeComputer| tc.evaluate(tc.forward_best).0;
         self.battery_cost = (best(&board_for(self.night, self.give, false, self.printed, &self.yuck)) - best(&board_for(self.night, self.give, true, self.printed, &self.yuck))).max(0.0);
@@ -569,13 +594,17 @@ impl Laundromat {
     /// Upddayett gives `give` away tonight (or keeps everything). The item
     /// leaves the trades and gets a gift strip, so the board is rebuilt
     /// from scratch (it has a different number of strips).
-    pub fn set_give(&mut self, give: Option<usize>) {
+    pub fn set_give(&mut self, give: Option<Give>) {
         if matches!(self.mode, Mode::Cycle { .. }) || give == self.give {
             return;
         }
         self.give = give;
         self.reopen();
-        let what = give.map_or("nothing".to_string(), |item| format!("the {}", self.tc.world.items[item].name));
+        let what = match give {
+            Some(Give::Item(item)) => format!("the {}", self.tc.world.items[item].name),
+            Some(Give::Mesh) => format!("a {}", world::MESH_HANDHELD),
+            None => "nothing".to_string(),
+        };
         info!("Upddayett gives away {what}");
     }
 
@@ -588,7 +617,9 @@ impl Laundromat {
         if let Some(k) = self.printed {
             tonight.add_print(&print::CATALOG[k]);
         }
-        if self.give.is_some_and(|item| !tonight.giveable(upd).contains(&item)) {
+        if let Some(Give::Item(item)) = self.give
+            && !tonight.giveable(upd).contains(&item)
+        {
             self.give = None;
         }
         (self.tc, self.ghosts) = open(self.night, self.give, self.battery, self.printed, &self.yuck);

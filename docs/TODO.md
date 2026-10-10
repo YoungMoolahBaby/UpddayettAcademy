@@ -20,6 +20,9 @@ arcs the user named, then smaller items.
   - [ ] review the Shrug Network's shrugs (billionaires, yachts) for punching down
   - [ ] the site's tone: lessons as what the washer taught him, plain words
   - [ ] the how-to-play pages written so far, same check
+- [x] **The mesh handheld** (Tentzhen; DESIGN "The mesh handheld"): a give-away
+  for comms with no phone bill. Later: a solar repeater, everyone on the mesh
+  once nights carry over.
 
 - [ ] **How to play, the rest of the book** (PLAN "How to play, started";
   `src/game/guide.rs`). Pages 1-6 are written (the street, Goo, a trade,

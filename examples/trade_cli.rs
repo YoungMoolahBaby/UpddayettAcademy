@@ -247,7 +247,11 @@ fn setup(o: &Opts) -> TradeComputer {
     if let Some(g) = &o.give {
         let (who, what) = g.split_once(':').expect("--give WHO:WHAT");
         let npc = w.find_npc(who).unwrap_or_else(|| panic!("nobody called {who}"));
-        let item = w.find_item(what).unwrap_or_else(|| panic!("no item like {what}"));
+        // A mesh handheld only exists once Upddayett brings one to give away.
+        let item = match w.find_item(what) {
+            None if what.eq_ignore_ascii_case("mesh") => w.add_mesh(),
+            found => found.unwrap_or_else(|| panic!("no item like {what}")),
+        };
         assert_eq!(w.items[item].owner, npc, "{} doesn't have the {}", w.npcs[npc].name, w.items[item].name);
         w.set_gift(item, true);
         println!("{} gives away the {}.", w.npcs[npc].name, w.items[item].name);

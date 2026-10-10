@@ -76,17 +76,20 @@ pub fn setup(
             Transform::from_translation(at),
         ));
     }
-    // A spare crate for tonight's print (Upddayett's, and always the item
-    // after the world's own), hidden until he prints one.
+    // Spare crates for what Upddayett brings tonight (his, and always the
+    // items after the world's own): a print, a mesh handheld, or both.
+    // Hidden until he does.
     let upd = w.find_npc("upddayett").unwrap_or(0);
     let at = home(&spots.0, &owners, owners.len() - 1);
-    commands.spawn((
-        Crate { item: w.items.len(), from: at, to: at, t0: 0.0 },
-        Mesh3d(cube),
-        MeshMaterial3d(paint[upd % paint.len()].clone()),
-        Transform::from_translation(at),
-        Visibility::Hidden,
-    ));
+    for item in w.items.len()..w.items.len() + 2 {
+        commands.spawn((
+            Crate { item, from: at, to: at, t0: 0.0 },
+            Mesh3d(cube.clone()),
+            MeshMaterial3d(paint[upd % paint.len()].clone()),
+            Transform::from_translation(at),
+            Visibility::Hidden,
+        ));
+    }
 }
 
 /// Slot `item` beside whoever holds it in `holder`: a stack on the floor at
@@ -132,7 +135,7 @@ pub fn fly(time: Res<Time>, lm: Res<Laundromat>, spots: Res<NpcSpots>, mut crate
     let mut n = 0;
     for (mut c, mut tf, mut vis) in &mut crates {
         let i = c.item;
-        // The print's crate, on a night without a print.
+        // A spare crate, on a night without what it is for.
         if i >= w.items.len() {
             *vis = Visibility::Hidden;
             continue;

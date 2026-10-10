@@ -65,6 +65,16 @@ is in DESIGN "Humble, karma first". First cut:
   bulk-order tab to The Farm are gone), and two Shrug lines changed ("a pig bought something off a dog in an
   alley", "a chicken crossed the road"). User: none of the farm animals
   are free yet, so none can be at a window or in an alley.
+**The mesh handheld** (2026-10-09; user: a new Tentzhen item for comms,
+since nobody can afford a phone bill; get it early, for everyone). It's
+a give-away: "a mesh handheld he built" in the give-away menu
+(`sim::Give::Mesh`), `UPD_GIVE=mesh`, `trade_cli --give upd:mesh`. It joins
+the board only as a gift (`World::add_mesh`), so the default boards are
+unchanged. On night 1 it goes to Ranchelle (no phone) for 8 Karma; the
+board grows from 17 to 20 strips, and the 3 weakest gift chains are left
+off (all 11 trades stay). Two spare counter crates now (a print and a
+handheld can share a night); the drum pool has 22 bodies. DESIGN "The mesh
+handheld".
 
 ## Step 5: the drum tumbler (plan, 2026-10-06)
 

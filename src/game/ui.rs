@@ -8,7 +8,7 @@ use cortenforge_play::trade::{Cycle, Sabotage, World, qubo, salties, yuck};
 
 use super::arrows::trade_color;
 use super::scene::{ARROW_Y, LOOKS, MainCam, NpcSpots, board_cam_rect};
-use super::sim::{Laundromat, Mode, PROGRAMS, TRACE_DT, TRACE_LEN};
+use super::sim::{Give, Laundromat, Mode, PROGRAMS, TRACE_DT, TRACE_LEN};
 
 pub(super) fn c32(c: Color) -> egui::Color32 {
     let s = c.to_srgba();
@@ -412,29 +412,42 @@ pub fn panels(
                     ui.separator();
                     ui.label(egui::RichText::new("UPDDAYETT GIVES AWAY...").strong().color(GIFT_EGUI));
                     let mut give = lm.give;
-                    let name = |item: usize| lm.tc.world.items[item].name;
+                    let name = |g: Option<Give>| match g {
+                        Some(Give::Item(item)) => lm.tc.world.items[item].name,
+                        Some(Give::Mesh) => "a mesh handheld he built",
+                        None => "nothing (keeps it all)",
+                    };
                     ui.horizontal_wrapped(|ui| {
                         egui::ComboBox::from_id_salt("give_what")
                             .width(side(200.0, 150.0))
-                            .selected_text(give.map_or("nothing (keeps it all)", name))
+                            .selected_text(name(give))
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut give, None, "nothing (keeps it all)");
+                                ui.selectable_value(&mut give, None, name(None));
                                 for &(item, cost) in &lm.give_menu {
                                     let takers: Vec<&str> = (0..lm.tc.world.npcs.len())
                                         .filter(|&k| lm.tc.world.items[item].owner != k && lm.tc.world.value[k][item] > 0.0)
                                         .map(|k| lm.tc.world.npcs[k].name)
                                         .collect();
-                                    ui.selectable_value(&mut give, Some(item), name(item))
+                                    ui.selectable_value(&mut give, Some(Give::Item(item)), name(Some(Give::Item(item))))
                                         .on_hover_text(format!("costs him {cost:.0} Goo; wanted by {}", takers.join(", ")));
                                 }
+                                ui.selectable_value(&mut give, Some(Give::Mesh), name(Some(Give::Mesh)))
+                                    .on_hover_text("Texts anyone on Market St for free: no SIM, no bill. Nobody here can pay a phone bill.");
                             });
                     });
                     if give != lm.give {
                         lm.set_give(give);
                     }
-                    if let Some(item) = lm.give {
-                        let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
-                        let text = format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.");
+                    if let Some(g) = lm.give {
+                        let text = match g {
+                            Give::Item(item) => {
+                                let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
+                                format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.")
+                            }
+                            Give::Mesh => "He built it to give away. It texts anyone on Market St for free, no SIM, no bill. \
+                                           The drum picks who gets it, by Karma."
+                                .to_string(),
+                        };
                         ui.label(egui::RichText::new(text).small().color(GIFT_EGUI));
                         // Giving lifts the giver (Dunn, Aknin and Norton, 2008): it clears his own yuck.
                         let upd = lm.tc.world.find_npc("Upddayett");

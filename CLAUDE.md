@@ -50,13 +50,13 @@ Read first:
 - The game (Step 2): `cargo run --release` (Bevy 0.19 + bevy_egui). `UPD_SHOT=1 cargo run --release`
   plays a fast spin cycle, saves `shots/*.png` and exits; use it to check visuals.
   `UPD_PROGRAM=0..4` picks the wash program (4 = Smart, the learned one); `UPD_WANT=upd:hub` sets a want; `UPD_SEED=<n>` replays a logged
-  session (it also picks the night); `UPD_NEXT=1` presses Next night first; `UPD_GIVE=phone` has
+  session (it also picks the night); `UPD_NEXT=1` presses Next night first; `UPD_GIVE=phone` (or `mesh`, a handheld he built) has
   Upddayett give that away; `UPD_IDLE=1` runs the idle check, `UPD_SHIELD=<strip>|found` places the
   shield, `UPD_BATTERY=1` runs on the battery, `UPD_RESPIN=1` fights back and spins again (Salties nights:
   smart coils 1, 10, 16; smart quiet cut 4; dumb magnets 21, 29; dumb cuts 17, 31); `UPD_WINDOW=960x600` checks the compact layout. `UPD_CARDS=1` shoots the title, splash and every beat of every ad (`shots/card_*.png`; in play the ads come on the TV, click it to watch); `UPD_PACE=<x>` tries another ad speed (default 2.1x); Tab hides the panels in play; `UPD_TV=shrug|promise|ad` holds the TV on one channel; `UPD_SCOPE=<strip>` opens the scope on that trade; `UPD_PRINT=sled|feeder|bracket|hook` has Upddayett print that part first (shots `print_*.png`). `UPD_TAPE=<file or folder>|empty` shoots the tape deck (Step 8, `src/game/tape.rs`; shots `tape_*.png`, nothing is copied into `music/`). The deck: drop music on the window or put it in `music/` (git-ignored); M pauses, N skips; settings in `music/deck.txt`. How to play (`src/game/guide.rs`): F1 or the banner button opens the picture book; `UPD_GUIDE=all|<page>,<page>` shoots its pages (`shots/guide_<k>.png`). Ray tracing (Bevy Solari, cargo feature `solari`, compiled in but off at start): F2 toggles it, `UPD_SOLARI=1` starts with it on, `UPD_BENCH=1` times PBR vs Solari (vsync off) and saves `shots/rt_*.png`.
 - `trade_cli wants [--bench]` lists every want the picker offers, with cost, field strength and hit rate;
   `trade_cli night --night N` shows a night's conditions; every mode takes `--night N`; `nights` summarizes
-  200 nights; `--give upd:phone` gives an item away; `--gifts N` / `--chain N` change the gift strips
+  200 nights; `--give upd:phone` gives an item away (`upd:mesh` brings a mesh handheld to give); `--gifts N` / `--chain N` change the gift strips
   (experiments).
 - The smart wash (Step 4, `src/trade/smart.rs`): `trade_cli versus [--nights 61..80] [--seed S]` pits Normal
   against the learned program per night (~2 min for 10 nights x 48 spins); `bench --smart` benches it;

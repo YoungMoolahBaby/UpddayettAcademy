@@ -12,7 +12,7 @@ use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use cortenforge::cf_design::{AttributedMesh, Solid};
 use cortenforge_play::trade::drum::{self, Tumbler};
-use cortenforge_play::trade::print;
+use cortenforge_play::trade::{print, world};
 use nalgebra::Vector3;
 
 use super::scene::WasherRoot;
@@ -77,8 +77,9 @@ pub fn setup(
     mut mats: ResMut<Assets<StandardMaterial>>,
 ) {
     // One body per world item, plus one per print in Upddayett's catalog
-    // (built now: the model takes ~12 s, so a print can't wait for one).
-    let names: Vec<&'static str> = lm.tc.world.items.iter().map(|i| i.name).chain(print::CATALOG.iter().map(|p| p.item)).collect();
+    // and his mesh handheld (built now: the model takes ~12 s, so a print
+    // can't wait for one).
+    let names: Vec<&'static str> = lm.tc.world.items.iter().map(|i| i.name).chain(print::CATALOG.iter().map(|p| p.item)).chain([world::MESH_HANDHELD]).collect();
     let bodies = names.clone();
     let shared = Arc::new(Mutex::new(Shared { poses: vec![None; names.len()], ..default() }));
     let worker = shared.clone();
@@ -228,7 +229,7 @@ fn load(lm: &Laundromat, names: &[&str]) -> Vec<usize> {
             count[leg.item] += 1;
         }
     }
-    let fresh = |i: usize| print::CATALOG.iter().any(|p| p.item == w.items[i].name);
+    let fresh = |i: usize| w.items[i].name == world::MESH_HANDHELD || print::CATALOG.iter().any(|p| p.item == w.items[i].name);
     let mut items: Vec<usize> = (0..count.len()).filter(|&i| (count[i] > 0 || fresh(i)) && !w.items[i].held).collect();
     items.sort_by_key(|&i| (!fresh(i), std::cmp::Reverse(count[i]), i));
     items.truncate(drum::MAX_ITEMS);

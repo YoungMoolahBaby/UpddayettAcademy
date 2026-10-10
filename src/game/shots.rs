@@ -2,7 +2,7 @@
 //! `UPD_PROGRAM=0..3` picks the wash program (default Normal);
 //! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
 //! `UPD_NEXT=1` goes to the next night first (checks the night switch).
-//! `UPD_GIVE=what` (e.g. `phone`) has Upddayett give that away (before the want).
+//! `UPD_GIVE=what` (e.g. `phone`, or `mesh` for a mesh handheld he built) has Upddayett give that away (before the want).
 //! `UPD_BATTERY=1`, `UPD_IDLE=1`, `UPD_SHIELD=<strip>|found`: defenses (see below).
 //! `UPD_SCOPE=<strip>`: put that trade's strip on the scope.
 //! `UPD_PRINT=sled|feeder|bracket|hook`: Upddayett prints that part first (`shots/print_1_draft1.png`,
@@ -14,7 +14,7 @@
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 
-use super::sim::{Laundromat, Mode};
+use super::sim::{Give, Laundromat, Mode};
 
 pub fn enabled() -> bool {
     std::env::var_os("UPD_SHOT").is_some()
@@ -142,9 +142,13 @@ pub fn drive(
             lm.program = p.min(super::sim::PROGRAMS.len() - 1);
         }
         if let Ok(what) = std::env::var("UPD_GIVE") {
-            match lm.give_menu.iter().map(|&(i, _)| i).find(|&i| lm.tc.world.items[i].name.to_lowercase().contains(&what.to_lowercase())) {
-                Some(item) => lm.set_give(Some(item)),
-                None => error!("UPD_GIVE: Upddayett has nothing like {what:?} to give"),
+            if what.eq_ignore_ascii_case("mesh") {
+                lm.set_give(Some(Give::Mesh));
+            } else {
+                match lm.give_menu.iter().map(|&(i, _)| i).find(|&i| lm.tc.world.items[i].name.to_lowercase().contains(&what.to_lowercase())) {
+                    Some(item) => lm.set_give(Some(Give::Item(item))),
+                    None => error!("UPD_GIVE: Upddayett has nothing like {what:?} to give"),
+                }
             }
         }
         // Defenses: UPD_BATTERY=1, UPD_IDLE=1 (idle check), UPD_SHIELD=<strip>

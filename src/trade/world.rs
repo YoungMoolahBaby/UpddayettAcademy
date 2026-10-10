@@ -324,6 +324,33 @@ impl World {
     }
 }
 
+/// A mesh handheld Upddayett built: one of Tentzhen's projects (a LoRa text
+/// mesh, no SIM, no bill), for a street where nobody can pay a phone bill.
+/// Like a print, it joins a night's board only when he brings one, and he
+/// brings it to give away ([`World::add_mesh`]).
+pub const MESH_HANDHELD: &str = "mesh handheld (texts free, no bill)";
+
+/// Who wants the handheld, and how much on a neutral night. It's a lifeline:
+/// a need for anyone with no phone, purpose for everyone else (a phone
+/// with no plan only works on the library Wi-Fi).
+const MESH_WANTS: [(&str, f64); 6] = [("Ranchelle", 8.0), ("Gravo", 5.0), ("Wafflina", 5.0), ("Brisko", 4.0), ("Crunchton", 4.0), ("Zestina", 3.0)];
+
+impl World {
+    /// Upddayett brings a mesh handheld tonight: his item, wanted by the
+    /// regulars. Returns the item; give it away with [`World::set_gift`].
+    pub fn add_mesh(&mut self) -> usize {
+        let upd = self.find_npc("upddayett").expect("Upddayett runs the place");
+        // Worth nothing to him: he built it to give away.
+        let item = self.add_item(upd, MESH_HANDHELD, 0.0, Use::Lifeline);
+        for (who, base) in MESH_WANTS {
+            let npc = self.find_npc(who).unwrap_or_else(|| panic!("nobody called {who}"));
+            self.add_want(npc, item, base, Use::Lifeline);
+        }
+        self.set_night(self.night.clone());
+        item
+    }
+}
+
 /// The regulars who face the TV from where they stand (Upddayett heckles it).
 pub const TV_WATCHERS: [&str; 3] = ["Upddayett", "Gravo", "Zestina"];
 

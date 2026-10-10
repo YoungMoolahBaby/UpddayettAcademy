@@ -37,6 +37,10 @@ tent to the PCB fabs of Shenzhen.
   karma first".)
 - **Theme:** stupid and curious beats smart and incurious.
 - **Tentzhen's tagline is the game's theme:** "Build your own safety net."
+- **Tentzhen is an oracle** (user, 2026-10-09): a catalog of cheap
+  electronics projects that help people get through the AI economic
+  transition. Upddayett builds from it; the scope is one project, the
+  mesh (below) another, and more come later. It isn't tied to one lesson.
 
 ## Tone and rating
 
@@ -380,6 +384,27 @@ trade or give away.
   the print joins the board: new trades, new gift chains, a crate at his
   feet. It tumbles in the drum as the very same shape that was checked.
   The STLs land in `prints/` and are real files for a real slicer.
+
+### The mesh handheld (built 2026-10-09)
+
+A Tentzhen project (via-balaena/tentzhen `docs/mesh.md`): a LoRa mesh of
+handhelds and solar repeaters that texts anyone on it for free. The user's
+reason: nobody on Market St has money, so nobody can pay a phone bill, and
+a phone with no plan only works on the library Wi-Fi. It's an item to get
+early in the game, for everyone.
+- **In the laundromat:** "a mesh handheld he built" is a line in the
+  UPDDAYETT GIVES AWAY menu (`World::add_mesh`, `world::MESH_HANDHELD`).
+  Like a print, it joins the board only when he brings one, so the default
+  boards and every measured number stay as they were. It's worth nothing to
+  him (he built it to give away) and it's a lifeline: a need for anyone
+  with no phone (Ranchelle: 8 Karma), purpose for everyone else. The drum
+  sends it to whoever has no phone (test
+  `the_mesh_handheld_goes_to_whoever_has_no_phone`, nights 1-39). It
+  tumbles in the drum as an orange pocket handheld with a stub antenna.
+- **Later:** a solar repeater on a roof (the real one runs on 18650 cells:
+  Ranchelle's cells, the printed battery sled), and everyone on the street
+  on the mesh once the nights carry over (Level 2). Real names and boards
+  stay in Tentzhen's doc; in the game it's "the mesh".
 
 ### The boombox (built in Step 8)
 

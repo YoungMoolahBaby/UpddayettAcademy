@@ -139,6 +139,10 @@ pub fn item_look(name: &str) -> Look {
         look(slab(38.0, 38.0, 2.0), 900.0, [1.0, 0.95, 0.35])
     } else if has("adas polo") {
         look(pillow(110.0, 80.0, 25.0, 5.0), 900.0, [0.8, 0.8, 0.82])
+    } else if has("mesh handheld") {
+        // A pocket LoRa handheld, about T-Echo size, with a stub antenna.
+        let antenna = pillow(4.0, 10.0, 4.0, 2.0).translate(Vector3::new(12.0, 48.0, 0.0));
+        look(pillow(20.0, 40.0, 9.0, 4.0).union(antenna), 1100.0, [1.0, 0.55, 0.1])
     } else {
         look(pillow(40.0, 40.0, 40.0, 5.0), 1000.0, [0.6, 0.6, 0.6])
     }
