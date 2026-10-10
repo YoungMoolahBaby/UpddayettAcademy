@@ -227,9 +227,9 @@ pub fn draw(
     Ok(())
 }
 
-/// The board-cam inset is its own camera, drawn over egui: off while a card or the how-to-play book is up.
-pub fn hide_inset(cards: Res<Cards>, guide: Res<super::guide::Guide>, mut cam: Single<&mut Camera, With<BoardCam>>) {
-    let on = cards.showing.is_none() && !guide.open;
+/// The board-cam inset is its own camera, drawn over egui: on under the hood only, and off while a card or the how-to-play book is up.
+pub fn hide_inset(cards: Res<Cards>, guide: Res<super::guide::Guide>, hood: Res<super::simple::Hood>, mut cam: Single<&mut Camera, With<BoardCam>>) {
+    let on = cards.showing.is_none() && !guide.open && hood.open;
     if cam.is_active != on {
         cam.is_active = on;
     }

@@ -11,6 +11,7 @@ mod printer;
 mod rt;
 mod scene;
 mod shots;
+mod simple;
 mod tv;
 mod sim;
 mod tape;
@@ -28,6 +29,7 @@ impl Plugin for GamePlugin {
             .insert_resource(lm)
             .init_resource::<tv::Tv>()
             .init_resource::<guide::Guide>()
+            .init_resource::<simple::Hood>()
             .init_gizmo_group::<arrows::TradeArrows>()
             .init_gizmo_group::<arrows::LockedArrows>()
             .init_gizmo_group::<arrows::Neon>()

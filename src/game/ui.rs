@@ -17,12 +17,12 @@ pub(super) fn c32(c: Color) -> egui::Color32 {
 
 pub(super) const GOLD: egui::Color32 = egui::Color32::from_rgb(255, 205, 60);
 pub(super) const GOO_GREEN: egui::Color32 = egui::Color32::from_rgb(90, 200, 30);
-const ICY: egui::Color32 = egui::Color32::from_rgb(140, 200, 255);
-const HUNGRY: egui::Color32 = egui::Color32::from_rgb(255, 150, 60);
+pub(super) const ICY: egui::Color32 = egui::Color32::from_rgb(140, 200, 255);
+pub(super) const HUNGRY: egui::Color32 = egui::Color32::from_rgb(255, 150, 60);
 /// Gifts and Karma: the same warm gold as the gift arrows (`arrows::GIFT`).
-const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
+pub(super) const GIFT_EGUI: egui::Color32 = egui::Color32::from_rgb(255, 140, 38);
 /// The Salties: road-salt white with a cold blue cast.
-const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
+pub(super) const SALT: egui::Color32 = egui::Color32::from_rgb(200, 225, 240);
 /// The counter (escrow): cardboard tan.
 pub(super) const COUNTER: egui::Color32 = egui::Color32::from_rgb(215, 180, 130);
 /// PromiseTV's purple-and-gold.
@@ -103,6 +103,7 @@ pub fn panels(
     tv: Res<super::tv::Tv>,
     mut shop: ResMut<super::printer::PrintShop>,
     mut guide: ResMut<super::guide::Guide>,
+    mut hood: ResMut<super::simple::Hood>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?;
     let (cam, cam_tf) = *camera;
@@ -156,21 +157,28 @@ pub fn panels(
         }
     }
 
-    // Caption above the board-cam inset.
+    // Caption above the board-cam inset (under the hood only, like the inset).
     let (x, y, w, _) = board_cam_rect(&window);
-    let cap = egui::Rect::from_min_size(egui::pos2(x, y - 22.0), egui::vec2(w, 20.0));
-    painter.rect_filled(cap, 3.0, egui::Color32::from_black_alpha(200));
-    painter.text(
-        cap.left_center() + egui::vec2(6.0, 0.0),
-        egui::Align2::LEFT_CENTER,
-        if small { "BOARD CAM  -  green = trade on" } else { "BOARD CAM  -  slap bits (live CortenForge qpos)    green = trade on" },
-        egui::FontId::monospace(12.0),
-        egui::Color32::from_rgb(120, 255, 140),
-    );
+    if hood.open {
+        let cap = egui::Rect::from_min_size(egui::pos2(x, y - 22.0), egui::vec2(w, 20.0));
+        painter.rect_filled(cap, 3.0, egui::Color32::from_black_alpha(200));
+        painter.text(
+            cap.left_center() + egui::vec2(6.0, 0.0),
+            egui::Align2::LEFT_CENTER,
+            if small { "BOARD CAM  -  green = trade on" } else { "BOARD CAM  -  slap bits (live CortenForge qpos)    green = trade on" },
+            egui::FontId::monospace(12.0),
+            egui::Color32::from_rgb(120, 255, 140),
+        );
+    }
 
-    // Tab hides the panels, to just watch the laundromat.
-    if keys.just_pressed(KeyCode::Tab) && !ctx.egui_wants_keyboard_input() {
-        *hidden = !*hidden;
+    // Tab hides the panels, to just watch the laundromat; H opens the hood.
+    if !ctx.egui_wants_keyboard_input() {
+        if keys.just_pressed(KeyCode::Tab) {
+            *hidden = !*hidden;
+        }
+        if keys.just_pressed(KeyCode::KeyH) {
+            hood.open = !hood.open;
+        }
     }
     if *hidden {
         egui::Area::new("tab_hint".into()).anchor(egui::Align2::RIGHT_TOP, [-12.0, 12.0]).show(ctx, |ui| {
@@ -203,16 +211,26 @@ pub fn panels(
                         lm.next_night();
                     }
                     // The TV is a yuck pump; off, it shows nothing (no news, no promises).
-                    let tv = if lm.yuck.tv_on { "TV on" } else { "TV off" };
-                    let flip = ui
-                        .add_enabled(!spinning, egui::Button::new(egui::RichText::new(tv).small()))
-                        .on_hover_text("Switch the TV. Off, it pumps no yuck, but you lose the true numbers on the news and the promises you can check.");
-                    if flip.clicked() {
-                        let on = !lm.yuck.tv_on;
-                        lm.set_tv(on);
+                    if hood.open {
+                        let tv = if lm.yuck.tv_on { "TV on" } else { "TV off" };
+                        let flip = ui
+                            .add_enabled(!spinning, egui::Button::new(egui::RichText::new(tv).small()))
+                            .on_hover_text("Switch the TV. Off, it pumps no yuck, but you lose the true numbers on the news and the promises you can check.");
+                        if flip.clicked() {
+                            let on = !lm.yuck.tv_on;
+                            lm.set_tv(on);
+                        }
                     }
                     if ui.button(egui::RichText::new("How to play").small()).on_hover_text("The picture book (F1).").clicked() {
                         guide.open = !guide.open;
+                    }
+                    let (label, tip) = if hood.open {
+                        ("Simple view", "Back to the simple screen (H).")
+                    } else {
+                        ("Under the hood ⚙", "The whole machine: wash programs, the strips, the board cam, the i9's call, the ghosts (H).")
+                    };
+                    if ui.button(egui::RichText::new(label).small()).on_hover_text(tip).clicked() {
+                        hood.open = !hood.open;
                     }
                 });
                 let w = &lm.tc.world;
@@ -228,13 +246,20 @@ pub fn panels(
                     .response
                     .on_hover_text("Somebody's been hanging around the counter. Which of their brags is real physics? Check before you spin.");
                 }
-                if !small {
+                if !small && hood.open {
                     ui.label(egui::RichText::new(format!("{} trades + {gifts} gifts on the board", lm.tc.cycles.len() - gifts)).small());
                 }
             });
     });
 
-    let n = lm.n();
+    // The simple screen, unless the hood is open.
+    if !hood.open {
+        if super::simple::draw(ctx, &mut lm, &tv, &mut shop, small, screen) {
+            hood.open = true;
+        }
+        return Ok(());
+    }
+
     let side = |big: f32, compact: f32| if small { compact } else { big };
     let board_cam_top = y - 22.0;
     // Panels scale with the window, so the washer stays in sight between them.
@@ -336,127 +361,13 @@ pub fn panels(
                     // Backward mode: pick a customer and something they could get.
                     ui.separator();
                     ui.label(egui::RichText::new("I WANT...").strong());
-                    let mut choice = lm.tc.want;
-                    ui.horizontal_wrapped(|ui| {
-                        let npcs = &lm.tc.world.npcs;
-                        let mut who = lm.picker_npc;
-                        egui::ComboBox::from_id_salt("want_who").width(side(130.0, 110.0)).selected_text(npcs[who].name).show_ui(ui, |ui| {
-                            for (k, npc) in npcs.iter().enumerate() {
-                                ui.selectable_value(&mut who, k, npc.name);
-                            }
-                        });
-                        let current = choice.filter(|&(n, _)| n == who).map(|(_, item)| lm.tc.world.items[item].name);
-                        egui::ComboBox::from_id_salt("want_what")
-                            .width(side(200.0, 110.0))
-                            .selected_text(current.unwrap_or("pick an item..."))
-                            .show_ui(ui, |ui| {
-                                for (item, it) in lm.tc.world.items.iter().enumerate() {
-                                    if it.owner == who {
-                                        continue;
-                                    }
-                                    match lm.want_menu[who].iter().find(|(i, _)| *i == item) {
-                                        Some(&(_, cost)) => {
-                                            let picked = choice == Some((who, item));
-                                            if ui.selectable_label(picked, it.name).on_hover_text(cost_text(cost)).clicked() {
-                                                choice = Some((who, item));
-                                            }
-                                        }
-                                        None => {
-                                            ui.add_enabled(false, egui::Button::selectable(false, it.name))
-                                                .on_disabled_hover_text("nobody's trading that tonight");
-                                        }
-                                    }
-                                }
-                            });
-                        lm.picker_npc = who;
-                        if choice.is_some() && ui.button("Clear").clicked() {
-                            choice = None;
-                        }
-                    });
-                    // PromiseTV's promise, checked against the picker's real price.
-                    if let Some(p) = &tv.promise
-                        && let Some(upd) = lm.tc.world.find_npc("Upddayett")
-                    {
-                        let supply = p.supply(&lm.tc.world);
-                        let price = lm.want_menu[upd].iter().find(|(i, _)| *i == p.item).map(|&(_, c)| c);
-                        let check = price.map_or("nobody's trading it tonight".to_string(), |c| format!("for Upddayett it {}", cost_text(c)));
-                        ui.horizontal_wrapped(|ui| {
-                            ui.spacing_mut().item_spacing.x = 4.0;
-                            ui.label(egui::RichText::new("ON TV").small().strong().color(PROMISE));
-                            ui.label(
-                                egui::RichText::new(format!("{}: \"{}\" Market St has {supply}. Checked: {check}.", p.candidate, p.pitch))
-                                    .small()
-                                    .color(PROMISE),
-                            );
-                            if price.is_some()
-                                && choice != Some((upd, p.item))
-                                && ui.small_button("Want it").on_hover_text("Put it in the I WANT picker and see what it really takes.").clicked()
-                            {
-                                lm.picker_npc = upd;
-                                choice = Some((upd, p.item));
-                            }
-                        });
-                    }
-                    if choice != lm.tc.want {
-                        lm.set_want(choice);
-                    }
-                    if let Some((npc, item)) = lm.tc.want {
-                        let cost = lm.want_menu[npc].iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
-                        ui.label(egui::RichText::new(format!("{}: {}", lm.want_text().unwrap_or_default(), cost_text(cost))).small().color(GOLD));
-                    } else if !small {
-                        ui.small("No want: the machine just finds the best trades for everyone.");
-                    }
+                    want_controls(ui, &mut lm, &tv, small);
 
                     // Upddayett gives one of his things away: a gift strip of
                     // his own, routed by Karma like Amir's food.
                     ui.separator();
                     ui.label(egui::RichText::new("UPDDAYETT GIVES AWAY...").strong().color(GIFT_EGUI));
-                    let mut give = lm.give;
-                    let name = |g: Option<Give>| match g {
-                        Some(Give::Item(item)) => lm.tc.world.items[item].name,
-                        Some(Give::Mesh) => "a mesh handheld he built",
-                        None => "nothing (keeps it all)",
-                    };
-                    ui.horizontal_wrapped(|ui| {
-                        egui::ComboBox::from_id_salt("give_what")
-                            .width(side(200.0, 150.0))
-                            .selected_text(name(give))
-                            .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut give, None, name(None));
-                                for &(item, cost) in &lm.give_menu {
-                                    let takers: Vec<&str> = (0..lm.tc.world.npcs.len())
-                                        .filter(|&k| lm.tc.world.items[item].owner != k && lm.tc.world.value[k][item] > 0.0)
-                                        .map(|k| lm.tc.world.npcs[k].name)
-                                        .collect();
-                                    ui.selectable_value(&mut give, Some(Give::Item(item)), name(Some(Give::Item(item))))
-                                        .on_hover_text(format!("costs him {cost:.0} Goo; wanted by {}", takers.join(", ")));
-                                }
-                                ui.selectable_value(&mut give, Some(Give::Mesh), name(Some(Give::Mesh)))
-                                    .on_hover_text("Texts anyone on Market St for free: no SIM, no bill. Nobody here can pay a phone bill.");
-                            });
-                    });
-                    if give != lm.give {
-                        lm.set_give(give);
-                    }
-                    if let Some(g) = lm.give {
-                        let text = match g {
-                            Give::Item(item) => {
-                                let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
-                                format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.")
-                            }
-                            Give::Mesh => "He built it to give away. It texts anyone on Market St for free, no SIM, no bill. \
-                                           The drum picks who gets it, by Karma."
-                                .to_string(),
-                        };
-                        ui.label(egui::RichText::new(text).small().color(GIFT_EGUI));
-                        // Giving lifts the giver (Dunn, Aknin and Norton, 2008): it clears his own yuck.
-                        let upd = lm.tc.world.find_npc("Upddayett");
-                        if upd.is_some_and(|u| lm.yuck.exposed(&lm.tc.world).contains(&u)) {
-                            ui.label(egui::RichText::new("Giving lifts the giver: it cleared the yuck he was carrying.").small().color(GHOST));
-                        }
-                    } else if !small {
-                        ui.small("Give something away and the drum sends it where it does the most good.");
-                    }
+                    give_controls(ui, &mut lm, small);
 
                     // Upddayett prints a part: the i9 checks his draft first.
                     ui.separator();
@@ -466,64 +377,7 @@ pub fn panels(
                     // magnet, cover it, or bring the battery.
                     ui.separator();
                     ui.label(egui::RichText::new("DEFENSES").strong().color(SALT));
-                    ui.horizontal_wrapped(|ui| {
-                        if ui
-                            .button("Idle check")
-                            .on_hover_text("Stop the drum, let the strips settle, and read every Hall sensor against what the springs say. A stray field means a magnet.")
-                            .clicked()
-                        {
-                            lm.idle_check();
-                        }
-                        if let Some(stray) = &lm.idle {
-                            let (k, top) = stray.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b });
-                            let x = top / lm.flat();
-                            let text = if x >= 0.01 {
-                                format!("strip {k} feels {x:.2}x the flattening field nobody installed")
-                            } else {
-                                format!("every strip sits where the springs say ({x:.2}x)")
-                            };
-                            ui.label(egui::RichText::new(text).small().color(if x >= 0.01 { SALT } else { egui::Color32::GRAY }));
-                        }
-                    });
-                    // The spin check runs on every cycle: the i9 averages the
-                    // same force balance while the drum shakes.
-                    if lm.spin_check.samples() > 0 && !spinning {
-                        let (text, color) = match lm.spin_alarm() {
-                            Some((k, x)) => (format!("Spin check: strip {k} felt {x:.2}x while the drum spun"), SALT),
-                            None => {
-                                let quiet = lm.spin_check.strongest().map_or(0.0, |(_, x)| x.abs() / lm.flat());
-                                (format!("Spin check: nothing unexplained while it spun ({quiet:.2}x)"), egui::Color32::GRAY)
-                            }
-                        };
-                        ui.label(egui::RichText::new(text).small().color(color)).on_hover_text(format!(
-                            "The idle check's force balance, averaged over the whole spin. The shaking averages out; a push that's only there \
-                             while the drum spins doesn't. Over {:.1}x counts.",
-                            salties::SPIN_ALARM
-                        ));
-                    }
-                    let mut shield = lm.shield;
-                    ui.horizontal(|ui| {
-                        let mut on = shield.is_some();
-                        ui.checkbox(&mut on, "Steel shield over strip").on_hover_text(format!(
-                            "A plate from a dead hard drive. It passes {:.0}% of a magnet's field, but only if it covers the magnet (within {} strips).",
-                            100.0 * salties::SHIELD,
-                            salties::SHIELD_SPAN
-                        ));
-                        // Defaults to wherever a check last pointed.
-                        let idle_top = lm.idle.as_ref().map(|s| s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0);
-                        let mut at = shield.or(lm.spin_alarm().map(|a| a.0)).or(idle_top).unwrap_or(n / 2);
-                        ui.add_enabled(on, egui::DragValue::new(&mut at).range(0..=n.saturating_sub(1)));
-                        shield = on.then_some(at);
-                    });
-                    if shield != lm.shield {
-                        lm.set_shield(shield);
-                    }
-                    let mut battery = lm.battery;
-                    ui.checkbox(&mut battery, if lm.battery_cost < 0.5 { "Battery: Ranchelle's 18650s (free tonight)".to_string() } else { format!("Battery: Ranchelle's 18650s (costs the block {:.0} Goo)", lm.battery_cost) })
-                        .on_hover_text("Finishes the cycle if the power goes. They're the cells Upddayett wants for his balance bot: while they run the drum, nobody trades them.");
-                    if battery != lm.battery {
-                        lm.set_battery(battery);
-                    }
+                    defense_controls(ui, &mut lm, spinning);
                 });
                 let mut watch = lm.watch;
                 if ui
@@ -844,6 +698,11 @@ fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
         };
         ui.label(egui::RichText::new(line).strong().color(GOLD));
     }
+    ai_lines(ui, lm);
+}
+
+/// What the Salties bragged and what the AI says about the cycle.
+pub(super) fn ai_lines(ui: &mut egui::Ui, lm: &Laundromat) {
     let ai = egui::Color32::from_rgb(255, 150, 220);
     let salty = lm.salty_lines();
     for (brag, roast) in &salty {
@@ -853,7 +712,7 @@ fn i9_call(ui: &mut egui::Ui, lm: &Laundromat, small: bool) {
         ui.label(egui::RichText::new(format!("AI: \"{roast}\"")).italics().color(ai));
     }
     // A miss on a sabotaged night has its own explanation above.
-    if !lm.tc.is_optimal(best) && matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
+    if !lm.tc.is_optimal(lm.latch.best_bits) && matches!(lm.sabotage(), None | Some(Sabotage::Emp)) {
         ui.label(egui::RichText::new("AI: \"We spun it too fast. The strips froze before they could agree.\"").italics().color(ai));
     }
 }
@@ -940,5 +799,195 @@ fn scope(ctx: &egui::Context, lm: &mut Laundromat, at_bottom: f32) {
         });
     if !open {
         lm.scope = None;
+    }
+}
+
+/// I WANT: pick a customer and something they could get (backward mode),
+/// with PromiseTV's promise checked against the real price.
+pub(super) fn want_controls(ui: &mut egui::Ui, lm: &mut Laundromat, tv: &super::tv::Tv, small: bool) {
+    let mut choice = lm.tc.want;
+    ui.horizontal_wrapped(|ui| {
+        let npcs = &lm.tc.world.npcs;
+        let mut who = lm.picker_npc;
+        egui::ComboBox::from_id_salt("want_who").width(if small { 110.0 } else { 130.0 }).selected_text(npcs[who].name).show_ui(ui, |ui| {
+            for (k, npc) in npcs.iter().enumerate() {
+                ui.selectable_value(&mut who, k, npc.name);
+            }
+        });
+        let current = choice.filter(|&(n, _)| n == who).map(|(_, item)| lm.tc.world.items[item].name);
+        egui::ComboBox::from_id_salt("want_what")
+            .width(if small { 110.0 } else { 200.0 })
+            .selected_text(current.unwrap_or("pick an item..."))
+            .show_ui(ui, |ui| {
+                for (item, it) in lm.tc.world.items.iter().enumerate() {
+                    if it.owner == who {
+                        continue;
+                    }
+                    match lm.want_menu[who].iter().find(|(i, _)| *i == item) {
+                        Some(&(_, cost)) => {
+                            let picked = choice == Some((who, item));
+                            if ui.selectable_label(picked, it.name).on_hover_text(cost_text(cost)).clicked() {
+                                choice = Some((who, item));
+                            }
+                        }
+                        None => {
+                            ui.add_enabled(false, egui::Button::selectable(false, it.name))
+                                .on_disabled_hover_text("nobody's trading that tonight");
+                        }
+                    }
+                }
+            });
+        lm.picker_npc = who;
+        if choice.is_some() && ui.button("Clear").clicked() {
+            choice = None;
+        }
+    });
+    // PromiseTV's promise, checked against the picker's real price.
+    if let Some(p) = &tv.promise
+        && let Some(upd) = lm.tc.world.find_npc("Upddayett")
+    {
+        let supply = p.supply(&lm.tc.world);
+        let price = lm.want_menu[upd].iter().find(|(i, _)| *i == p.item).map(|&(_, c)| c);
+        let check = price.map_or("nobody's trading it tonight".to_string(), |c| format!("for Upddayett it {}", cost_text(c)));
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = 4.0;
+            ui.label(egui::RichText::new("ON TV").small().strong().color(PROMISE));
+            ui.label(
+                egui::RichText::new(format!("{}: \"{}\" Market St has {supply}. Checked: {check}.", p.candidate, p.pitch))
+                    .small()
+                    .color(PROMISE),
+            );
+            if price.is_some()
+                && choice != Some((upd, p.item))
+                && ui.small_button("Want it").on_hover_text("Put it in the I WANT picker and see what it really takes.").clicked()
+            {
+                lm.picker_npc = upd;
+                choice = Some((upd, p.item));
+            }
+        });
+    }
+    if choice != lm.tc.want {
+        lm.set_want(choice);
+    }
+    if let Some((npc, item)) = lm.tc.want {
+        let cost = lm.want_menu[npc].iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
+        ui.label(egui::RichText::new(format!("{}: {}", lm.want_text().unwrap_or_default(), cost_text(cost))).small().color(GOLD));
+    } else if !small {
+        ui.small("No want: the machine just finds the best trades for everyone.");
+    }
+}
+
+/// Upddayett gives one of his things away: a gift strip of his own, routed
+/// by Karma like Amir's food.
+pub(super) fn give_controls(ui: &mut egui::Ui, lm: &mut Laundromat, small: bool) {
+    let mut give = lm.give;
+    let name = |g: Option<Give>| match g {
+        Some(Give::Item(item)) => lm.tc.world.items[item].name,
+        Some(Give::Mesh) => "a mesh handheld he built",
+        None => "nothing (keeps it all)",
+    };
+    ui.horizontal_wrapped(|ui| {
+        egui::ComboBox::from_id_salt("give_what")
+            .width(if small { 150.0 } else { 200.0 })
+            .selected_text(name(give))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut give, None, name(None));
+                for &(item, cost) in &lm.give_menu {
+                    let takers: Vec<&str> = (0..lm.tc.world.npcs.len())
+                        .filter(|&k| lm.tc.world.items[item].owner != k && lm.tc.world.value[k][item] > 0.0)
+                        .map(|k| lm.tc.world.npcs[k].name)
+                        .collect();
+                    ui.selectable_value(&mut give, Some(Give::Item(item)), name(Some(Give::Item(item))))
+                        .on_hover_text(format!("costs him {cost:.0} Goo; wanted by {}", takers.join(", ")));
+                }
+                ui.selectable_value(&mut give, Some(Give::Mesh), name(Some(Give::Mesh)))
+                    .on_hover_text("Texts anyone on Market St for free: no SIM, no bill. Nobody here can pay a phone bill.");
+            });
+    });
+    if give != lm.give {
+        lm.set_give(give);
+    }
+    if let Some(g) = lm.give {
+        let text = match g {
+            Give::Item(item) => {
+                let cost = lm.give_menu.iter().find(|(i, _)| *i == item).map_or(0.0, |&(_, c)| c);
+                format!("It leaves the trades and costs him {cost:.0} Goo. The drum picks who gets it, by Karma.")
+            }
+            Give::Mesh => "He built it to give away. It texts anyone on Market St for free, no SIM, no bill. \
+                           The drum picks who gets it, by Karma."
+                .to_string(),
+        };
+        ui.label(egui::RichText::new(text).small().color(GIFT_EGUI));
+        // Giving lifts the giver (Dunn, Aknin and Norton, 2008): it clears his own yuck.
+        let upd = lm.tc.world.find_npc("Upddayett");
+        if upd.is_some_and(|u| lm.yuck.exposed(&lm.tc.world).contains(&u)) {
+            ui.label(egui::RichText::new("Giving lifts the giver: it cleared the yuck he was carrying.").small().color(GHOST));
+        }
+    } else if !small {
+        ui.small("Give something away and the drum sends it where it does the most good.");
+    }
+}
+
+/// Red-team the machine before the Salties do: find the magnet, cover it,
+/// or bring the battery.
+pub(super) fn defense_controls(ui: &mut egui::Ui, lm: &mut Laundromat, spinning: bool) {
+    let n = lm.n();
+    ui.horizontal_wrapped(|ui| {
+        if ui
+            .button("Idle check")
+            .on_hover_text("Stop the drum, let the strips settle, and read every Hall sensor against what the springs say. A stray field means a magnet.")
+            .clicked()
+        {
+            lm.idle_check();
+        }
+        if let Some(stray) = &lm.idle {
+            let (k, top) = stray.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b });
+            let x = top / lm.flat();
+            let text = if x >= 0.01 {
+                format!("strip {k} feels {x:.2}x the flattening field nobody installed")
+            } else {
+                format!("every strip sits where the springs say ({x:.2}x)")
+            };
+            ui.label(egui::RichText::new(text).small().color(if x >= 0.01 { SALT } else { egui::Color32::GRAY }));
+        }
+    });
+    // The spin check runs on every cycle: the i9 averages the
+    // same force balance while the drum shakes.
+    if lm.spin_check.samples() > 0 && !spinning {
+        let (text, color) = match lm.spin_alarm() {
+            Some((k, x)) => (format!("Spin check: strip {k} felt {x:.2}x while the drum spun"), SALT),
+            None => {
+                let quiet = lm.spin_check.strongest().map_or(0.0, |(_, x)| x.abs() / lm.flat());
+                (format!("Spin check: nothing unexplained while it spun ({quiet:.2}x)"), egui::Color32::GRAY)
+            }
+        };
+        ui.label(egui::RichText::new(text).small().color(color)).on_hover_text(format!(
+            "The idle check's force balance, averaged over the whole spin. The shaking averages out; a push that's only there \
+             while the drum spins doesn't. Over {:.1}x counts.",
+            salties::SPIN_ALARM
+        ));
+    }
+    let mut shield = lm.shield;
+    ui.horizontal(|ui| {
+        let mut on = shield.is_some();
+        ui.checkbox(&mut on, "Steel shield over strip").on_hover_text(format!(
+            "A plate from a dead hard drive. It passes {:.0}% of a magnet's field, but only if it covers the magnet (within {} strips).",
+            100.0 * salties::SHIELD,
+            salties::SHIELD_SPAN
+        ));
+        // Defaults to wherever a check last pointed.
+        let idle_top = lm.idle.as_ref().map(|s| s.iter().enumerate().fold((0, 0.0f64), |b, (i, x)| if x.abs() > b.1 { (i, x.abs()) } else { b }).0);
+        let mut at = shield.or(lm.spin_alarm().map(|a| a.0)).or(idle_top).unwrap_or(n / 2);
+        ui.add_enabled(on, egui::DragValue::new(&mut at).range(0..=n.saturating_sub(1)));
+        shield = on.then_some(at);
+    });
+    if shield != lm.shield {
+        lm.set_shield(shield);
+    }
+    let mut battery = lm.battery;
+    ui.checkbox(&mut battery, if lm.battery_cost < 0.5 { "Battery: Ranchelle's 18650s (free tonight)".to_string() } else { format!("Battery: Ranchelle's 18650s (costs the block {:.0} Goo)", lm.battery_cost) })
+        .on_hover_text("Finishes the cycle if the power goes. They're the cells Upddayett wants for his balance bot: while they run the drum, nobody trades them.");
+    if battery != lm.battery {
+        lm.set_battery(battery);
     }
 }

@@ -75,7 +75,7 @@ late-night meets Idiocracy humor.
   - The AI shares the blame ("We spun it too fast"), teases kindly, and
     never talks down.
   - Karma is the quiet scoreboard: a night ends on who went to bed fed,
-    not on fireworks (to build next).
+    not on fireworks (built: the simple screen's WHAT HAPPENED TONIGHT card).
   - Clever stuff (citations, precedents, the quant lessons) stays in the
     docs and the site, where people go looking for it; the game says it
     in plain words.

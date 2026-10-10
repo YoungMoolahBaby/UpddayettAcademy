@@ -16,10 +16,14 @@ arcs the user named, then smaller items.
   - [x] Upddayett's heckles turn on himself; the AI says "we"
   - [x] soften the pimp framing (DESIGN)
   - [x] the dog ad loses the pig at the window and the bulk tab to The Farm (no farm animal is free yet)
-  - [ ] Karma first at the end of a night: who went to bed fed, quietly
+  - [x] Karma first at the end of a night: who went to bed fed, quietly (the simple screen's result card)
   - [ ] review the Shrug Network's shrugs (billionaires, yachts) for punching down
   - [ ] the site's tone: lessons as what the washer taught him, plain words
   - [ ] the how-to-play pages written so far, same check
+- [x] **A simple screen for first-timers** (PLAN "The simple screen"): Start button,
+  things to do tonight, a people-first result; the rest under the hood (H).
+  - [ ] plain-word AI lines on the simple screen (the Salties ones are technical)
+  - [ ] a way into the yuck call from the simple screen
 - [x] **The mesh handheld** (Tentzhen; DESIGN "The mesh handheld"): a give-away
   for comms with no phone bill. Later: a solar repeater, everyone on the mesh
   once nights carry over.

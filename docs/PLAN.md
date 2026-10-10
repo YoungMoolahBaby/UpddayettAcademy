@@ -65,6 +65,23 @@ is in DESIGN "Humble, karma first". First cut:
   bulk-order tab to The Farm are gone), and two Shrug lines changed ("a pig bought something off a dog in an
   alley", "a chicken crossed the road"). User: none of the farm animals
   are free yet, so none can be at a window or in an alley.
+**The simple screen** (2026-10-09; user: "the overall ux/ui could be
+more intuitive. its a bit overwhelming for a noob like me"). The first
+screen had ~40 controls and readouts in machine words. Now the game opens
+on a simple screen (`src/game/simple.rs`): the night banner, a TONIGHT card
+with "things to do tonight" folded in plain verbs (Give something away, Ask
+for something, Print a part; Protect the machine only on a night the
+Salties brag, or once a spin gives them away), one big START THE WASH
+button, and after the wash a WHAT HAPPENED TONIGHT card, people first and
+needs first ("Ranchelle can reach people now (mesh handheld)", "Gravo ate
+tonight"), then "+41 Goo, nobody lost. Karma 16" (`tonight_lines`, tests).
+Everything else (programs, the dial, the strip board, the board cam, the
+scope, the i9's call, ghosts and the yuck call, HOW IT WORKS, the TV switch)
+is Under the hood: the banner button or H (`simple::Hood`; `UPD_HOOD=1`).
+The controls are shared, not copied (`ui::want_controls`, `give_controls`,
+`defense_controls`, `ai_lines`). `UPD_SHOT` now also saves `0_start.png`.
+Not yet simple: the AI's Salties lines are still technical, and the yuck
+call lives only under the hood.
 **The mesh handheld** (2026-10-09; user: a new Tentzhen item for comms,
 since nobody can afford a phone bill; get it early, for everyone). It's
 a give-away: "a mesh handheld he built" in the give-away menu

@@ -2,6 +2,7 @@
 //! `UPD_PROGRAM=0..3` picks the wash program (default Normal);
 //! `UPD_WANT=who:what` (e.g. `upd:hub`) sets a want first.
 //! `UPD_NEXT=1` goes to the next night first (checks the night switch).
+//! Shots: `0_start` (before the wash), `1_spinning_hot`, `2_cooling`, `3_locked`. `UPD_HOOD=1` shoots under the hood.
 //! `UPD_GIVE=what` (e.g. `phone`, or `mesh` for a mesh handheld he built) has Upddayett give that away (before the want).
 //! `UPD_BATTERY=1`, `UPD_IDLE=1`, `UPD_SHIELD=<strip>|found`: defenses (see below).
 //! `UPD_SCOPE=<strip>`: put that trade's strip on the scope.
@@ -182,10 +183,20 @@ pub fn drive(
         if let Some(k) = std::env::var("UPD_SCOPE").ok().and_then(|s| s.parse::<usize>().ok()) {
             lm.scope = (k < lm.n()).then_some(k);
         }
-        lm.start_cycle();
         *since = f;
     }
     if f < 30 {
+        return;
+    }
+    // The start screen (the simple one has the big button), then the wash.
+    if lm.mode == Mode::Manual && !*respun && *stage == 0 {
+        if f == 45 {
+            std::fs::create_dir_all("shots").ok();
+            commands.spawn(Screenshot::primary_window()).observe(save_to_disk("shots/0_start.png"));
+        }
+        if f == 50 {
+            lm.start_cycle();
+        }
         return;
     }
     // Stages follow the cycle's progress, so any program length works.

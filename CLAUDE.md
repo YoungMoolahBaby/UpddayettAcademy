@@ -48,7 +48,7 @@ Read first:
 - Trade computer (Step 1): `cargo run --release --example trade_cli -- [run|bench|cycles] [--want upd:hub]`;
   library in `src/trade/`, unit tests via `cargo test --release --lib`.
 - The game (Step 2): `cargo run --release` (Bevy 0.19 + bevy_egui). `UPD_SHOT=1 cargo run --release`
-  plays a fast spin cycle, saves `shots/*.png` and exits; use it to check visuals.
+  plays a fast spin cycle, saves `shots/*.png` (`0_start` before the wash, then `1_spinning_hot`, `2_cooling`, `3_locked`) and exits; use it to check visuals. The game opens on the simple screen (`src/game/simple.rs`: things to do tonight, a Start button, a people-first result card); H or the banner button opens Under the hood (the full panels, board cam, scope), and `UPD_HOOD=1` starts there.
   `UPD_PROGRAM=0..4` picks the wash program (4 = Smart, the learned one); `UPD_WANT=upd:hub` sets a want; `UPD_SEED=<n>` replays a logged
   session (it also picks the night); `UPD_NEXT=1` presses Next night first; `UPD_GIVE=phone` (or `mesh`, a handheld he built) has
   Upddayett give that away; `UPD_IDLE=1` runs the idle check, `UPD_SHIELD=<strip>|found` places the

@@ -423,7 +423,7 @@ fn drum(ui: &mut egui::Ui, _: &World, cycles: &[Cycle]) {
     text(
         ui,
         "That's real physics, not a trick: CortenForge simulates every strip, the shaking and all, frame by frame. \
-         The board cam (bottom left) shows the strips live.",
+         Under the hood (H), the board cam shows the strips live.",
     );
     ui.horizontal_wrapped(|ui| {
         ui.label(egui::RichText::new("When it stops:").strong().color(COUNTER));
