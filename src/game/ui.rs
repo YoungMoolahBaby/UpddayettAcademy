@@ -534,6 +534,9 @@ pub fn panels(
                     lm.watch = watch;
                 }
                 ui.separator();
+                // The controls above can rebuild the board (battery, give-away, print),
+                // so count tonight's strips again.
+                let n = lm.n();
                 let in_wells = (0..n).filter(|&i| lm.well(i).is_in_well()).count();
                 let clash = lm.tc.evaluate(lm.machine.bits()).1;
                 ui.label(format!("strips in a well: {in_wells}/{n}    sim t = {:.0}", lm.machine.time()));
@@ -641,7 +644,7 @@ pub fn panels(
                         if cycle.is_gift() {
                             ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "♥", egui::FontId::proportional(14.0), GIFT_EGUI);
                         } else {
-                            ui.painter().rect_filled(rect, 2.0, c32(trade_color(c, n)));
+                            ui.painter().rect_filled(rect, 2.0, c32(trade_color(c, lm.n())));
                         }
                         let state = match lm.well(c) {
                             WellState::Right => egui::RichText::new("ON ").color(egui::Color32::from_rgb(90, 255, 120)),
