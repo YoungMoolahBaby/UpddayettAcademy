@@ -769,6 +769,29 @@ normal, a direction straight out from the middle, and grows their wealth
 along it, out to infinity. Normals never cross, so nobody's growth takes
 anything from anybody: everyone stays in their own lane.
 
+**Decided (user, 2026-10-13): it's a picture of net worth and assets,
+not the physical map.** Nobody walks on it, and distance on it costs
+nothing. The proposal for what it shows is under "The picture" below;
+the reach-cost experiment it started from is kept after that as a record.
+
+- **The picture (proposed):**
+  - **Your spike is your stuff.** Each person's lane is a spike out of
+    the ball, built as a stack of what they hold, one segment per item,
+    sized by what it's worth to them (Goo). Its length is their net worth.
+    Drawn on a log scale, so it can grow forever and stay readable.
+  - **Trades and gifts move segments.** A trade swaps segments between
+    spikes (as the crates fly at the counter); a gift takes one off.
+  - **The ball is what's shared.** Everyone's spike stands on the ball,
+    and the ball grows with the Karma the street has given. Kindness
+    raises everyone's footing at once; your spike is only yours. That
+    keeps Karma first in a picture that would otherwise be about wealth.
+  - **Neighbors are trading partners.** The sim places the spikes
+    (below): trading partners pull together, so who stands next to whom
+    shows who's in whose loops. Re-settled from tonight's trades.
+  - **Where:** under the hood first, as a small panel. It could join the
+    end-of-night card later, after the people-first lines, never before.
+  - **Needs carry-over to grow.** Nights don't carry over yet, so until
+    they do it shows tonight: before the wash and after.
 - **What it gets right:**
   - **Positive-sum by geometry.** There's no shared pie to fight over;
     the room grows with you.
@@ -776,8 +799,9 @@ anything from anybody: everyone stays in their own lane.
     above anybody and a height leaderboard can't be drawn. "Look up at
     people, never down" is built into the shape (see "Humble, karma
     first").
-  - **The middle is the laundromat.** At radius 0 everyone is in the one
-    room: that's today's game. Growing is moving out along your lane.
+- **Tried first, now parked: distance as a cost.** Before the decision
+  we tried the ball as a map, with the laundromat in the middle (radius 0)
+  and growing as moving out along your lane.
 - **The catch: lanes spread apart.** Two people an angle apart at radius
   r are 2 r sin(angle/2) apart, so the richer everyone gets, the farther
   they are from each other. And the game runs on trades between people.
@@ -819,26 +843,11 @@ anything from anybody: everyone stays in their own lane.
   - **The machine:** its hit rate dipped as gains shrank (78% at the
     laundromat, 68% at 1.5 together, 77% with friends; 240 spins each, so
     a hint, not a result) and was 100% once only gifts were left.
-- **What it suggests:**
-  - **Coming home is the move.** The laundromat at the middle is the one
-    place everyone is close. A night at the laundromat could pull you back
-    to radius 0, and that's when the big loops happen.
-  - **The mesh handheld shrinks reach** (texts free, no bill): a cheap
-    way to stay in each other's loops while you grow.
-  - **Gifts are how you reach out** once trades can't.
-- **Open, for the user:**
-  - Does wealth grow per person (your Goo is your radius) or does the
-    street grow together?
-  - Does what people trade grow with them? If item values scale with r,
-    the reach cost stays the same size next to the gains and nobody
-    drifts apart; if they don't, the cliff above is the game. (Or in
-    between: values grow, but slower than distance.)
-  - More people on the ball (the farm, the downtown) so lanes have real
-    neighbors?
-  - What it looks like: a little planet with each person's lane as a
-    tower growing out of it (a sea urchin of a street), or the laundromat
-    at the core with the lanes as streets out of town. It could be the
-    map for the third-person arc.
+- **Why it's parked:** with the ball as a picture, distance means
+  nothing, so it shouldn't cost anything. `World::reach` stays in the
+  library (empty by default, tested) and `probe_sphere` keeps the
+  numbers, in case distance ever means something again (e.g. the
+  third-person street).
 
 ### Candidate ideas (not decided)
 

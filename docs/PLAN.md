@@ -917,8 +917,11 @@ designing, to see if the drift apart is a fun tension or a slow fade.
     radius 3.
   - The hit-rate dip around 1.5 is 240 spins a cell, so a hint only; it
     would need the paired bootstrap the yuck run used.
-- **Next (TODO "The sphere"):** the user's calls in DESIGN "Open, for the
-  user", then a game prototype.
+- **Decided after (user, 2026-10-13):** the sphere is a picture of net
+  worth and assets, not the physical map. The reach cost is parked
+  (`World::reach` stays, empty by default); the Thomson placement with
+  friends pulled together is what carries over, to place the spikes.
+  Proposal in DESIGN "The picture"; next steps in TODO "The sphere".
 
 ## Backlog (2026-10-06; not planned yet, best first)
 

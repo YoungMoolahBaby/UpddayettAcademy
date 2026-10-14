@@ -85,7 +85,8 @@ Read first:
   (shots `yuck_1_call`, `yuck_2_cured`). The banner has a TV on/off switch (the TV is a yuck pump).
 - The sphere (DESIGN "The sphere", PLAN "The sphere, probed"): `cargo run --release --example probe_sphere --
   [thomson|together|alone|friends]` places the street on a ball (Thomson problem on ball joints + the thermostat)
-  and sweeps the radius with a reach cost (`World::reach`, Goo per unit of distance on trades, gifts free);
+  and sweeps the radius with a reach cost (`World::reach`, Goo per unit of distance on trades, gifts free; parked:
+  the sphere is a picture of net worth, not the map);
   `--nights A..B --runs N --cost C --pull K` (~2 min a sweep).
 - The Salties (3.6): `--salty` applies tonight's sabotage, `--magnet POS:S` (S x the flattening field,
   + pushes on) with `--shield`, `--cut F`, `--coil` (the smart Salties' aimed coil); `magnets`, `cuts` and `smart`

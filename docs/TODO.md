@@ -52,15 +52,14 @@ arcs the user named, then smaller items.
   given and tracked.
 
 - [ ] **The sphere: everyone's own lane** (DESIGN "The sphere"; PLAN
-  "The sphere, probed"). The street on a ball, everyone growing out along
-  their own normal; trades pay a reach cost, gifts don't.
-  - [x] probe: Thomson placement on the thermostat, reach swept
-    (`probe_sphere`): a cliff at radius 2, friends next door push it to 3-4
-  - [ ] the user's calls: per-person or shared growth; do values grow with
-    you; how it looks; more people on the ball
-  - [ ] coming home: a night at the laundromat pulls you back to the middle
-  - [ ] the mesh handheld shrinks reach
-  - [ ] in the game
+  "The sphere, probed"). A picture of net worth and assets, not the map
+  (user, 2026-10-13): each person's spike out of a shared ball.
+  - [x] probe: Thomson placement on the thermostat (`probe_sphere`); the
+    reach-cost experiment it ran is parked
+  - [ ] the user's OK on the picture (DESIGN "The picture"): spike = stack
+    of your items, ball = the street's Karma, neighbors = trading partners
+  - [ ] a panel under the hood: tonight, before and after the wash
+  - [ ] growing over nights, once nights carry over
 
 ## Waiting on something
 
