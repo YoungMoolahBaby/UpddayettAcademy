@@ -53,11 +53,15 @@ arcs the user named, then smaller items.
 
 - [ ] **The sphere: everyone's own lane** (DESIGN "The sphere"; PLAN
   "The sphere, probed"). A picture of net worth and assets, not the map
-  (user, 2026-10-13): each person's spike out of a shared ball.
-  - [x] probe: Thomson placement on the thermostat (`probe_sphere`); the
-    reach-cost experiment it ran is parked
+  (user, 2026-10-13): each person's spike out of a shared ball. Distance
+  still costs, as the wealth gap: too far ahead or too far behind.
+  - [x] probe: Thomson placement on the thermostat (`probe_sphere`)
+  - [x] the wealth-gap cost measured (`probe_sphere gap`): a sweet spot near
+    the street's middle, a slope at both ends
   - [ ] the user's OK on the picture (DESIGN "The picture"): spike = stack
-    of your items, ball = the street's Karma, neighbors = trading partners
+    of your items, shells = doublings, ball = the street's Karma,
+    neighbors = trading partners; and on the cost (1 Goo a doubling past one free)
+  - [ ] the gap cost in the game (`World::reach` from tonight's net worths)
   - [ ] a panel under the hood: tonight, before and after the wash
   - [ ] growing over nights, once nights carry over
 

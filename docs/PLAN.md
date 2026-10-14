@@ -918,10 +918,32 @@ designing, to see if the drift apart is a fun tension or a slow fade.
   - The hit-rate dip around 1.5 is 240 spins a cell, so a hint only; it
     would need the paired bootstrap the yuck run used.
 - **Decided after (user, 2026-10-13):** the sphere is a picture of net
-  worth and assets, not the physical map. The reach cost is parked
-  (`World::reach` stays, empty by default); the Thomson placement with
-  friends pulled together is what carries over, to place the spikes.
-  Proposal in DESIGN "The picture"; next steps in TODO "The sphere".
+  worth and assets, not the physical map, and distance still costs ("you
+  don't wanna grow too far away / fall too far behind"). Distance between
+  spike tips can't do that (the middle is close to everyone), so the cost
+  is the wealth gap: `probe_sphere gap` charges `--cost` Goo a leg per
+  doubling between net worths (what each holds, valued by them; 1 Goo
+  floor) past `--free` doublings, and scales Upddayett's net worth
+  1/16x-16x. Defaults 1 Goo, 1 free, nights 1-10, 24 spins:
+
+  | Upddayett x | trades | his trades | best Goo | hit |
+  |---|---|---|---|---|
+  | no cost | 11.6 | 7.1 | 41.4 | 78% |
+  | 1/16 | 8.9 | 4.4 | 29.1 | 85% |
+  | 1/8 | 11.6 | 7.1 | 34.6 | 73% |
+  | 1/4 | 11.6 | 7.1 | 40.0 | 80% |
+  | 1/2 | 11.6 | 7.1 | 41.3 | 74% |
+  | 1 | 11.6 | 7.1 | 40.8 | 80% |
+  | 2 | 8.9 | 4.4 | 34.5 | 91% |
+  | 4 | 8.1 | 3.6 | 29.8 | 84% |
+  | 8 | 6.9 | 2.4 | 25.0 | 83% |
+  | 16 | 4.6 | 0.1 | 21.8 | 93% |
+
+  Night 1 net worths: Upddayett 14, Gravo 8, Ranchelle 7, Brisko 11,
+  Wafflina 8, Crunchton 5, Zestina 5 (Amir's 0: only the gift). He starts
+  the richest, so 1/4-1/2 puts him in the street's middle. Proposal in
+  DESIGN "The picture" and "Distance is the wealth gap"; next steps in
+  TODO "The sphere".
 
 ## Backlog (2026-10-06; not planned yet, best first)
 

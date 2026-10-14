@@ -16,11 +16,17 @@
 //!   friends    `together`, with trading partners pulled together while
 //!              the street settles (a spring per pair, x what they want of
 //!              each other)
+//!   gap        distance as the wealth gap instead (user, 2026-10-13: don't
+//!              grow too far away or fall too far behind): a trade costs
+//!              `--cost` Goo per doubling between two people's net worth,
+//!              past `--free` doublings. Upddayett's net worth is scaled
+//!              1/16x..16x; everyone growing together costs nothing
 //!
 //!   --nights A..B   nights to average (default 1..10)
 //!   --runs N        spins a board for the hit rate (default 24; 0 skips the machine)
 //!   --cost C        Goo per unit of distance (default 1)
 //!   --pull K        friends: spring per Goo wanted (default 0.05)
+//!   --free F        gap: doublings that cost nothing (default 1, within 2x)
 //!   --seed S        placement seed (default 1)
 
 use std::time::Instant;
@@ -44,11 +50,12 @@ struct Opts {
     runs: usize,
     cost: f64,
     pull: f64,
+    free: f64,
     seed: u64,
 }
 
 fn parse() -> Opts {
-    let mut o = Opts { mode: "all".into(), nights: (1, 10), runs: 24, cost: 1.0, pull: 0.05, seed: 1 };
+    let mut o = Opts { mode: "all".into(), nights: (1, 10), runs: 24, cost: 1.0, pull: 0.05, free: 1.0, seed: 1 };
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     while i < args.len() {
@@ -66,6 +73,7 @@ fn parse() -> Opts {
             "--runs" => o.runs = val().parse().unwrap(),
             "--cost" => o.cost = val().parse().unwrap(),
             "--pull" => o.pull = val().parse().unwrap(),
+            "--free" => o.free = val().parse().unwrap(),
             "--seed" => o.seed = val().parse().unwrap(),
             m if !m.starts_with("--") => o.mode = m.into(),
             other => panic!("unknown option {other}"),
@@ -324,6 +332,73 @@ fn print_neighbors(w: &World, dirs: &[Vector3<f64>]) {
     }
 }
 
+/// Each person's net worth tonight: what everything they hold is worth to
+/// them, in Goo.
+fn net_worth(w: &World) -> Vec<f64> {
+    let mut nw = vec![0.0; w.npcs.len()];
+    for (id, it) in w.items.iter().enumerate() {
+        nw[it.owner] += w.value[it.owner][id];
+    }
+    nw
+}
+
+/// The gap between two net worths, in doublings (1 Goo floor, so nobody
+/// is infinitely far behind).
+fn doublings(a: f64, b: f64) -> f64 {
+    ((a.max(1.0)) / (b.max(1.0))).log2().abs()
+}
+
+/// `gap`: Upddayett's net worth scaled from 1/16x to 16x; every trade leg
+/// costs `--cost` Goo per doubling between the two people past `--free`.
+fn section_gap(o: &Opts) {
+    println!(
+        "\n== The wealth gap: {} Goo a trade per doubling past {} free ==",
+        o.cost, o.free
+    );
+    let w1 = trade::world::laundromat(o.nights.0);
+    let nw = net_worth(&w1);
+    let line: Vec<String> = w1.npcs.iter().zip(&nw).map(|(p, v)| format!("{} {v:.0}", p.name)).collect();
+    println!("  net worth on night {}: {}", o.nights.0, line.join(", "));
+    let upd = w1.find_npc("Upddayett").unwrap();
+    let nights = o.nights.0..=o.nights.1;
+    let count = nights.clone().count() as f64;
+    println!("  Upddayett x  trade strips  best Goo  Karma  people trading  hit rate  his trades  ({:>5})", "s");
+    let t0 = Instant::now();
+    let scales = [1.0 / 16.0, 1.0 / 8.0, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0];
+    // No cost at all, for comparison.
+    for scale in std::iter::once(None).chain(scales.iter().map(|&s| Some(s))) {
+        let mut sum = [0.0; 6];
+        for night in nights.clone() {
+            let mut w = trade::world::laundromat(night);
+            if let Some(s) = scale {
+                let mut nw = net_worth(&w);
+                nw[upd] *= s;
+                let n = nw.len();
+                let reach = (0..n)
+                    .map(|a| (0..n).map(|b| o.cost * (doublings(nw[a], nw[b]) - o.free).max(0.0)).collect())
+                    .collect();
+                w.set_reach(reach);
+            }
+            let his = trade::cycles::enumerate(&w, trade::MAX_LOOP).iter().filter(|c| c.legs.iter().any(|l| l.from == upd)).count();
+            let b = board(w, o.runs, o.seed + night * 104_729);
+            for (s, x) in sum.iter_mut().zip(b.iter().copied().chain([his as f64])) {
+                *s += x / count;
+            }
+        }
+        let label = scale.map_or("no cost".into(), |s| if s < 1.0 { format!("1/{:.0}", 1.0 / s) } else { format!("{s:.0}") });
+        let hit = if sum[4].is_nan() { "    -".into() } else { format!("{:>4.0}%", 100.0 * sum[4]) };
+        println!(
+            "  {label:>11}  {:>12.1}  {:>8.1}  {:>5.1}  {:>14.1}  {hit:>8}  {:>10.1}  ({:>5.0})",
+            sum[0],
+            sum[1],
+            sum[2],
+            sum[3],
+            sum[5],
+            t0.elapsed().as_secs_f64()
+        );
+    }
+}
+
 fn main() {
     let o = parse();
     let street = trade::world::laundromat(1);
@@ -331,6 +406,9 @@ fn main() {
     let all = o.mode == "all";
     if all || o.mode == "thomson" {
         section_thomson();
+    }
+    if all || o.mode == "gap" {
+        section_gap(&o);
     }
     if all || o.mode == "together" {
         println!("\n== Everyone grows together ==");

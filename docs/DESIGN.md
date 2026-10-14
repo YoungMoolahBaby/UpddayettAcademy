@@ -770,15 +770,56 @@ along it, out to infinity. Normals never cross, so nobody's growth takes
 anything from anybody: everyone stays in their own lane.
 
 **Decided (user, 2026-10-13): it's a picture of net worth and assets,
-not the physical map.** Nobody walks on it, and distance on it costs
-nothing. The proposal for what it shows is under "The picture" below;
-the reach-cost experiment it started from is kept after that as a record.
+not the physical map,** and distance still costs: "you don't wanna grow
+too far away / fall too far behind." The proposal for what it shows is
+under "The picture"; the cost is under "Distance is the wealth gap". The
+first experiment (distance between spike tips) is kept after those as a
+record.
+
+- **Distance is the wealth gap** (measured 2026-10-13, `probe_sphere gap`):
+  - **The rule:** a trade costs each recipient 1 Goo for every doubling
+    between their net worth and the giver's, past one free doubling (so
+    within 2x of each other trades are free). Gifts are free, as always.
+    Everyone growing together costs nothing: that's the own-lane idea.
+  - **Why not the distance between tips:** on the ball the middle is
+    close to everyone. The tip experiment's best night was Upddayett at
+    the middle (below), so falling behind would cost nothing.
+  - **Measured,** nights 1-10, Upddayett's net worth scaled (he starts
+    the richest, 14 Goo; the street's middle is about 7):
+
+    | Upddayett | trades on the board | his trades | street's best Goo |
+    |---|---|---|---|
+    | no cost | 11.6 | 7.1 | 41.4 |
+    | 1/16 | 8.9 | 4.4 | 29.1 |
+    | 1/8 | 11.6 | 7.1 | 34.6 |
+    | 1/4 to 1 | 11.6 | 7.1 | 40-41 |
+    | 2x | 8.9 | 4.4 | 34.5 |
+    | 4x | 8.1 | 3.6 | 29.8 |
+    | 8x | 6.9 | 2.4 | 25.0 |
+    | 16x | 4.6 | 0.1 | 21.8 |
+
+    - **A sweet spot, and both ends cost.** Near the street's middle
+      nothing is lost. 16x ahead, almost nobody can trade with him, and
+      the street loses half its Goo, because his trades were in other
+      people's loops. 1/16 behind costs him a third of his trades.
+    - **It's a slope, not a cliff** (the tip experiment's trades all
+      died at once): each doubling past the free one costs a bit more.
+    - **The machine copes:** hit rate 73-93% across the sweep against
+      78% with no cost (240 spins a row, so within noise).
+  - **What it means:** the way back from either end is giving. A gift
+    from someone far ahead to someone far behind costs nothing and closes
+    the gap from both sides.
 
 - **The picture (proposed):**
   - **Your spike is your stuff.** Each person's lane is a spike out of
     the ball, built as a stack of what they hold, one segment per item,
     sized by what it's worth to them (Goo). Its length is their net worth.
     Drawn on a log scale, so it can grow forever and stay readable.
+  - **The gap is visible.** On a log scale every doubling is the same
+    step, so faint shells around the ball mark the doublings, and the
+    cost (below) is how many shells lie between two tips past the free
+    one. A shell around your tip, one doubling each way, is who you can
+    trade with for free.
   - **Trades and gifts move segments.** A trade swaps segments between
     spikes (as the crates fly at the counter); a gift takes one off.
   - **The ball is what's shared.** Everyone's spike stands on the ball,
@@ -799,9 +840,9 @@ the reach-cost experiment it started from is kept after that as a record.
     above anybody and a height leaderboard can't be drawn. "Look up at
     people, never down" is built into the shape (see "Humble, karma
     first").
-- **Tried first, now parked: distance as a cost.** Before the decision
-  we tried the ball as a map, with the laundromat in the middle (radius 0)
-  and growing as moving out along your lane.
+- **Tried first, replaced: distance between spike tips.** Before the
+  decision we tried the ball as a map, with the laundromat in the middle
+  (radius 0) and growing as moving out along your lane.
 - **The catch: lanes spread apart.** Two people an angle apart at radius
   r are 2 r sin(angle/2) apart, so the richer everyone gets, the farther
   they are from each other. And the game runs on trades between people.
@@ -843,11 +884,9 @@ the reach-cost experiment it started from is kept after that as a record.
   - **The machine:** its hit rate dipped as gains shrank (78% at the
     laundromat, 68% at 1.5 together, 77% with friends; 240 spins each, so
     a hint, not a result) and was 100% once only gifts were left.
-- **Why it's parked:** with the ball as a picture, distance means
-  nothing, so it shouldn't cost anything. `World::reach` stays in the
-  library (empty by default, tested) and `probe_sphere` keeps the
-  numbers, in case distance ever means something again (e.g. the
-  third-person street).
+- **Why it was replaced:** the middle is close to everyone, so it never
+  punished falling behind, and everyone growing together cost trades.
+  The wealth gap fixes both. `World::reach` carries either one.
 
 ### Candidate ideas (not decided)
 
