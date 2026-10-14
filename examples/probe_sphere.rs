@@ -22,11 +22,16 @@
 //!              past `--free` doublings. Upddayett's net worth is scaled
 //!              1/16x..16x; everyone growing together costs nothing
 //!
+//!   pull       the street's spring (DESIGN "The pull"): an outlier at each end
+//!              (Upddayett 16x ahead, Crunchton 1/8 behind) with the gap cost on,
+//!              the spring's stiffness swept: what it costs, how much it pulls in
+//!
 //!   --nights A..B   nights to average (default 1..10)
 //!   --runs N        spins a board for the hit rate (default 24; 0 skips the machine)
 //!   --cost C        Goo per unit of distance (default 1)
 //!   --pull K        friends: spring per Goo wanted (default 0.05)
 //!   --free F        gap: doublings that cost nothing (default 1, within 2x)
+//!   --band B        pull: doublings the spring leaves slack (default 1; 0 = a plain spring)
 //!   --seed S        placement seed (default 1)
 
 use std::time::Instant;
@@ -34,7 +39,7 @@ use std::time::Instant;
 use cortenforge::sim::core::{mj_jac, DVector, Data, Model, Vector3};
 use cortenforge::sim::mjcf::load_model;
 use cortenforge::sim::thermostat::{LangevinThermostat, PassiveComponent, PassiveStack};
-use cortenforge_play::trade::{self, world::World, Anneal, Physics, TradeComputer};
+use cortenforge_play::trade::{self, world::World, Anneal, Physics, Spring, TradeComputer};
 
 /// The Thomson problem's minimum energies on the unit sphere, unit charges
 /// (Wales et al., Cambridge Cluster Database).
@@ -51,11 +56,12 @@ struct Opts {
     cost: f64,
     pull: f64,
     free: f64,
+    band: f64,
     seed: u64,
 }
 
 fn parse() -> Opts {
-    let mut o = Opts { mode: "all".into(), nights: (1, 10), runs: 24, cost: 1.0, pull: 0.05, free: 1.0, seed: 1 };
+    let mut o = Opts { mode: "all".into(), nights: (1, 10), runs: 24, cost: 1.0, pull: 0.05, free: 1.0, band: 1.0, seed: 1 };
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     while i < args.len() {
@@ -74,6 +80,7 @@ fn parse() -> Opts {
             "--cost" => o.cost = val().parse().unwrap(),
             "--pull" => o.pull = val().parse().unwrap(),
             "--free" => o.free = val().parse().unwrap(),
+            "--band" => o.band = val().parse().unwrap(),
             "--seed" => o.seed = val().parse().unwrap(),
             m if !m.starts_with("--") => o.mode = m.into(),
             other => panic!("unknown option {other}"),
@@ -245,12 +252,48 @@ fn wanting(w: &World) -> Vec<Vec<f64>> {
     m
 }
 
+/// Tonight's trade computer for `w`, with the street's spring if given.
+fn computer(w: World, spring: Option<Spring>) -> TradeComputer {
+    let mut tc = TradeComputer::with_board(w, 5.0, 1.6, trade::MAX_BITS, trade::cycles::MAX_CHAIN);
+    tc.delta_v = Physics::default().delta_v;
+    if spring.is_some() {
+        tc.set_spring(spring);
+    }
+    tc
+}
+
+/// How often the machine finds a best set (by its own score, spring
+/// included) over `runs` spins; NaN when skipped.
+fn hit_rate(tc: &TradeComputer, runs: usize, seed: u64) -> f64 {
+    if runs == 0 || tc.cycles.is_empty() {
+        return f64::NAN;
+    }
+    let physics = Physics::default();
+    let threads = std::thread::available_parallelism().map_or(4, |n| n.get());
+    let hits: usize = std::thread::scope(|s| {
+        let hs: Vec<_> = (0..threads)
+            .map(|t| {
+                s.spawn(move || {
+                    (t..runs)
+                        .step_by(threads)
+                        .filter(|&r| {
+                            let mut m = tc.machine(physics, seed + r as u64 * 7919).expect("machine");
+                            let l = tc.spin(&mut m, &Anneal::default(), 1.0, 1.0, |_, _| {}).expect("spin");
+                            tc.is_optimal(l.best_bits)
+                        })
+                        .count()
+                })
+            })
+            .collect();
+        hs.into_iter().map(|h| h.join().unwrap()).sum()
+    });
+    hits as f64 / runs as f64
+}
+
 /// One board: trade strips, the best set's Goo and Karma, how many people
 /// trade in it, and the machine's hit rate (NaN when skipped).
 fn board(w: World, runs: usize, seed: u64) -> [f64; 5] {
-    let mut tc = TradeComputer::with_board(w, 5.0, 1.6, trade::MAX_BITS, trade::cycles::MAX_CHAIN);
-    let physics = Physics::default();
-    tc.delta_v = physics.delta_v;
+    let tc = computer(w, None);
     let best = tc.ground_state();
     let tally = tc.tally(best);
     let trades = tc.cycles.iter().filter(|c| !c.is_gift()).count();
@@ -262,30 +305,7 @@ fn board(w: World, runs: usize, seed: u64) -> [f64; 5] {
             }
         }
     }
-    let hit = if runs == 0 || tc.cycles.is_empty() {
-        f64::NAN
-    } else {
-        let threads = std::thread::available_parallelism().map_or(4, |n| n.get());
-        let tc = &tc;
-        let hits: usize = std::thread::scope(|s| {
-            let hs: Vec<_> = (0..threads)
-                .map(|t| {
-                    s.spawn(move || {
-                        (t..runs)
-                            .step_by(threads)
-                            .filter(|&r| {
-                                let mut m = tc.machine(physics, seed + r as u64 * 7919).expect("machine");
-                                let l = tc.spin(&mut m, &Anneal::default(), 1.0, 1.0, |_, _| {}).expect("spin");
-                                tc.is_optimal(l.best_bits)
-                            })
-                            .count()
-                    })
-                })
-                .collect();
-            hs.into_iter().map(|h| h.join().unwrap()).sum()
-        });
-        hits as f64 / runs as f64
-    };
+    let hit = hit_rate(&tc, runs, seed);
     [trades as f64, tally.goo, tally.karma, traders.iter().filter(|&&t| t).count() as f64, hit]
 }
 
@@ -332,20 +352,17 @@ fn print_neighbors(w: &World, dirs: &[Vector3<f64>]) {
     }
 }
 
-/// Each person's net worth tonight: what everything they hold is worth to
-/// them, in Goo.
-fn net_worth(w: &World) -> Vec<f64> {
-    let mut nw = vec![0.0; w.npcs.len()];
-    for (id, it) in w.items.iter().enumerate() {
-        nw[it.owner] += w.value[it.owner][id];
-    }
-    nw
-}
+use trade::spring::net_worth;
 
 /// The gap between two net worths, in doublings (1 Goo floor, so nobody
 /// is infinitely far behind).
 fn doublings(a: f64, b: f64) -> f64 {
-    ((a.max(1.0)) / (b.max(1.0))).log2().abs()
+    (trade::spring::doublings(a) - trade::spring::doublings(b)).abs()
+}
+
+/// The gap cost for net worths `nw`: `cost` Goo a leg per doubling past `free`.
+fn gap_reach(nw: &[f64], cost: f64, free: f64) -> Vec<Vec<f64>> {
+    nw.iter().map(|&a| nw.iter().map(|&b| cost * (doublings(a, b) - free).max(0.0)).collect()).collect()
 }
 
 /// `gap`: Upddayett's net worth scaled from 1/16x to 16x; every trade leg
@@ -373,11 +390,7 @@ fn section_gap(o: &Opts) {
             if let Some(s) = scale {
                 let mut nw = net_worth(&w);
                 nw[upd] *= s;
-                let n = nw.len();
-                let reach = (0..n)
-                    .map(|a| (0..n).map(|b| o.cost * (doublings(nw[a], nw[b]) - o.free).max(0.0)).collect())
-                    .collect();
-                w.set_reach(reach);
+                w.set_reach(gap_reach(&nw, o.cost, o.free));
             }
             let his = trade::cycles::enumerate(&w, trade::MAX_LOOP).iter().filter(|c| c.legs.iter().any(|l| l.from == upd)).count();
             let b = board(w, o.runs, o.seed + night * 104_729);
@@ -399,6 +412,75 @@ fn section_gap(o: &Opts) {
     }
 }
 
+/// `pull`: the street's spring (DESIGN "The pull") on a street with an
+/// outlier at each end, Upddayett 16x ahead and Crunchton 1/8 behind, with
+/// the gap cost on. Sweeps the spring's stiffness. The spread is measured
+/// with a 1 Goo spring whatever the stiffness, so the rows compare.
+fn section_pull(o: &Opts) {
+    println!(
+        "\n== The pull: Upddayett 16x ahead, Crunchton 1/8 behind; gap cost {} Goo a doubling past {}; spring slack {} ==",
+        o.cost, o.free, o.band
+    );
+    let w1 = trade::world::laundromat(o.nights.0);
+    let (upd, crunch) = (w1.find_npc("Upddayett").unwrap(), w1.find_npc("Crunchton").unwrap());
+    let polo = w1.find_item("adas polo").unwrap();
+    let nights = o.nights.0..=o.nights.1;
+    let count = nights.clone().count() as f64;
+    println!(
+        "  k (Goo)  best Goo  Karma  pull (Goo)  spread before -> after  Upddayett  Crunchton  polo to Crunchton  hit rate  ({:>5})",
+        "s"
+    );
+    let t0 = Instant::now();
+    for k in [0.0, 0.5, 1.0, 2.0, 4.0, 8.0] {
+        // goo, karma, pull, spread before, after, upd offset, crunch offset, polo, hit
+        let mut sum = [0.0; 9];
+        for night in nights.clone() {
+            let mut w = trade::world::laundromat(night);
+            let mut worth = net_worth(&w);
+            worth[upd] *= 16.0;
+            worth[crunch] /= 8.0;
+            w.set_reach(gap_reach(&worth, o.cost, o.free));
+            let spring = Spring { k, free: o.band, worth };
+            let tc = computer(w, (k > 0.0).then(|| spring.clone()));
+            let best = tc.ground_state();
+            let gauge = Spring { k: 1.0, ..spring };
+            let after = gauge.after(&tc.world, &tc.cycles, best);
+            let off = gauge.offsets(&tc.world, &after);
+            let tally = tc.tally(best);
+            let fed = trade::qubo::chosen(best, tc.cycles.len())
+                .iter()
+                .any(|&i| tc.cycles[i].legs.iter().any(|l| l.item == polo && l.to == crunch));
+            let row = [
+                tally.goo,
+                tally.karma,
+                tc.pull(best),
+                gauge.energy_of(&tc.world, &gauge.worth),
+                gauge.energy_of(&tc.world, &after),
+                off[upd],
+                off[crunch],
+                if fed { 1.0 } else { 0.0 },
+                hit_rate(&tc, o.runs, o.seed + night * 104_729),
+            ];
+            for (s, x) in sum.iter_mut().zip(row) {
+                *s += x / count;
+            }
+        }
+        let hit = if sum[8].is_nan() { "    -".into() } else { format!("{:>4.0}%", 100.0 * sum[8]) };
+        println!(
+            "  {k:>7.1}  {:>8.1}  {:>5.1}  {:>10.2}  {:>13.2} -> {:<5.2}  {:>+9.2}  {:>+9.2}  {:>17.0}%  {hit:>8}  ({:>5.0})",
+            sum[0],
+            sum[1],
+            sum[2],
+            sum[3],
+            sum[4],
+            sum[5],
+            sum[6],
+            100.0 * sum[7],
+            t0.elapsed().as_secs_f64()
+        );
+    }
+}
+
 fn main() {
     let o = parse();
     let street = trade::world::laundromat(1);
@@ -409,6 +491,9 @@ fn main() {
     }
     if all || o.mode == "gap" {
         section_gap(&o);
+    }
+    if all || o.mode == "pull" {
+        section_pull(&o);
     }
     if all || o.mode == "together" {
         println!("\n== Everyone grows together ==");

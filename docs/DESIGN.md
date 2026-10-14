@@ -809,6 +809,55 @@ record.
   - **What it means:** the way back from either end is giving. A gift
     from someone far ahead to someone far behind costs nothing and closes
     the gap from both sides.
+  - **But the gap cost alone doesn't pull anyone in.** It freezes
+    outliers: far ahead it's a ceiling (fine), far behind it's a trap
+    (they can't trade while everyone else grows). Hence the pull.
+- **The pull: the street settles on its middle** (user, 2026-10-13: "the
+  physics itself basically settles on the median/average of where people
+  are at ... outliers from both direction face physics"; built and
+  measured the same day, `src/trade/spring.rs`, `probe_sphere pull`):
+  - **The rule:** everyone sits at their net worth in doublings, tied to
+    the street's average there (the geometric mean, which one outlier
+    barely drags) by a flat-bottomed spring: slack within one doubling,
+    k Goo per doubling squared beyond.
+  - **Steer only (user's call).** It never takes anything. The spring is
+    part of what the washer minimizes, so among the win-win trades and
+    the free gifts it leans toward the ones that close gaps.
+  - **It's real physics on the board.** The spring is a force on the
+    strips, a CortenForge passive component beside the trade springs, so
+    the same shake-and-cool that picks the trades settles the street. A
+    flat-bottomed spring on a log scale can't be written as strip-to-strip
+    springs (a fitted version found the best set on only 7 of 10 nights);
+    as a force it's exact, and the machine finds the best set 100% of the
+    time up to k = 4, 80% at k = 8.
+  - **Measured on one night** (nights 1-10; Upddayett 16x ahead and
+    Crunchton 1/8 behind, gap cost on):
+
+    | k (Goo) | Goo | Karma | spread after | Upddayett | Crunchton | polo to Crunchton |
+    |---|---|---|---|---|---|---|
+    | 0 | 14.6 | 7.9 | 8.95 | +3.92 | -1.62 | 0% |
+    | 1 | 14.5 | 7.8 | 8.84 | +3.90 | -1.64 | 0% |
+    | 2 | 14.3 | 7.6 | 8.68 | +3.88 | -1.53 | 10% |
+    | 4 | 13.9 | 7.2 | 8.56 | +3.87 | -1.30 | 30% |
+    | 8 | 13.9 | 7.2 | 8.56 | +3.87 | -1.30 | 30% |
+
+    (Spread is the spring's energy at k = 1, before the night 17.4;
+    Upddayett and Crunchton in doublings from the middle after the night.)
+    - **Steering is gentle in one night.** The trades themselves halve
+      the spread (everyone else grows toward Upddayett). At k = 4 the
+      spring adds a little: Amir's polo goes to Crunchton on 3 nights in
+      10 instead of none, for 0.7 Goo and 0.7 Karma.
+    - **It levels off at k = 4:** the gap cost has already frozen both
+      outliers' trades, so the free gifts are the only lever left.
+    - **The top doesn't come down in a night.** Steer-only can't take, so
+      Upddayett comes back toward the middle only as the street catches
+      up and as he gives. That's nights, not one night.
+  - **So the settling is a many-night thing:** it needs nights to carry
+    over. Then the measure is whether the street's spread settles (not to
+    zero: each night's needs and luck shake it, like temperature) and how
+    fast, against the spring's stiffness.
+  - **Recommended:** k = 4 (the strongest that's still reliable), slack 1
+    doubling, matching the gap cost's free band.
 
 - **The picture (proposed):**
   - **Your spike is your stuff.** Each person's lane is a spike out of

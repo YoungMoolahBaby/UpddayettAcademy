@@ -61,7 +61,13 @@ arcs the user named, then smaller items.
   - [ ] the user's OK on the picture (DESIGN "The picture"): spike = stack
     of your items, shells = doublings, ball = the street's Karma,
     neighbors = trading partners; and on the cost (1 Goo a doubling past one free)
-  - [ ] the gap cost in the game (`World::reach` from tonight's net worths)
+  - [x] the pull (DESIGN "The pull"): a flat-bottomed spring to the street's
+    middle, steer only, a force on the board (`src/trade/spring.rs`,
+    `probe_sphere pull`); gentle in one night, k = 4 recommended
+  - [ ] the gap cost and the pull in the game (from tonight's net worths)
+  - [ ] the pull over many nights (needs carry-over): does the spread settle,
+    and how fast for each k
+  - [ ] the row of washers with the spring (its swaps don't see it yet)
   - [ ] a panel under the hood: tonight, before and after the wash
   - [ ] growing over nights, once nights carry over
 

@@ -15,6 +15,7 @@ pub mod qubo;
 pub mod row;
 pub mod salties;
 pub mod smart;
+pub mod spring;
 pub mod tv;
 pub mod world;
 pub mod yuck;
@@ -23,6 +24,7 @@ pub use cycles::{Cycle, Kind, Leg};
 pub use machine::{Anneal, Error, Machine, Physics};
 pub use qubo::{Ising, Qubo, TradeProblem};
 pub use salties::{Magnet, Sabotage};
+pub use spring::Spring;
 pub use world::World;
 
 use cortenforge::sim::thermostat::ising::exact_distribution;
@@ -76,11 +78,17 @@ impl Latch {
     /// One Hall-sensor read: latch the strips if they all sit in a well and
     /// beat the best so far.
     pub fn observe(&mut self, m: &Machine, q: &Qubo) {
+        self.observe_with(m, |bits| q.energy(bits));
+    }
+
+    /// [`Latch::observe`], scoring by `energy` (the trade QUBO plus
+    /// anything else on the board, e.g. the street's spring).
+    pub fn observe_with(&mut self, m: &Machine, energy: impl Fn(u32) -> f64) {
         if !m.all_in_wells() {
             return;
         }
         let bits = m.bits();
-        let e = q.energy(bits);
+        let e = energy(bits);
         if e < self.best_energy - 1e-12 {
             self.best_bits = bits;
             self.best_energy = e;
@@ -115,6 +123,9 @@ pub struct TradeComputer {
     pub forward_best: u32,
     /// Candidate trades left out because the board holds [`MAX_BITS`].
     pub dropped: usize,
+    /// The street's spring, if on ([`spring`]): the drum also pulls
+    /// everyone toward the middle. Set with [`TradeComputer::set_spring`].
+    pub spring: Option<Spring>,
     /// `masks[i]`: the trades that conflict with trade i.
     masks: Vec<u32>,
     /// Best trade set for the current problem (want included), cached.
@@ -203,6 +214,7 @@ impl TradeComputer {
             want: None,
             forward_best,
             dropped,
+            spring: None,
             masks,
             ground: forward_best,
             bias: None,
@@ -275,7 +287,42 @@ impl TradeComputer {
             Some(b) => self.cycles.iter().zip(b).map(|(c, b)| c.value() + b).collect(),
             None => self.cycles.iter().map(Cycle::value).collect(),
         };
-        self.ground = qubo::best_valid_set(&weights, &self.masks).0;
+        self.ground = self.best_set(&weights);
+    }
+
+    /// Best valid set for per-candidate `weights`, less the spring's pull
+    /// when it's on (exact).
+    fn best_set(&self, weights: &[f64]) -> u32 {
+        let Some(s) = &self.spring else {
+            return qubo::best_valid_set(weights, &self.masks).0;
+        };
+        let rest = s.energy(&self.world, &self.cycles, 0);
+        let mut best = (0u32, 0.0f64);
+        qubo::for_each_valid_set(&self.masks, |set| {
+            let v: f64 = qubo::chosen(set, weights.len()).iter().map(|&i| weights[i]).sum::<f64>()
+                - (s.energy(&self.world, &self.cycles, set) - rest);
+            if v > best.1 + 1e-12 {
+                best = (set, v);
+            }
+        });
+        best.0
+    }
+
+    /// Turn the street's spring on (or off with `None`). The forward best
+    /// and the ground state then include its pull. Wants are priced
+    /// without it.
+    pub fn set_spring(&mut self, spring: Option<Spring>) {
+        self.spring = spring;
+        let values: Vec<f64> = self.cycles.iter().map(Cycle::value).collect();
+        self.forward_best = self.best_set(&values);
+        self.rebuild();
+    }
+
+    /// What the spring charges a set, in Goo: how much it raises the
+    /// street's spread energy (negative when it pulls people in). 0 with
+    /// the spring off.
+    pub fn pull(&self, bits: u32) -> f64 {
+        self.spring.as_ref().map_or(0.0, |s| s.energy(&self.world, &self.cycles, bits) - s.energy(&self.world, &self.cycles, 0))
     }
 
     /// Backward mode: make `npc` end up with `item`. Returns `false` (and
@@ -290,8 +337,24 @@ impl TradeComputer {
         true
     }
 
+    /// The board. With the street's spring on, the spring rides on it as a
+    /// force on the strips ([`spring::Force`]).
     pub fn machine(&self, physics: Physics, seed: u64) -> Result<Machine, Error> {
-        Machine::new(&self.ising, physics, seed)
+        match &self.spring {
+            Some(s) => Machine::with_component(
+                &self.ising,
+                physics,
+                seed,
+                s.force(&self.world, &self.cycles, self.beta, self.problem.scale),
+            ),
+            None => Machine::new(&self.ising, physics, seed),
+        }
+    }
+
+    /// The board's energy for `bits`, in QUBO units: the trade problem,
+    /// plus the spring's pull when it's on. What the latch scores by.
+    pub fn energy(&self, bits: u32) -> f64 {
+        self.problem.qubo.energy(bits) + self.problem.scale * self.pull(bits)
     }
 
     /// The board with a magnet under the counter. The i9 doesn't know about
@@ -339,7 +402,7 @@ impl TradeComputer {
             m.set_temperature(t);
             m.step()?;
             if k % sample_steps == 0 || k == steps {
-                latch.observe(m, &self.problem.qubo);
+                latch.observe_with(m, |bits| self.energy(bits));
             }
             if k % tick_steps == 0 {
                 tick(m, &latch);
@@ -426,10 +489,11 @@ impl TradeComputer {
     /// ground state bit for bit: several trade sets can tie (e.g. when
     /// Zestina wants the kale, ~70% of runs find an equally good set that
     /// isn't the brute-force one). Must also be clash-free and deliver the want.
+    /// With the spring on, the score less its pull ([`TradeComputer::pull`]).
     pub fn is_optimal(&self, bits: u32) -> bool {
         let (v, clash) = self.evaluate(bits);
-        let best = self.evaluate(self.ground_state()).0;
-        !clash && self.delivers_want(bits) && v >= best - 1e-9
+        let best = self.evaluate(self.ground_state()).0 - self.pull(self.ground_state());
+        !clash && self.delivers_want(bits) && v - self.pull(bits) >= best - 1e-9
     }
 
     pub fn delivers_want(&self, bits: u32) -> bool {
@@ -1090,6 +1154,105 @@ mod tests {
             }
             let gifts = |w: &World| cycles::enumerate_gifts(w, cycles::MAX_CHAIN).len();
             assert_eq!(gifts(&clean), gifts(&far), "night {night}: gifts get through");
+        }
+    }
+
+    /// A street with two outliers: Upddayett 16x ahead, Crunchton 1/8 behind.
+    fn outliers(w: &World) -> Vec<f64> {
+        let mut worth = spring::net_worth(w);
+        worth[w.find_npc("Upddayett").unwrap()] *= 16.0;
+        worth[w.find_npc("Crunchton").unwrap()] /= 8.0;
+        worth
+    }
+
+    /// A spring with a band wider than any gap is slack: same board, same
+    /// best set.
+    #[test]
+    fn slack_spring_changes_nothing() {
+        for night in NIGHTS {
+            let plain = tc(night);
+            let mut slack = tc(night);
+            let worth = outliers(&slack.world);
+            slack.set_spring(Some(Spring { k: 4.0, free: 100.0, worth }));
+            assert_eq!(slack.ising.h, plain.ising.h, "night {night}");
+            assert_eq!(slack.ising.j, plain.ising.j, "night {night}");
+            assert_eq!(slack.ground_state(), plain.ground_state(), "night {night}");
+            assert_eq!(slack.pull(plain.ground_state()), 0.0);
+        }
+    }
+
+    /// The spring only steers: its best set is made of the same win-win
+    /// candidates and never leaves the street more spread out than the
+    /// plain best set.
+    #[test]
+    fn spring_never_spreads_the_street() {
+        for night in NIGHTS {
+            let plain = tc(night);
+            let mut pulled = tc(night);
+            let worth = outliers(&pulled.world);
+            pulled.set_spring(Some(Spring { k: 2.0, free: 1.0, worth }));
+            let (p, s) = (plain.ground_state(), pulled.ground_state());
+            assert!(!pulled.evaluate(s).1, "night {night}: clash");
+            assert!(pulled.pull(s) <= pulled.pull(p) + 1e-9, "night {night}: spring spread the street");
+            assert!(pulled.is_optimal(s), "night {night}");
+        }
+    }
+
+    /// The board's whole energy (trades + spring) bottoms out at a best set,
+    /// clash-free, even with a stiff spring.
+    #[test]
+    fn spring_board_bottoms_out_at_a_best_set() {
+        for night in [1, 4, 9] {
+            let mut pulled = tc(night);
+            let worth = outliers(&pulled.world);
+            pulled.set_spring(Some(Spring { k: 8.0, free: 1.0, worth }));
+            let bits = (0..1u32 << pulled.cycles.len()).min_by(|&a, &b| pulled.energy(a).total_cmp(&pulled.energy(b))).unwrap();
+            assert!(!pulled.evaluate(bits).1, "night {night}: the board's ground state clashes");
+            assert!(pulled.is_optimal(bits), "night {night}: the board's ground state isn't a best set");
+        }
+    }
+
+    /// The spring's force on the strips is minus the slope of its energy,
+    /// and at the wells its energy is the exact spread energy.
+    #[test]
+    fn spring_force_is_the_energy_slope() {
+        use cortenforge::sim::core::DVector;
+        use cortenforge::sim::thermostat::PassiveComponent;
+        let mut pulled = tc(4);
+        let worth = outliers(&pulled.world);
+        let spring = Spring { k: 2.0, free: 1.0, worth };
+        pulled.set_spring(Some(spring.clone()));
+        let (beta, scale) = (pulled.beta, pulled.problem.scale);
+        let f = spring.force(&pulled.world, &pulled.cycles, beta, scale);
+        let n = pulled.cycles.len();
+        // At the wells: exact.
+        for bits in [0u32, pulled.ground_state(), 0b1011] {
+            let x: Vec<f64> = (0..n).map(|c| if (bits >> c) & 1 == 1 { 1.0 } else { -1.0 }).collect();
+            let exact = beta * scale * spring.energy(&pulled.world, &pulled.cycles, bits);
+            assert!((f.energy(&x) - exact).abs() < 1e-9, "bits {bits:#b}");
+        }
+        // In between: the force matches a central difference.
+        let mut s = 7u64;
+        let x: Vec<f64> = (0..n)
+            .map(|_| {
+                s ^= s << 13;
+                s ^= s >> 7;
+                s ^= s << 17;
+                (s % 2000) as f64 / 1000.0 - 1.0
+            })
+            .collect();
+        let m = crate::trade::machine::board_model(&pulled.ising, Physics::default(), 1, None).unwrap();
+        let mut d = m.make_data();
+        d.qpos.as_mut_slice()[..n].copy_from_slice(&x);
+        let mut q = DVector::zeros(m.nv);
+        f.apply(&m, &d, &mut q);
+        for c in 0..n {
+            let h = 1e-6;
+            let (mut a, mut b) = (x.clone(), x.clone());
+            a[c] += h;
+            b[c] -= h;
+            let fd = -(f.energy(&a) - f.energy(&b)) / (2.0 * h);
+            assert!((q[c] - fd).abs() < 1e-5 * (1.0 + fd.abs()), "strip {c}: force {} vs slope {fd}", q[c]);
         }
     }
 }

@@ -944,6 +944,34 @@ designing, to see if the drift apart is a fun tension or a slow fade.
   the richest, so 1/4-1/2 puts him in the street's middle. Proposal in
   DESIGN "The picture" and "Distance is the wealth gap"; next steps in
   TODO "The sphere".
+- **The pull, built (user, 2026-10-13: the physics settles everyone on
+  the street's middle, outliers both ways face it; steer only):**
+  - `src/trade/spring.rs`: `Spring { k, free, worth }`, energy
+    k sum max(0, |log2 worth - mean| - free)^2 over people (businesses
+    off; 1 Goo floor). `TradeComputer::set_spring` makes the exact best
+    set (`best_set`, over every valid set) and `is_optimal` include it;
+    `pull(bits)` is its change in Goo; `energy(bits)` is what the latch
+    scores (`Latch::observe_with`). On the board it's `spring::Force`, a
+    `PassiveComponent` (`TradeComputer::machine`): candidate c is
+    (x_c + 1) / 2 on, net worth is linear in that, so the force is exact
+    at every corner. Tests: slack changes nothing, never spreads the
+    street, the board's energy bottoms out at a best set (k = 8,
+    brute force), force = minus the slope (central difference).
+  - Tried first: the spring as Ising couplings. Linearized shifts found the
+    board's best set on 7/10 nights at k = 4 and 3/10 at k = 8 (the flat
+    bottom: lifting Crunchton into the band was charged as overshoot);
+    a fit exact for every one or two candidates, 7/10 and 6/10 (three
+    candidates stacking on Crunchton); no flat bottom, worse (log steps
+    don't add). Hence the force.
+  - `probe_sphere pull` (`--band` the slack, `--cost`/`--free` the gap
+    cost): Upddayett 16x, Crunchton 1/8, gap cost on, nights 1-10, 24
+    spins, k = 0 / 0.5 / 1 / 2 / 4 / 8: hit 100 / 98 / 100 / 100 / 100 /
+    80%; spread after 8.95 / 8.95 / 8.84 / 8.68 / 8.56 / 8.56 (17.40
+    before); polo to Crunchton 0 / 0 / 0 / 10 / 30 / 30%; Goo 14.6 ->
+    13.9, Karma 7.9 -> 7.2. Table in DESIGN "The pull".
+  - Not yet: the game, wants with the spring (want pricing ignores it),
+    the row of washers (its swaps read `Machine::potential`, which
+    doesn't see the spring), many nights (needs carry-over).
 
 ## Backlog (2026-10-06; not planned yet, best first)
 

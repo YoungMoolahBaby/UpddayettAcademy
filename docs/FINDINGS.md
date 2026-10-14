@@ -648,6 +648,21 @@ from reading the source (file:line) and can't be checked at run time
   Option<f64>` on the trait, summed by `PassiveStack::energy`, would cover
   it. The crate is also the natural home for a replica-exchange helper
   (swap states, rescale velocities); we wrote one in `src/trade/row.rs`.
+  - Seen again (2026-10-13, the street's spring): a custom many-body
+    component (`src/trade/spring.rs` `Force`) carries its own `energy`
+    on the side, and the latch has to be told to add it
+    (`TradeComputer::energy`). The row of washers' swaps still read only
+    the trade board's energy, so a row would swap as if the spring weren't
+    there. A trait hook would make every component's energy visible.
+- **works** (2026-10-13): a many-body potential drops into the stack
+  beside `PairwiseCoupling`. The street's spring is a flat-bottomed spring
+  on log net worth, a function of all the strips at once, so no Ising
+  coupling can carry it: fitted as a quadratic (exact for every one or
+  two candidates), the board's lowest state was the true best set on only
+  7 of 10 nights at k = 4. As a `PassiveComponent` that writes minus its
+  slope into `qfrc` (checked against a central difference to 1e-5), the
+  board's energy is exact at every corner and the Normal anneal finds the
+  true best set 100% of the time up to k = 4 (240 spins), 80% at k = 8.
 - **docs** (2026-10-05): nothing says two components of the same type can
   share a `PassiveStack` (it works). See Step 3.
 - **docs** (2026-10-05): writing your own `PassiveComponent` is easy but
