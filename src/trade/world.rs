@@ -118,6 +118,11 @@ pub struct World {
     /// worth it to them. Gifts aren't taxed: kindness gets through. Empty =
     /// nobody yucky.
     pub yuck: Vec<f64>,
+    /// Reach (DESIGN "The sphere: everyone's own lane"): `reach[from][to]`
+    /// is the Goo it costs `to` to get a thing from `from` on a trade, from
+    /// how far apart they've grown. Gifts aren't charged, like yuck. Empty =
+    /// everyone in the one laundromat, no distance.
+    pub reach: Vec<Vec<f64>>,
 }
 
 /// Values are whole Goo: easier to read, and near-ties (36.6 vs 36.7) that
@@ -145,7 +150,7 @@ fn rule(use_: Use, npc: &Npc, i: usize, night: &Night) -> (f64, Tag) {
 
 impl World {
     fn empty() -> Self {
-        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![], yuck: vec![] }
+        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![], yuck: vec![], reach: vec![] }
     }
 
     fn npc(&mut self, name: &'static str, sleeps_out: bool, has_animals: bool, has_phone: bool) -> usize {
@@ -292,6 +297,19 @@ impl World {
     pub fn set_yuck(&mut self, npc: usize, tax: f64) {
         self.yuck.resize(self.npcs.len(), 0.0);
         self.yuck[npc] = tax;
+    }
+
+    /// What it costs `to` to reach `from` for a trade, in Goo (0 = no distance).
+    pub fn reach_tax(&self, from: usize, to: usize) -> f64 {
+        self.reach.get(from).and_then(|r| r.get(to)).copied().unwrap_or(0.0)
+    }
+
+    /// Set every pair's reach cost: `reach[from][to]` in Goo, one row and
+    /// column per person.
+    pub fn set_reach(&mut self, reach: Vec<Vec<f64>>) {
+        let n = self.npcs.len();
+        assert!(reach.len() == n && reach.iter().all(|r| r.len() == n), "one row and column per person");
+        self.reach = reach;
     }
 
     /// Who a pump makes yucky tonight: `"hungry"` (hangry), `"cold"` (out in

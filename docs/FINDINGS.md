@@ -548,6 +548,15 @@ from reading the source (file:line) and can't be checked at run time
   gamma dt / M of about 2 (gamma 3000 at dt 0.001: velocity 4.8e3 after 200
   steps). The docs mention only the O(h gamma / M) bias, with no stability
   limit (langevin.rs:115-118). *(probe: stiff damping diverges)*
+  - Seen again (2026-10-13, `probe_sphere`): it bites without any stiff
+    gamma. On a ball joint, M is the inertia about each axis, and a small
+    ball on a rod has almost none about the rod itself (a 2 cm ball:
+    1.6e-4). gamma 1 at dt 0.002 is gamma dt / I = 12.5, and the first
+    step goes to qvel 442, then NaN. With the sim-core reset below
+    ("a bad state makes `step` reset everything"), every ball went
+    back to `qpos0` and all 8 people sat on one point with `Ok(())`. The
+    fix was a 0.5 m ball (I = 0.1). The docs could say that gamma is
+    per DOF in force per velocity, so the limit is per axis inertia.
 - **works** (2026-10-05): the same seed replays bit for bit across threads,
   and a different `traj_id` (under 2^32) gives different noise. A negative
   ctrl temperature is treated as zero, not NaN. *(probe: seeds replay
@@ -651,6 +660,15 @@ from reading the source (file:line) and can't be checked at run time
 - **API** (2026-10-05): `WellState::from_position` (well_state.rs:28) takes
   the threshold as a bare `f64` with no suggested default; 0.5 x x0 (from
   the crate's tests) worked.
+- **works** (2026-10-13): the stack runs a model that has nothing to do
+  with Ising. `probe_sphere` puts N charges on ball joints (unit rods),
+  writes a custom `PassiveComponent` that pushes them apart through
+  sim-core's `mj_jac` (`qfrc += jacp^T F`), and anneals them with the
+  `LangevinThermostat` on a ctrl temperature (a dummy slide joint carries
+  the actuator slot). It lands on the known Thomson-problem minima: N 5,
+  8 and 12 to within 1.2e-11, from 4 random starts each, on the sphere to
+  4e-16, in 2-4 s. `mj_jac`'s ball columns and Euler's local-frame
+  quaternion update agree (jacobian/mod.rs:77-88, integrate/euler.rs:45-65).
 
 #### Ising tools (exact solver, Gibbs sampler, distances)
 

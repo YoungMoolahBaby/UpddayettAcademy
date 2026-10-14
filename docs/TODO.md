@@ -51,6 +51,17 @@ arcs the user named, then smaller items.
   settle first: controls, camera follow, street size, how missions are
   given and tracked.
 
+- [ ] **The sphere: everyone's own lane** (DESIGN "The sphere"; PLAN
+  "The sphere, probed"). The street on a ball, everyone growing out along
+  their own normal; trades pay a reach cost, gifts don't.
+  - [x] probe: Thomson placement on the thermostat, reach swept
+    (`probe_sphere`): a cliff at radius 2, friends next door push it to 3-4
+  - [ ] the user's calls: per-person or shared growth; do values grow with
+    you; how it looks; more people on the ball
+  - [ ] coming home: a night at the laundromat pulls you back to the middle
+  - [ ] the mesh handheld shrinks reach
+  - [ ] in the game
+
 ## Waiting on something
 
 - [ ] **Bump to CortenForge 0.9.2** when it ships: every crate, rerun the

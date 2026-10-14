@@ -871,6 +871,55 @@ GitHub Pages. It's `site/`, static HTML with one shared stylesheet.
   - The phone layout is checked at a 492 px viewport. Headless Edge won't
     go narrower: `--window-size=400` lays out at 492 and crops.
 
+## The sphere, probed (2026-10-13)
+
+The user's idea (DESIGN "The sphere: everyone's own lane"): the street on
+a ball, everyone growing out along their own normal. Probed before
+designing, to see if the drift apart is a fun tension or a slow fade.
+
+- **Library:** `World::reach` (`reach[from][to]`, Goo) is charged to each
+  trade leg's recipient in `cycles::score`, next to the yuck tax; gifts
+  aren't charged. Empty = no distance, so every existing night is
+  unchanged. Test `reach_charges_trades_not_gifts`.
+- **Probe:** `cargo run --release --example probe_sphere -- [thomson|together|alone|friends]`
+  (`--nights A..B`, `--runs N`, `--cost C`, `--pull K`, `--seed S`; ~2 min a sweep).
+  - **Placement (the Thomson problem):** each person is a charge on a
+    ball joint (unit rod, 0.5 m ball so the spin axis has inertia; see
+    FINDINGS sim-thermostat "stiff damping diverges"). A custom
+    `PassiveComponent` pushes them apart through `mj_jac`, the Langevin
+    thermostat shakes them on a ctrl temperature (0.5 cooled to 1e-4 over
+    150, then 50 still; dt 0.002). N 5, 8, 12 land on the known minima to
+    1.2e-11 from 4 random starts each. `friends` adds a spring per pair,
+    0.05 x the Goo they want of each other.
+  - **Distance:** chord between positions at radius r, x `--cost` (1 Goo
+    per unit).
+- **Results** (nights 1-10, 24 spins a board; "Goo" includes the ~7.9 Goo
+  gift recipients get):
+
+  | radius | together: trades / Goo / trading / hit | Upddayett alone (others at 1) | friends placement |
+  |---|---|---|---|
+  | 0 | 11.6 / 41.4 / 6.7 / 78% | 6.3 / 21.6 / 6.2 / 87% | 11.6 / 41.4 / 6.7 / 78% |
+  | 0.5 | 11.6 / 31.5 / 6.7 / 78% | 7.1 / 21.4 / 6.7 / 80% | 11.6 / 33.9 / 6.7 / 80% |
+  | 1 | 6.3 / 18.2 / 6.1 / 83% | 6.3 / 18.2 / 6.1 / 83% | 7.3 / 25.2 / 6.2 / 87% |
+  | 1.5 | 5.3 / 11.4 / 5.1 / 68% | 5.3 / 16.2 / 6.1 / 85% | 6.3 / 16.9 / 6.2 / 77% |
+  | 2 | 0.1 / 8.1 / 0.2 / 100% | 5.2 / 13.9 / 6.0 / 85% | 4.0 / 13.1 / 3.0 / 97% |
+  | 2.5 | 0.1 / 8.0 / 0.2 / 100% | 2.2 / 11.2 / 3.1 / 96% | 2.0 / 11.2 / 3.0 / 100% |
+  | 3 | 0 / 7.9 / 0 / 100% | 2.2 / 11.1 / 3.1 / 98% | 1.0 / 9.4 / 2.0 / 100% |
+  | 4 | 0 / 7.9 / 0 / 100% | 2.0 / 11.0 / 3.0 / 99% | 0 / 7.9 / 0 / 100% |
+  | 6 | 0 / 7.9 / 0 / 100% | 2.0 / 11.0 / 3.0 / 99% | 0 / 7.9 / 0 / 100% |
+
+  - A cliff: trades are gone by radius 2 (nearest neighbor 2.3 apart, more
+    than the usual gain). Karma 7.9 at every radius.
+  - 8 people on a ball are 1.17-2.0 radii apart (the square antiprism),
+    so the geometry barely sorts near from far.
+  - Friends: push energy 20.11 vs 19.68 (+2%); Upddayett-Ranchelle 0.91,
+    Gravo-Brisko 0.96, Amir's (gifts only) farthest out. Trades last to
+    radius 3.
+  - The hit-rate dip around 1.5 is 240 spins a cell, so a hint only; it
+    would need the paired bootstrap the yuck run used.
+- **Next (TODO "The sphere"):** the user's calls in DESIGN "Open, for the
+  user", then a game prototype.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

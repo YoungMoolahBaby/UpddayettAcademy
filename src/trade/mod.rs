@@ -1066,4 +1066,30 @@ mod tests {
             assert_eq!(clean.yuck_tax(upd), 0.0);
         }
     }
+
+    /// Reach (DESIGN "The sphere"): no distance changes nothing; a cost on
+    /// every pair takes it off each surviving leg; gifts get through.
+    #[test]
+    fn reach_charges_trades_not_gifts() {
+        for night in NIGHTS {
+            let clean = world::laundromat(night);
+            let n = clean.npcs.len();
+            let reach = |c: f64| (0..n).map(|a| (0..n).map(|b| if a == b { 0.0 } else { c * (1 + a + b) as f64 }).collect()).collect();
+            let trades = |w: &World| cycles::enumerate(w, MAX_LOOP);
+            let mut zero = clean.clone();
+            zero.set_reach(reach(0.0));
+            let a = trades(&clean);
+            assert_eq!(trades(&zero).iter().map(|c| c.gains.clone()).collect::<Vec<_>>(), a.iter().map(|c| c.gains.clone()).collect::<Vec<_>>());
+            let mut far = clean.clone();
+            far.set_reach(reach(0.25));
+            for t in &trades(&far) {
+                let same = a.iter().find(|c| c.legs == t.legs).expect("a trade only distance allows");
+                for ((l, g), g0) in t.legs.iter().zip(&t.gains).zip(&same.gains) {
+                    assert!((g0 - far.reach_tax(l.from, l.to) - g).abs() < 1e-9, "night {night}");
+                }
+            }
+            let gifts = |w: &World| cycles::enumerate_gifts(w, cycles::MAX_CHAIN).len();
+            assert_eq!(gifts(&clean), gifts(&far), "night {night}: gifts get through");
+        }
+    }
 }

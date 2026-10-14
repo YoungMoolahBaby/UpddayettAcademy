@@ -762,6 +762,84 @@ of power.
     the yuck to the caller;
   - the TV's off switch as a pump fix.
 
+### The sphere: everyone's own lane (proposed, 2026-10-13)
+
+The user's idea: put the street on a ball. Everyone gets their own
+normal, a direction straight out from the middle, and grows their wealth
+along it, out to infinity. Normals never cross, so nobody's growth takes
+anything from anybody: everyone stays in their own lane.
+
+- **What it gets right:**
+  - **Positive-sum by geometry.** There's no shared pie to fight over;
+    the room grows with you.
+  - **No top.** "Up" points a different way for everyone, so nobody is
+    above anybody and a height leaderboard can't be drawn. "Look up at
+    people, never down" is built into the shape (see "Humble, karma
+    first").
+  - **The middle is the laundromat.** At radius 0 everyone is in the one
+    room: that's today's game. Growing is moving out along your lane.
+- **The catch: lanes spread apart.** Two people an angle apart at radius
+  r are 2 r sin(angle/2) apart, so the richer everyone gets, the farther
+  they are from each other. And the game runs on trades between people.
+  So distance costs: a trade charges each recipient a **reach** cost, in
+  Goo per unit of distance (`World::reach`, like the yuck tax but per
+  pair). Gifts aren't charged, as with yuck: kindness gets through.
+- **The sim places people.** Where each person's lane points is the
+  Thomson problem: like charges spreading out on a ball. Each person is a
+  charge on a ball joint, CortenForge's thermostat shakes the street and
+  cools it, and everyone settles as far from everyone else as the ball
+  allows (it hits the known minimum energies to 1e-11). A newcomer
+  arriving makes everyone shuffle over: lanes get narrower but never
+  close. A variant pulls trading partners together while it settles, so
+  friends end up next door.
+- **Measured** (2026-10-13, `probe_sphere`; PLAN "The sphere, probed"):
+  10 nights, reach 1 Goo per unit of distance, 24 spins a board.
+  - **It's a cliff, not a fade.** Everyone growing together: 11.6 trades
+    and 41 Goo at the laundromat, 6.3 trades at radius 1, 5.3 at 1.5, and
+    none left at 2. Trade gains are a few whole Goo, so once a leg's reach
+    passes the usual gain, every trade dies at once. You don't notice
+    drifting apart until it's all gone.
+  - **Gifts don't care.** The Karma (7.9 a night) is the same at every
+    radius. When the trades are gone, giving is what's left.
+  - **Eight people make a small ball.** On a ball, 8 people are all
+    between 1.2 and 2 radii apart, so nobody is really next door or
+    across town; the scale matters, not the geometry. Lanes with real
+    neighbors need more people.
+  - **Friends next door move the cliff out.** Pulling trading partners
+    together while the street settles (Upddayett ends up beside Ranchelle,
+    Gravo beside Brisko) costs 2% of the spread and keeps trades alive
+    twice as far: 4 trades and 13 Goo at radius 2 (instead of none), the
+    last one gone at 4.
+  - **One person growing alone takes others with them.** Everyone at 1
+    and Upddayett moving out: by radius 2.5 the street drops from 6.1
+    people trading to 3.1 and from 18 Goo to 11. He was in their loops,
+    so three neighbors lose their trades with him. Upddayett at the middle
+    (radius 0, in the laundromat) is the best night of the sweep, 21.6 Goo:
+    the middle is close to everyone.
+  - **The machine:** its hit rate dipped as gains shrank (78% at the
+    laundromat, 68% at 1.5 together, 77% with friends; 240 spins each, so
+    a hint, not a result) and was 100% once only gifts were left.
+- **What it suggests:**
+  - **Coming home is the move.** The laundromat at the middle is the one
+    place everyone is close. A night at the laundromat could pull you back
+    to radius 0, and that's when the big loops happen.
+  - **The mesh handheld shrinks reach** (texts free, no bill): a cheap
+    way to stay in each other's loops while you grow.
+  - **Gifts are how you reach out** once trades can't.
+- **Open, for the user:**
+  - Does wealth grow per person (your Goo is your radius) or does the
+    street grow together?
+  - Does what people trade grow with them? If item values scale with r,
+    the reach cost stays the same size next to the gains and nobody
+    drifts apart; if they don't, the cliff above is the game. (Or in
+    between: values grow, but slower than distance.)
+  - More people on the ball (the farm, the downtown) so lanes have real
+    neighbors?
+  - What it looks like: a little planet with each person's lane as a
+    tower growing out of it (a sea urchin of a street), or the laundromat
+    at the core with the lanes as streets out of town. It could be the
+    map for the third-person arc.
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone
