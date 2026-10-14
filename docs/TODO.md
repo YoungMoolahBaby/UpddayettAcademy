@@ -55,6 +55,9 @@ arcs the user named, then smaller items.
   "The sphere, probed"). A picture of net worth and assets, not the map
   (user, 2026-10-13): each person's spike out of a shared ball. Distance
   still costs, as the wealth gap: too far ahead or too far behind.
+  **Paused (user, 2026-10-13): the open items below are deferred to a
+  future session.** Next up when it resumes: nights that carry over, then
+  the pull over many nights.
   - [x] probe: Thomson placement on the thermostat (`probe_sphere`)
   - [x] the wealth-gap cost measured (`probe_sphere gap`): a sweet spot near
     the street's middle, a slope at both ends
