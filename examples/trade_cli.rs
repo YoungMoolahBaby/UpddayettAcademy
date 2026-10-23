@@ -1122,6 +1122,24 @@ fn main() -> Result<(), trade::Error> {
             }
             Ok(())
         }
+        "cast" => {
+            // How level the cast is: what each person's things draw, what
+            // they want, how soon their things come back, and food.
+            let w = trade::world::laundromat(o.night);
+            println!("person                    draws  wants  ratio  soonest back  Amir's food");
+            for (k, f) in w.footing().iter().enumerate().filter(|(k, _)| !w.npcs[*k].business) {
+                println!(
+                    "{:<24} {:>6.0} {:>6.0} {:>6.2} {:>8}       {}",
+                    w.npcs[k].name,
+                    f.drawn,
+                    f.wants,
+                    f.drawn / f.wants,
+                    f.soonest.map_or("-".to_string(), |n| format!("{n} nights")),
+                    if f.fed { "yes" } else { "no" }
+                );
+            }
+            Ok(())
+        }
         "night" => {
             // Tonight's conditions and what every want is worth and means.
             let tc = setup(&o);
@@ -1325,6 +1343,7 @@ fn street_mode(o: &Opts) {
     );
     let (mut sums, mut n) = ([0.0f64; 8], 0.0);
     let mut kinds = [0usize; 3];
+    let mut footing = vec![(0usize, 0usize); s.goo.len()];
     let mut empty = 0;
     for night in first..=last {
         let fresh = board_for(o, trade::world::laundromat(night));
@@ -1372,6 +1391,14 @@ fn street_mode(o: &Opts) {
             empty += 1;
         }
         s.settle(&tc.world, &tc.cycles, best);
+        // Nights each person ended owing, and owed, something.
+        if let Some(tab) = &s.tab {
+            for (k, f) in footing.iter_mut().enumerate() {
+                let raw: f64 = tab.owed[k].iter().sum();
+                f.0 += usize::from(raw > 0.0);
+                f.1 += usize::from(tab.owed_to(k) > 0.0);
+            }
+        }
     }
     println!(
         "mean: hungry {:.1} (fresh {:.1}), board {:.1} strips (fresh {:.1}), best Goo + Karma {:.1} (fresh {:.1}); {empty} nights with nothing to do",
@@ -1402,7 +1429,8 @@ fn street_mode(o: &Opts) {
         let kept: Vec<&str> = s.kept[k].iter().map(|x| x.item).collect();
         let tab = s.tab.as_ref().map_or(String::new(), |t| {
             let raw: f64 = t.owed[k].iter().sum();
-            if t.mutual { format!("  balance {:>+3.0}", t.owed_to(k) - raw) } else { format!("  owes {:>2.0}, owed {:>2.0}", raw, t.owed_to(k)) }
+            let now = if t.mutual { format!("  balance {:>+3.0}", t.owed_to(k) - raw) } else { format!("  owes {:>2.0}, owed {:>2.0}", raw, t.owed_to(k)) };
+            format!("{now} (nights owing {:>2}, owed {:>2})", footing[k].0, footing[k].1)
         });
         println!(
             "  {:<24} +{:>4.0} Goo  {:>4.0} Karma  worth {:>4.0}{tab}  kept: {}",

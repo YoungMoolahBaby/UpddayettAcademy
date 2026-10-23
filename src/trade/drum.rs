@@ -134,6 +134,11 @@ pub fn item_look(name: &str) -> Look {
         look(pillow(90.0, 90.0, 70.0, 4.0), 1200.0, [0.6, 0.35, 0.2])
     } else if has("library card") {
         look(pillow(43.0, 27.0, 2.0, 1.0), 1400.0, [0.95, 0.85, 0.3])
+    } else if has("solder") {
+        // A 250 g spool: mostly tin.
+        look(Solid::cylinder(28.0, 22.0), 3000.0, [0.7, 0.7, 0.72])
+    } else if has("bus day pass") {
+        look(pillow(54.0, 86.0, 1.0, 0.5), 1400.0, [0.1, 0.6, 0.65])
     } else if has("Wi-Fi") {
         // The password, on a sticky note.
         look(slab(38.0, 38.0, 2.0), 900.0, [1.0, 0.95, 0.35])

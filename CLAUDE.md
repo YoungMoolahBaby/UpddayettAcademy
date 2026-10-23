@@ -58,6 +58,7 @@ Read first:
   `trade_cli night --night N` shows a night's conditions; every mode takes `--night N`; `nights` summarizes
   200 nights; `--give upd:phone` gives an item away (`upd:mesh` brings a mesh handheld to give); `--gifts N` / `--chain N` change the gift strips
   (experiments).
+- `trade_cli cast` prints how level the cast is (each person's draws vs wants, soonest back, food; PLAN "The cast, leveled").
 - Nights that carry over (`src/trade/street.rs`, PLAN "Nights that carry over, probed"): `trade_cli street --nights 1..60
   [--bench] [--wear N] [--restock F] [--tab L [--no-rings] [--mutual] [--uneven]]` walks the nights with what changed hands staying changed, beside the same nights fresh; `--tab` opens the counter's tab (`src/trade/tab.rs`, PLAN "The tab, probed")
   (seconds; `--bench` spins the washer on both, ~2 min for 12 nights).

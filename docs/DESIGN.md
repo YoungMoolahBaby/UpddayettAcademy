@@ -1018,9 +1018,33 @@ person a night (`Tab::even`, on by default).
   Upddayett and +217 for Gravo). Fewer people want their things: on a
   neutral night their things draw 9 Goo of wants each, while they want
   14. Upddayett's Goo and kale come back in a night; their records and
-  cards take 4. A level field needs a level cast (open question for the
-  user: it changes every night's board, and the site's figures come from
-  real runs).
+  cards take 4. A level field needs a level cast.
+
+**The cast, leveled (user: "yes, level the cast", 2026-10-23).** Each
+person's things now draw about what they want (`World::footing`,
+`trade_cli cast`: ratios 0.91-1.08, were 0.64-1.21), everyone has a thing
+back within two nights, and Amir's food can reach anyone:
+- **Crunchton** has a spool of 63/37 solder (back in 2 nights). Gravo wants
+  it for his cart's lights; Wafflina wants it too.
+- **Zestina** has a bus day pass (the library lends them; back the next
+  night). Ranchelle wants it to get to the clinic and back; Brisko wants
+  one too.
+- **Zestina** wants Gravo's casters for the library's book cart.
+- **Brisko** wants Amir's food like everyone else (he had no way to Karma).
+- Gravo's casters come back in 2 nights, not 3.
+- **Who wants what matters, not just how much.** Totals level, Gravo was
+  still never owed (everyone who wanted his things had something he
+  wanted, so he swapped) and Brisko never owed. The new wants go to
+  people who have nothing the other wants.
+- **Result, 60 carried nights, tab limit 10:** every person owes on 40-59
+  nights and is owed on 36-59. Rings of IOUs cleared 241 Goo (40 rings),
+  against 12 Goo on the old cast: circles form once the field is level. A
+  test keeps it so (`everyone_is_on_the_same_footing`).
+- **What stays uneven, on purpose:** Goo gained. Upddayett and Gravo gain
+  the most (+245, +251 in 60 nights) and Crunchton the least (+38), because
+  needs weigh more: people sleeping out value food and warmth more, so
+  meeting their needs counts more. Upddayett also trades the most (his
+  things draw 33 Goo of wants, Wafflina's 14): it's his laundromat.
 
 ### Candidate ideas (not decided)
 

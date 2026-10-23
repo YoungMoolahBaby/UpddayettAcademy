@@ -87,8 +87,9 @@ arcs the user named, then smaller items.
     1-4 of the 30 Goo; rings almost never form (debt runs one way); the
     tab can't make things exist
   - [x] same footing (user): the limit runs both ways (`Tab::even`), ~free
-  - [ ] a level cast? Crunchton and Zestina only owe: fewer people want
-    their things. Changing the cast changes every board and the site's figures
+  - [x] a level cast (user, 2026-10-23): solder, the bus pass, five new
+    wants; every person owes and is owed; rings clear 241 Goo in 60 nights
+  - [ ] redraw the site's and MACHINE.md's figures and numbers on the level cast
   - [ ] the user's call: the game with a small tab, and/or more supply
   - [ ] the game
 

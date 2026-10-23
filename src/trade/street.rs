@@ -229,6 +229,38 @@ mod tests {
         assert!((s.karma.iter().sum::<f64>() - karma).abs() < 1e-9);
     }
 
+    /// Everyone on the same footing (user, 2026-10-23): on paper each
+    /// person's things draw about what they want, everyone has something back
+    /// within two nights, and Amir's food can reach anyone; over 60 nights
+    /// with the tab, every person both owes and is owed, often.
+    #[test]
+    fn everyone_is_on_the_same_footing() {
+        let w = world::laundromat(1);
+        let people: Vec<usize> = (0..w.npcs.len()).filter(|&k| !w.npcs[k].business).collect();
+        for (k, f) in w.footing().into_iter().enumerate().filter(|(k, _)| people.contains(k)) {
+            let name = w.npcs[k].name;
+            assert!((0.9..=1.1).contains(&(f.drawn / f.wants)), "{name}: draws {} for wants {}", f.drawn, f.wants);
+            assert!(f.soonest.is_some_and(|n| n <= 2), "{name}: nothing back soon");
+            assert!(f.fed, "{name}: Amir's food can't reach them");
+        }
+        let mut s = Street::new(1);
+        s.tab = Some(Tab::new(w.npcs.len(), 10.0));
+        let (mut owing, mut owed) = (vec![0; w.npcs.len()], vec![0; w.npcs.len()]);
+        for _ in 0..60 {
+            let tc = board(s.world());
+            let best = tc.ground_state();
+            s.settle(&tc.world, &tc.cycles, best);
+            let tab = s.tab.as_ref().unwrap();
+            for &k in &people {
+                owing[k] += usize::from(tab.owed[k].iter().sum::<f64>() > 0.0);
+                owed[k] += usize::from(tab.owed_to(k) > 0.0);
+            }
+        }
+        for &k in &people {
+            assert!(owing[k] >= 20 && owed[k] >= 20, "{}: owing {} nights, owed {} of 60", w.npcs[k].name, owing[k], owed[k]);
+        }
+    }
+
     #[test]
     fn the_tab_stays_under_its_limit_both_ways_and_goo_still_adds_up() {
         let mut s = Street::new(1);

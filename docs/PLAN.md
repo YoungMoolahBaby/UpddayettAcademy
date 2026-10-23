@@ -1070,6 +1070,35 @@ Crunchton and Zestina owe and are never owed in every row: the cast, not
 the tab (their things draw 9 Goo of wants on a neutral night, they want 14;
 DESIGN "Everyone on the same footing").
 
+## The cast, leveled (2026-10-23)
+
+The user: "yes, level the cast". Changes in DESIGN "The cast, leveled":
+two items added last (Crunchton's solder, Zestina's bus pass; older item
+numbers unchanged), seven wants (Brisko gets Amir's food), casters back in
+2. `World::footing` and `trade_cli cast` print each person's draws, wants,
+ratio, soonest back and food; the test `everyone_is_on_the_same_footing`
+holds ratios to 0.9-1.1, something back within 2 nights, food for all, and
+both owing and owed on 20+ of 60 tab nights. The night rolls are unchanged
+(same cast of people); the boards are not.
+- **Footing:** ratios 0.91-1.08 (were 0.64-1.21).
+- **Carried nights, 1-60 (no tab):** 22.1 Goo + Karma a night (was 18.6),
+  fresh 48.4 (was 49.0), board 9.9 strips carried, fresh 20.0 (full).
+- **Tab, limit 10, even:** 23.2; 137 on the tab, 9 paid back, 40 rings
+  cleared 241 Goo, 36 still owed. Nights owing / owed: Upddayett 40/58,
+  Gravo 48/52, Ranchelle 59/48, Brisko 52/58, Wafflina 58/36, Crunchton
+  59/51, Zestina 46/59. (Uneven: 36 rings, 250 Goo; one balance each: 23
+  rings, 182 Goo.) A first try with only the totals level left Gravo never
+  owed and Brisko never owing (23 rings, 189 Goo); rewiring three wants
+  fixed it.
+- **The cost: harder boards.** `nights`: 14-16 trades + 4-6 gifts, every
+  night at the 20-strip cap with 1-8 candidates left off (was 11-14 trades).
+  `versus --nights 61..80 --smart --runs 48`: Normal 63% (was 83%), smart
+  (run 5) 77% (was 95%); misses cost 0.0-1.8 Goo (Normal) and 0.0-1.2
+  (smart). Run 5 was trained on the old boards.
+- **Stale until redrawn:** the site's and MACHINE.md's figures and numbers
+  (night 1's board, the programs, the ladder, the lessons) are from the old
+  cast; so are the older results in this file.
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

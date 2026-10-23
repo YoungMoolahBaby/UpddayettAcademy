@@ -352,6 +352,36 @@ impl World {
         let name = name.to_lowercase();
         self.items.iter().position(|i| i.name.to_lowercase().contains(&name))
     }
+
+    /// How level the cast is (DESIGN "Everyone on the same footing"), per
+    /// person on a neutral night: what others want of their things, what
+    /// they want of others' (gifts left out on both sides), and the
+    /// soonest one of their things is back once it changes hands.
+    pub fn footing(&self) -> Vec<Footing> {
+        (0..self.npcs.len())
+            .map(|k| {
+                let trade = |w: &&Want| !self.items[w.item].gift;
+                let drawn = self.wants.iter().filter(trade).filter(|w| self.items[w.item].owner == k).map(|w| w.base).sum();
+                let wants = self.wants.iter().filter(trade).filter(|w| w.npc == k).map(|w| w.base).sum();
+                let soonest = self.items.iter().filter(|i| i.owner == k && !i.gift).filter_map(|i| i.back_in).min();
+                let fed = self.wants.iter().any(|w| w.npc == k && self.items[w.item].gift);
+                Footing { drawn, wants, soonest, fed }
+            })
+            .collect()
+    }
+}
+
+/// One person's footing on the street ([`World::footing`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Footing {
+    /// Goo of wants their things draw from others, on a neutral night.
+    pub drawn: f64,
+    /// Goo of wants they have for others' things.
+    pub wants: f64,
+    /// Nights until their quickest thing is back (`None`: nothing to trade).
+    pub soonest: Option<u32>,
+    /// They want a gift someone gives (Amir's food), so it can reach them.
+    pub fed: bool,
 }
 
 /// A mesh handheld Upddayett built: one of Tentzhen's projects (a LoRa text
@@ -428,6 +458,13 @@ pub fn laundromat(seed: u64) -> World {
     let polo = w.has(amir, "tray of day-old adas polo (lentil rice)", 0.0, Use::Eat);
     w.items[polo].gift = true;
 
+    // Everyone on the same footing (DESIGN "Everyone on the same footing"):
+    // Crunchton and Zestina had less that the street wanted than they wanted
+    // themselves, so on the tab they only ever owed. Added last, so every
+    // older item keeps its number.
+    let solder = w.has(ray, "spool of 63/37 solder", 2.0, Use::Build);
+    let bus = w.has(tamara, "bus day pass (the library lends them)", 2.0, Use::Build);
+
     // When each thing changes hands: does the new owner keep it, and how many
     // nights until its owner has another (nights that carry over,
     // [`super::street`]). Food, soda and seed get used up, parts get built
@@ -438,7 +475,7 @@ pub fn laundromat(seed: u64) -> World {
         (phone, true, 5),
         (kale, false, 1),
         (hub, false, 4),
-        (wheels, false, 3),
+        (wheels, false, 2),
         (cells, false, 2),
         (usbc, false, 3),
         (iron, true, 6),
@@ -451,6 +488,8 @@ pub fn laundromat(seed: u64) -> World {
         (card, true, 4),
         (wifi, true, 0),
         (polo, false, 0),
+        (solder, false, 2),
+        (bus, false, 1),
     ] {
         w.items[item].keeps = keeps;
         w.items[item].back_in = Some(back_in);
@@ -488,9 +527,20 @@ pub fn laundromat(seed: u64) -> World {
 
     // Tonight's surplus from Amir's. It's a gift: nobody has to give anything
     // back, and what it does for people counts as Karma.
-    for (npc, base) in [(upd, 6.0), (cart, 6.0), (vape, 5.0), (pigeon, 5.0), (ray, 4.0), (tamara, 4.0)] {
+    for (npc, base) in [(upd, 6.0), (cart, 6.0), (vape, 5.0), (pigeon, 5.0), (ray, 4.0), (tamara, 4.0), (dave, 4.0)] {
         w.wants(npc, polo, base, Use::Eat);
     }
+
+    // The leveling's wants: what draws on Crunchton's and Zestina's new
+    // things, so every person's things draw about what they want. Some go
+    // to people who have nothing the other wants, so everyone sometimes
+    // needs the tab and sometimes covers someone on it (Gravo swapped
+    // everything and was never owed; Brisko never owed).
+    w.wants(cart, solder, 3.0, Use::Build); // his cart's lights
+    w.wants(pigeon, solder, 3.0, Use::Build);
+    w.wants(vape, bus, 5.0, Use::Build); // to the clinic and back
+    w.wants(dave, bus, 3.0, Use::Build);
+    w.wants(tamara, wheels, 4.0, Use::Build); // the library's book cart
 
     w.roll_night(seed);
     w
