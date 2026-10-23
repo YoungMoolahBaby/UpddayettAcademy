@@ -111,6 +111,10 @@ struct Opts {
     /// Nights `versus` tests on, and `learn` trains on.
     nights: (u64, u64),
     train: Vec<u64>,
+    /// `street`: nights a kept thing lasts (`--wear N`; default forever).
+    wear: Option<u32>,
+    /// `street`: x each thing's nights away (`--restock F`, default 1).
+    restock: f64,
 }
 
 fn parse() -> Opts {
@@ -156,6 +160,8 @@ fn parse() -> Opts {
         patience: None,
         pop: 24,
         nights: (1, 10),
+        wear: None,
+        restock: 1.0,
         train: (11..=22).collect(),
     };
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -216,6 +222,8 @@ fn parse() -> Opts {
             "--patience" => o.patience = Some(num(val())),
             "--pop" => o.pop = num(val()) as usize,
             "--nights" => o.nights = night_range(&val()),
+            "--wear" => o.wear = Some(num(val()) as u32),
+            "--restock" => o.restock = num(val()),
             "--train" => o.train = night_list(&val()),
             m if !m.starts_with("--") => o.mode = m.to_string(),
             other => panic!("unknown option {other}"),
@@ -1266,7 +1274,90 @@ fn main() -> Result<(), trade::Error> {
             print_chain(&tc, g);
             Ok(())
         }
+        "street" => {
+            street_mode(&o);
+            Ok(())
+        }
         m => panic!("unknown mode {m}"),
+    }
+}
+
+/// `street`: nights that carry over, from the first of --nights to the last.
+/// Each night takes its best set; what changed hands stays changed. Every
+/// night is set beside the same night rolled fresh (nothing carried), and
+/// with --bench the washer runs --runs spins on both boards.
+fn street_mode(o: &Opts) {
+    use trade::street::Street;
+    let (first, last) = o.nights;
+    let mut s = Street::new(first);
+    s.wear = o.wear;
+    s.restock = o.restock;
+    println!("street: nights {first}..{last} carry over (each night takes its best set), beside the same nights rolled fresh");
+    println!("night  weather  hungry  away  board (fresh)   best Goo + Karma (fresh){}", if o.bench { "   washer hit (fresh)" } else { "" });
+    let (mut sums, mut n) = ([0.0f64; 8], 0.0);
+    let mut empty = 0;
+    for night in first..=last {
+        let fresh = board_for(o, trade::world::laundromat(night));
+        let tc = board_for(o, s.world());
+        let (best, fbest) = (tc.ground_state(), fresh.ground_state());
+        let (t, ft) = (tc.tally(best), fresh.tally(fbest));
+        let hungry = |w: &trade::world::World| w.night.hungry.iter().filter(|&&h| h).count();
+        let away = tc.world.items.iter().filter(|i| i.away).count();
+        let bench = if o.bench {
+            let on = Opts { night, ..o.clone() };
+            let (h, fh) = (hit_and_loss(&tc, &on).0, hit_and_loss(&fresh, &on).0);
+            sums[6] += h;
+            sums[7] += fh;
+            format!("   {:>4.0}% ({:>3.0}%)", 100.0 * h, 100.0 * fh)
+        } else {
+            String::new()
+        };
+        println!(
+            "{night:>5}  {:<7}  {:>2} ({:>1})  {away:>4}  {:>5} ({:>2})       {:>3.0} + {:>2.0}  ({:>3.0} + {:>2.0}){bench}",
+            if tc.world.night.cold { "cold" } else { "mild" },
+            hungry(&tc.world),
+            hungry(&fresh.world),
+            tc.cycles.len(),
+            fresh.cycles.len(),
+            t.goo,
+            t.karma,
+            ft.goo,
+            ft.karma
+        );
+        for (k, v) in [hungry(&tc.world) as f64, hungry(&fresh.world) as f64, tc.cycles.len() as f64, fresh.cycles.len() as f64, t.goo + t.karma, ft.goo + ft.karma].into_iter().enumerate() {
+            sums[k] += v;
+        }
+        n += 1.0;
+        if tc.cycles.is_empty() {
+            empty += 1;
+        }
+        s.settle(&tc.world, &tc.cycles, best);
+    }
+    println!(
+        "mean: hungry {:.1} (fresh {:.1}), board {:.1} strips (fresh {:.1}), best Goo + Karma {:.1} (fresh {:.1}); {empty} nights with nothing to do",
+        sums[0] / n,
+        sums[1] / n,
+        sums[2] / n,
+        sums[3] / n,
+        sums[4] / n,
+        sums[5] / n
+    );
+    if o.bench {
+        println!("washer hit rate: carried {:.0}%, fresh {:.0}%", 100.0 * sums[6] / n, 100.0 * sums[7] / n);
+    }
+    let w = s.world();
+    let worth = s.worth(&w);
+    println!("after {} nights:", n);
+    for (k, npc) in w.npcs.iter().enumerate() {
+        let kept: Vec<&str> = s.kept[k].iter().map(|x| x.item).collect();
+        println!(
+            "  {:<24} +{:>4.0} Goo  {:>4.0} Karma  worth {:>4.0}  kept: {}",
+            npc.name,
+            s.goo[k],
+            s.karma[k],
+            worth[k],
+            if kept.is_empty() { "-".to_string() } else { kept.join(", ") }
+        );
     }
 }
 

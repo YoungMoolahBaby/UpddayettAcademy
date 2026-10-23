@@ -16,6 +16,7 @@ pub mod row;
 pub mod salties;
 pub mod smart;
 pub mod spring;
+pub mod street;
 pub mod tv;
 pub mod world;
 pub mod yuck;

@@ -1,0 +1,209 @@
+//! Nights that carry over (DESIGN "Nights that carry over"): tonight's
+//! outcome is tomorrow's start. What changed hands stays changed: the new
+//! owner keeps it or uses it up, and the old owner goes without until they
+//! find another ([`Item::back_in`](super::world::Item::back_in)). Whoever
+//! ate isn't hungry tomorrow, fed pigeons aren't either, and a phone you
+//! were given is your phone. Goo and Karma add up night after night.
+//!
+//! The weather and the hunger coins still roll from the night's seed, so a
+//! street where nothing ever changes hands sees the same nights as before.
+
+use super::cycles::{self, Cycle};
+use super::qubo;
+use super::world::{self, Use, World};
+
+/// Something a person was given and kept.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Kept {
+    pub item: &'static str,
+    /// What they wanted it for.
+    pub use_: Use,
+    /// What it was worth to them the night they got it, in Goo.
+    pub value: f64,
+    /// Nights they've had it.
+    pub age: u32,
+}
+
+/// What the street remembers from one night to the next.
+#[derive(Clone, Debug)]
+pub struct Street {
+    /// Tonight's night number (its seed).
+    pub night: u64,
+    /// Nights each of the regulars' things stays away (0 = here tonight).
+    pub away: Vec<u32>,
+    /// Who ate last night, so isn't hungry tonight.
+    pub fed: Vec<bool>,
+    /// Whose animals ate last night.
+    pub animals_fed: Vec<bool>,
+    /// What each person was given and kept.
+    pub kept: Vec<Vec<Kept>>,
+    /// Goo each person has gained, all nights so far.
+    pub goo: Vec<f64>,
+    /// Karma each person's gifts brought them, all nights so far.
+    pub karma: Vec<f64>,
+    /// Nights a kept thing lasts before it wears out or gets lost, and its
+    /// keeper wants another (`None`: forever).
+    pub wear: Option<u32>,
+    /// How slowly things come back: each item's `back_in` times this (1 = as listed).
+    pub restock: f64,
+}
+
+impl Street {
+    /// The street on night `first`, before anything has changed hands.
+    pub fn new(first: u64) -> Self {
+        let w = world::laundromat(first);
+        let n = w.npcs.len();
+        Self {
+            night: first,
+            away: vec![0; w.items.len()],
+            fed: vec![false; n],
+            animals_fed: vec![false; n],
+            kept: vec![vec![]; n],
+            goo: vec![0.0; n],
+            karma: vec![0.0; n],
+            wear: None,
+            restock: 1.0,
+        }
+    }
+
+    /// Tonight's laundromat: the night's roll, with what last night left.
+    pub fn world(&self) -> World {
+        let mut w = world::laundromat(self.night);
+        self.carry_into(&mut w);
+        w
+    }
+
+    /// Bring what the street remembers into `w`, a freshly rolled night of
+    /// the same cast.
+    pub fn carry_into(&self, w: &mut World) {
+        let mut night = w.night.clone();
+        for k in 0..w.npcs.len() {
+            night.hungry[k] &= !self.fed[k];
+            night.animals_hungry[k] &= !self.animals_fed[k];
+            if self.kept[k].iter().any(|kept| kept.use_ == Use::Lifeline) {
+                w.npcs[k].has_phone = true;
+            }
+        }
+        // Nobody wants a second one of what they kept.
+        let (kept, items) = (&self.kept, &w.items);
+        w.wants.retain(|x| !kept[x.npc].iter().any(|k| k.item == items[x.item].name));
+        for (item, &nights) in self.away.iter().enumerate() {
+            w.items[item].away = nights > 0;
+        }
+        w.set_night(night);
+    }
+
+    /// Tonight ends with the set `bits` of `cycles` (on `w`, tonight's
+    /// world): move what changed hands, add up Goo and Karma, and roll on to
+    /// tomorrow.
+    pub fn settle(&mut self, w: &World, cycles: &[Cycle], bits: u32) {
+        for nights in &mut self.away {
+            *nights = nights.saturating_sub(1);
+        }
+        self.fed.fill(false);
+        self.animals_fed.fill(false);
+        let wear = self.wear;
+        for kept in &mut self.kept {
+            kept.iter_mut().for_each(|x| x.age += 1);
+            kept.retain(|x| wear.is_none_or(|w| x.age < w));
+        }
+        for i in qubo::chosen(bits, cycles.len()) {
+            let c = &cycles[i];
+            for (leg, &gain) in c.legs.iter().zip(&c.gains) {
+                let it = &w.items[leg.item];
+                self.goo[leg.to] += gain;
+                if c.is_gift() {
+                    self.karma[leg.to] += cycles::karma_weight(w, leg.to, leg.item).1 * gain;
+                }
+                let use_ = w.wants.iter().find(|x| x.npc == leg.to && x.item == leg.item).map_or(it.owner_use, |x| x.use_);
+                match use_ {
+                    Use::Eat => self.fed[leg.to] = true,
+                    Use::FeedAnimals => self.animals_fed[leg.to] = true,
+                    _ => {}
+                }
+                if it.keeps {
+                    self.kept[leg.to].push(Kept { item: it.name, use_, value: w.value[leg.to][leg.item], age: 0 });
+                }
+                if let (Some(nights), Some(back_in)) = (self.away.get_mut(leg.item), it.back_in) {
+                    *nights = (back_in as f64 * self.restock).round() as u32;
+                }
+            }
+        }
+        self.night += 1;
+    }
+
+    /// Each person's net worth tonight, in Goo: what they hold on `w` (see
+    /// [`super::spring::net_worth`]) plus what they were given and kept.
+    pub fn worth(&self, w: &World) -> Vec<f64> {
+        let mut nw = super::spring::net_worth(w);
+        for (k, kept) in self.kept.iter().enumerate() {
+            nw[k] += kept.iter().map(|x| x.value).sum::<f64>();
+        }
+        nw
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::trade::TradeComputer;
+
+    fn board(w: World) -> TradeComputer {
+        TradeComputer::new(w, 5.0, 1.6)
+    }
+
+    #[test]
+    fn a_street_where_nothing_changes_hands_sees_the_same_nights() {
+        let mut s = Street::new(1);
+        for night in 1..15 {
+            let w = s.world();
+            let fresh = world::laundromat(night);
+            assert_eq!(w.night, fresh.night, "night {night}");
+            assert_eq!(w.value, fresh.value, "night {night}");
+            s.settle(&w, &[], 0);
+        }
+    }
+
+    #[test]
+    fn what_changed_hands_stays_changed() {
+        let mut s = Street::new(1);
+        for _ in 1..30 {
+            let w = s.world();
+            let tc = board(w);
+            let best = tc.ground_state();
+            let moved: Vec<_> = qubo::chosen(best, tc.cycles.len()).iter().flat_map(|&i| tc.cycles[i].legs.clone()).collect();
+            s.settle(&tc.world, &tc.cycles, best);
+            let next = s.world();
+            for l in &moved {
+                let it = &tc.world.items[l.item];
+                let gone = it.back_in.unwrap() > 0;
+                assert_eq!(next.items[l.item].away, gone, "{}", it.name);
+                if gone {
+                    assert!(next.value.iter().all(|v| v[l.item] == 0.0), "{} is away but worth something", it.name);
+                }
+                if tc.world.wants.iter().any(|x| x.npc == l.to && x.item == l.item && x.use_ == Use::Eat) {
+                    assert!(!next.night.hungry[l.to], "{} ate but is hungry", tc.world.npcs[l.to].name);
+                }
+                if it.keeps {
+                    assert!(next.wants.iter().all(|x| !(x.npc == l.to && x.item == l.item)), "{} wants another", it.name);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn goo_and_karma_add_up_to_the_nights_tallies() {
+        let mut s = Street::new(3);
+        let (mut goo, mut karma) = (0.0, 0.0);
+        for _ in 0..20 {
+            let tc = board(s.world());
+            let best = tc.ground_state();
+            let t = tc.tally(best);
+            goo += t.goo;
+            karma += t.karma;
+            s.settle(&tc.world, &tc.cycles, best);
+        }
+        assert!((s.goo.iter().sum::<f64>() - goo).abs() < 1e-9);
+        assert!((s.karma.iter().sum::<f64>() - karma).abs() < 1e-9);
+    }
+}

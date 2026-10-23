@@ -937,6 +937,50 @@ record.
   punished falling behind, and everyone growing together cost trades.
   The wealth gap fixes both. `World::reach` carries either one.
 
+### Nights that carry over (started 2026-10-23)
+
+The creative-to-survival shift ("Survival and barter"), done first because
+the sphere's many-night pull and the tab (below) both need it. Tonight's
+outcome is tomorrow's start (`src/trade/street.rs`, `Street`):
+- **What changed hands stays changed.** The new owner keeps it (phones,
+  tools, bedding, records) or uses it up (food and soda, birdseed, parts
+  built into something). Nobody wants a second one of what they kept.
+- **The old owner goes without until they find another.** Each thing has
+  its nights away: Amir's cooks every night, the kale and the Goo are back
+  in a night, parts in 2-5, a phone in 5, the iron and the sleeping bag in
+  6. The Wi-Fi password is back at once: Zestina still knows it.
+- **Needs carry:** whoever ate isn't hungry tomorrow, fed pigeons aren't
+  either, a phone you were given is your phone.
+- **Goo and Karma add up** per person, night after night; net worth counts
+  what you kept (the sphere's spikes).
+- The weather and the hunger coins still roll from the night's seed: a
+  street where nothing changes hands sees exactly the old nights.
+
+**What the probe found** (PLAN "Nights that carry over, probed"): the street
+dries up. A third of the board is left (7 strips a night against 18), a
+third of the value (19 Goo + Karma against 49), and the washer hits every
+time, because there's little left to choose. Mostly the restock wait: the
+things everyone wants are away. That's the opening for the tab.
+
+### The tab (proposed, 2026-10-23)
+
+The user's idea, from talking about real obligation clearing (Slovenia's
+national debt set-off): test it in the game first. Warm tone (user): a tab
+is neighbors covering each other, never a debt collector, nobody shamed for
+owing.
+- **On the tab:** when someone wants a thing tonight but what they'd give is
+  away, the trade can still happen as an IOU on the laundromat counter's
+  tab, paid when their thing is back.
+- **Clearing:** the washer clears tabs as well as trades. A ring of IOUs
+  (Gravo owes Ranchelle, Ranchelle owes Brisko, Brisko owes Gravo) cancels,
+  and nobody hands anything over. IOU rings are strips on the board,
+  all-or-nothing, like whole invoices.
+- **The payoff:** the tab shrinking. The result card says how much the
+  washer cleared, Karma first: whose slate went clean tonight.
+- **The honest test:** how much of what the dry street lost does the tab win
+  back, and does the washer beat an exact solver at clearing (paired, same
+  boards, like run 5 vs run 3), or is it just the story?
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone

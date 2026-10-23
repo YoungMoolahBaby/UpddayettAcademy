@@ -74,6 +74,18 @@ arcs the user named, then smaller items.
   - [ ] a panel under the hood: tonight, before and after the wash
   - [ ] growing over nights, once nights carry over
 
+- [ ] **Nights that carry over** (DESIGN "Nights that carry over"; PLAN
+  "Nights that carry over, probed"). Done first: the sphere's pull and the
+  tab need it (user, 2026-10-23).
+  - [x] library and probe (`src/trade/street.rs`, `trade_cli street`): the
+    street dries up to a third (7 strips, 19 of 49 Goo + Karma)
+  - [ ] the user's call on the dry street: the tab, faster restock, or both
+  - [ ] the game: Next night carries over; a way to start fresh
+- [ ] **The tab** (DESIGN "The tab"): IOUs on the counter, the washer clears
+  the rings. Warm, never a debt collector (user, 2026-10-23).
+  - [ ] probe: how much of the dry street it wins back; washer vs exact at clearing
+  - [ ] the game
+
 ## Waiting on something
 
 - [ ] **Bump to CortenForge 0.9.2** when it ships: every crate, rerun the

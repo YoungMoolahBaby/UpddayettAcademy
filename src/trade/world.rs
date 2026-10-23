@@ -44,6 +44,15 @@ pub struct Item {
     /// Off the market tonight (the battery is running on it): nobody but
     /// its owner wants it, so no trade moves it.
     pub held: bool,
+    /// Not here tonight: it changed hands on an earlier night and its owner
+    /// hasn't found another yet ([`super::street`]). Worth nothing to anyone.
+    pub away: bool,
+    /// Whoever gets it keeps it (a phone, a tool, records). Otherwise it gets
+    /// used up: eaten, drunk, fed to the pigeons, built into something.
+    pub keeps: bool,
+    /// Nights it stays gone once it changes hands, before its owner has
+    /// another (Amir's cooks every night: 0). `None`: a one-off.
+    pub back_in: Option<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -160,7 +169,7 @@ impl World {
 
     /// Adds an item held by `owner`, worth `base` to them on a neutral night.
     fn has(&mut self, owner: usize, name: &'static str, base: f64, owner_use: Use) -> usize {
-        self.items.push(Item { name, owner, owner_use, base, gift: false, held: false });
+        self.items.push(Item { name, owner, owner_use, base, gift: false, held: false, away: false, keeps: true, back_in: None });
         self.items.len() - 1
     }
 
@@ -194,10 +203,10 @@ impl World {
                 }
                 _ => 1.0,
             };
-            value[it.owner][id] = if it.gift { 0.0 } else { whole_goo(it.base * scale) };
+            value[it.owner][id] = if it.gift || it.away { 0.0 } else { whole_goo(it.base * scale) };
         }
         for w in &self.wants {
-            if self.items[w.item].held {
+            if self.items[w.item].held || self.items[w.item].away {
                 continue;
             }
             let (scale, _) = rule(w.use_, &self.npcs[w.npc], w.npc, &self.night);
@@ -415,6 +424,34 @@ pub fn laundromat(seed: u64) -> World {
 
     let polo = w.has(amir, "tray of day-old adas polo (lentil rice)", 0.0, Use::Eat);
     w.items[polo].gift = true;
+
+    // When each thing changes hands: does the new owner keep it, and how many
+    // nights until its owner has another (nights that carry over,
+    // [`super::street`]). Food, soda and seed get used up, parts get built
+    // into something; phones, tools, bedding and records are kept. The Wi-Fi
+    // password is back the next night: Zestina still knows it.
+    for (item, keeps, back_in) in [
+        (goo, false, 1),
+        (phone, true, 5),
+        (kale, false, 1),
+        (hub, false, 4),
+        (wheels, false, 3),
+        (cells, false, 2),
+        (usbc, false, 3),
+        (iron, true, 6),
+        (tube, false, 2),
+        (derailleur, false, 4),
+        (bag, true, 6),
+        (seed_sack, false, 2),
+        (gpu, false, 5),
+        (vinyl, true, 4),
+        (card, true, 4),
+        (wifi, true, 0),
+        (polo, false, 0),
+    ] {
+        w.items[item].keeps = keeps;
+        w.items[item].back_in = Some(back_in);
+    }
 
     // Upddayett wants to build a balance bot.
     w.wants(upd, hub, 9.0, Use::Build);

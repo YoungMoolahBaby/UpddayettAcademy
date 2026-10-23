@@ -973,6 +973,46 @@ designing, to see if the drift apart is a fun tension or a slow fade.
     the row of washers (its swaps read `Machine::potential`, which
     doesn't see the spring), many nights (needs carry-over).
 
+## Nights that carry over, probed (2026-10-23)
+
+The user: carry-over first (it blocks the sphere's many-night pull and the
+tab), warm tone for the tab. Rules in DESIGN "Nights that carry over".
+- **Library:** `src/trade/street.rs`. `Street::new(first)`, `world()`
+  (tonight's laundromat with what last night left), `settle(w, cycles,
+  bits)` (move what changed hands, add up Goo and Karma, roll on), `worth(w)`
+  (net worth with what was kept). Items gain `away`, `keeps` and `back_in`
+  (`world::laundromat` lists them). Knobs: `wear` (nights a kept thing
+  lasts, default forever) and `restock` (x every `back_in`, default 1).
+  Tests: a street where nothing changes hands sees the old nights exactly;
+  what changed hands stays changed (away, fed, no second want); Goo and
+  Karma add up to the nights' tallies.
+- **Probe:** `trade_cli street --nights A..B [--bench] [--wear N]
+  [--restock F]`: each night takes its best set, set beside the same night
+  rolled fresh.
+- **Result, nights 1-60:** the street dries up.
+
+  | Street | Board (strips) | Best Goo + Karma | Hungry |
+  | --- | --- | --- | --- |
+  | Fresh nights (as before) | 17.6 | 49.0 | 2.5 |
+  | Carry-over, as listed | 7.0 | 18.6 | 2.0 |
+  | Kept things wear out (`--wear` 1 / 5 / 10 / 20) | 7.8 / 7.9 / 7.4 / 7.3 | 22.5 / 21.1 / 20.0 / 19.4 | 2.0 |
+  | Restock x0 (back the next night) | 11.1 | 30.6 | 2.0 |
+  | Restock x0, nothing kept | 14.3 | 39.1 | 2.0 |
+  | Restock x0.5 / x2 | 7.7 / 6.7 | 20.2 / 17.1 | 2.0 |
+
+  The 30 lost: about 10 from fed people (fewer urgent needs, which is
+  the point), 8 from kept things (no second want), 12 from the restock
+  wait (what everyone wants is away). Night 1 moves 13 things; the
+  street then settles into 4-6 away and 6-8 strips. No night was empty.
+- **The washer, nights 1-12, 48 spins:** carried boards 100%, fresh 82%.
+  A small board leaves it nothing to do (like yuck: a smaller board is
+  easier, not harder).
+- After 60 nights Gravo and Upddayett have gained the most (+224, +194
+  Goo); Zestina the least (+19). Brisko got no Karma (no gift he wants).
+- **Next:** the tab (DESIGN "The tab") is the fix the result points at:
+  trades that can't happen because a thing is away go on the tab. Measure
+  what it wins back. Then the game (Next night carries over).
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:
