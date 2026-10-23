@@ -89,7 +89,17 @@ arcs the user named, then smaller items.
   - [x] same footing (user): the limit runs both ways (`Tab::even`), ~free
   - [x] a level cast (user, 2026-10-23): solder, the bus pass, five new
     wants; every person owes and is owed; rings clear 241 Goo in 60 nights
-  - [ ] redraw the site's and MACHINE.md's figures and numbers on the level cast
+  - [x] retrain the smart wash on the level cast: drifted (70% vs 77%), run 5 stays
+  - [x] program picker re-measured on the level cast (Normal 59%, Smart 71%, Row 77%)
+  - [ ] **Resume here (paused by the user, 2026-10-23).** The figures are
+    redrawn on branch `level-cast-redraw` (not master: a push to master
+    deploys site/, and the pages' text still has the old cast's numbers).
+    The open call (PLAN "The cast, leveled"): on the level cast a greedy +
+    2-swap hill-climb finds the best set on all 200 nights and the machine
+    56%. Options: re-tune beta/penalty for the full 20-strip boards first
+    (recommended), publish as is, or rethink the leveling. Then rewrite
+    MACHINE.md, site/machine and the six lessons from the new printout
+    (`machine_figs all`), and merge.
   - [ ] the user's call: the game with a small tab, and/or more supply
   - [ ] the game
 
