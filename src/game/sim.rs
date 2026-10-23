@@ -115,9 +115,10 @@ pub struct WashProgram {
     /// Anneal length in sim time units.
     pub duration: f64,
     pub watch_secs: f64,
-    /// How often the i9 finds the best set, measured with
-    /// `trade_cli bench --runs 48 --time <duration> --night 1..=10` (480
-    /// runs per program across 10 nights, with gift strips, 2026-10-05).
+    /// How often the i9 finds the best set on nights 1-10, 48 spins each
+    /// (480 a program), on the level cast (2026-10-23): `trade_cli versus
+    /// --nights 1..10 --time <duration> --runs 48 --smart` (its Normal column;
+    /// Smart from the 1000 run) and `trade_cli row --nights 1..10 --runs 48`.
     pub i9_rate: &'static str,
     /// The smart wash: the learned program sets the drum from the board
     /// ([`smart::SmartWash`]) instead of the clock.
@@ -128,14 +129,14 @@ pub struct WashProgram {
 }
 
 pub const PROGRAMS: [WashProgram; 6] = [
-    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "26%", smart: false, row: false },
-    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "46%", smart: false, row: false },
-    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "81%", smart: false, row: false },
-    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "95%", smart: false, row: false },
-    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "88%", smart: true, row: false },
+    WashProgram { name: "Quick Wash", duration: 150.0, watch_secs: 12.0, i9_rate: "16%", smart: false, row: false },
+    WashProgram { name: "Permanent Press", duration: 300.0, watch_secs: 16.0, i9_rate: "31%", smart: false, row: false },
+    WashProgram { name: "Normal", duration: 1000.0, watch_secs: 24.0, i9_rate: "59%", smart: false, row: false },
+    WashProgram { name: "Delicates", duration: 3000.0, watch_secs: 32.0, i9_rate: "84%", smart: false, row: false },
+    WashProgram { name: "Smart (learned)", duration: 1000.0, watch_secs: 24.0, i9_rate: "71%", smart: true, row: false },
     // Four washers sharing one Normal cycle's electricity: (1000 + 20) / 4 - 20
     // units each ([`Row::equal_compute`]).
-    WashProgram { name: "Row of 4 washers", duration: 235.0, watch_secs: 20.0, i9_rate: "95%", smart: false, row: true },
+    WashProgram { name: "Row of 4 washers", duration: 235.0, watch_secs: 20.0, i9_rate: "77%", smart: false, row: true },
 ];
 
 /// Upddayett, in any night's cast.

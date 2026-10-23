@@ -1097,6 +1097,29 @@ both owing and owed on 20+ of 60 tab nights. The night rolls are unchanged
   (smart). Run 5 was trained on the old boards. `row --nights 61..80 --runs
   48`: the row of 4 washers 82.6% (Normal 62.7%; on the old cast the row had
   96.8% on nights 141-200).
+- **Retraining the smart wash (user: "retrain the smart program"): run 5
+  stays.** The level cast's hard nights among 1-40 (Normal 8-42%: 3, 4, 7,
+  17, 20, 21, 24, 28, 32, 33, 40), CEM from run 5, 66 x 32, 27 min:
+  `learn --params <run 5> --train 3,4,7,17,20,21,24,28,32,33,40 --gens 66
+  --pop 32 --nights 61..80 --runs 48`. Params [2.014, -2.333, -0.064,
+  -0.075, -0.372, -0.972, -2.058]: 70% on held-out nights 61-80, against run
+  5's 77% on the same spins (Normal 63%). As in run 6, CEM with one spin a
+  candidate drifts; it can't see a few points (FINDINGS, sim-rl).
+- **The program picker, re-measured** (nights 1-10, 48 spins each; was
+  2026-10-05): Quick Wash 16% (26), Permanent Press 31% (46), Normal 59%
+  (81), Delicates 84% (95), Smart 71% (88), Row of 4 washers 77% (95).
+  In `src/game/sim.rs` and the programs figure.
+- **`machine_figs all` on the level cast** (figures redrawn, page text not
+  yet): night 1's greedy now finds the best set, so the board figures
+  moved to night 3 (20 strips: 16 trades, 4 gifts; best 40, greedy 37; 505
+  valid sets, 4 within 2; one Normal spin's latch 26/48, at rest 1/48).
+  The ladder, 200 nights (old cast in brackets): greedy 49.0% (38.5),
+  greedy + 1-swap hill-climb 49.0% (38.5), greedy + 2-swap hill-climb
+  **100%** (38.5), value per collision 84.5% (74.0), the machine (Normal, 4
+  spins, the latch) **56.0%** (78.9), exact 100%. On the level cast a
+  plain laptop heuristic beats the machine on every night. Also: penalty
+  1.6 still best (64.1% latch, was 80.3); night 2 50.0% over 480 (62.3);
+  fees peak at 18.2 Goo a night at 1.95 (19.5).
 - **Stale until redrawn:** the site's and MACHINE.md's figures and numbers
   (night 1's board, the programs, the ladder, the lessons) are from the old
   cast; so are the older results in this file.

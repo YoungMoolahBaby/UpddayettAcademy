@@ -835,7 +835,7 @@ fn freeze(tc: &TradeComputer) {
 /// Numbers as measured for the game's program picker (nights 1-10, 48
 /// spins each; `src/game/sim.rs` PROGRAMS).
 fn programs() {
-    let fixed = [("Quick Wash", 150.0, 26.0), ("Permanent Press", 300.0, 46.0), ("Normal", 1000.0, 81.0), ("Delicates", 3000.0, 95.0)];
+    let fixed = [("Quick Wash", 150.0, 16.0), ("Permanent Press", 300.0, 31.0), ("Normal", 1000.0, 59.0), ("Delicates", 3000.0, 84.0)];
     let mut s = Svg::new(760.0, 420.0);
     s.text((80.0, 28.0), "Wash programs: a longer, gentler cool-down finds the best set more often", 15.0, INK, "start", "bold");
     let a = Axes::new((80.0, 50.0, 420.0, 290.0), (100.0, 4000.0), (0.0, 100.0)).logs(true, false);
@@ -855,10 +855,10 @@ fn programs() {
         s.text((a.fx(t) + dx, a.fy(r) + 15.0), &format!("{name} {r:.0}%"), 11.5, INK, anchor, "normal");
     }
     // Same electricity as Normal, spent smarter.
-    s.circle(a.p(1000.0, 88.0), 7.0, PURPLE, "#ffffff", 1.5);
-    s.text((a.fx(1000.0) - 10.0, a.fy(88.0) + 4.0), "Smart 88%", 11.5, PURPLE, "end", "bold");
-    s.rect((a.fx(1000.0) - 7.0, a.fy(95.0) - 7.0), (14.0, 14.0), 2.0, GOO, "#ffffff");
-    s.text((a.fx(1000.0) - 12.0, a.fy(95.0) + 4.0), "Row of 4 washers 95%", 11.5, GOO, "end", "bold");
+    s.circle(a.p(1000.0, 71.0), 7.0, PURPLE, "#ffffff", 1.5);
+    s.text((a.fx(1000.0) - 10.0, a.fy(71.0) + 4.0), "Smart 71%", 11.5, PURPLE, "end", "bold");
+    s.rect((a.fx(1000.0) - 7.0, a.fy(77.0) - 7.0), (14.0, 14.0), 2.0, GOO, "#ffffff");
+    s.text((a.fx(1000.0) - 12.0, a.fy(77.0) + 4.0), "Row of 4 washers 77%", 11.5, GOO, "end", "bold");
     let lx = 530.0;
     let lines = [
         ("Blue: one washer, cooling on a clock.", INK),
