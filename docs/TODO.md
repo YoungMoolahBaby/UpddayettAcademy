@@ -86,6 +86,9 @@ arcs the user named, then smaller items.
   - [x] probe (`src/trade/tab.rs`, `trade_cli street --tab L`): wins back
     1-4 of the 30 Goo; rings almost never form (debt runs one way); the
     tab can't make things exist
+  - [x] same footing (user): the limit runs both ways (`Tab::even`), ~free
+  - [ ] a level cast? Crunchton and Zestina only owe: fewer people want
+    their things. Changing the cast changes every board and the site's figures
   - [ ] the user's call: the game with a small tab, and/or more supply
   - [ ] the game
 

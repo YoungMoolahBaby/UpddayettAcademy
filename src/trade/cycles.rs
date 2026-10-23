@@ -104,10 +104,10 @@ impl Cycle {
     }
 
     /// Two candidates conflict when they move the same item, or touch the
-    /// same line of the tab ([`Iou::line`]).
+    /// same line of the tab ([`Iou::lines`]).
     pub fn conflicts(&self, other: &Cycle) -> bool {
         self.legs.iter().any(|a| other.legs.iter().any(|b| a.item == b.item))
-            || self.tab.iter().any(|a| other.tab.iter().any(|b| a.line() == b.line()))
+            || self.tab.iter().any(|a| other.tab.iter().any(|b| a.lines().iter().any(|l| b.lines().contains(l))))
     }
 
     pub fn describe(&self, w: &World) -> String {

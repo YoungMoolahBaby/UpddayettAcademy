@@ -230,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn the_tab_stays_under_its_limit_and_goo_still_adds_up() {
+    fn the_tab_stays_under_its_limit_both_ways_and_goo_still_adds_up() {
         let mut s = Street::new(1);
         let n = s.goo.len();
         s.tab = Some(Tab::new(n, 10.0));
@@ -242,7 +242,8 @@ mod tests {
             used += qubo::chosen(best, tc.cycles.len()).iter().filter(|&&i| !tc.cycles[i].tab.is_empty()).count();
             s.settle(&tc.world, &tc.cycles, best);
             let tab = s.tab.as_ref().unwrap();
-            assert!((0..n).all(|k| tab.owes(k) <= 10.0 + 1e-9));
+            // The limit runs both ways: nobody owes, or is owed, past it.
+            assert!((0..n).all(|k| tab.owes(k) <= 10.0 + 1e-9 && tab.credit(k) <= 10.0 + 1e-9));
         }
         assert!(used > 0, "the tab never got used");
         assert!((s.goo.iter().sum::<f64>() - goo).abs() < 1e-9);

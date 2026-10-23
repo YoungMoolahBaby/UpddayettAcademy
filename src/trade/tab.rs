@@ -26,11 +26,16 @@ pub struct Iou {
 const ANYONE: usize = usize::MAX;
 
 impl Iou {
-    /// The line it touches, for conflicts: taking a debt off uses that
+    /// The lines it touches, for conflicts: taking a debt off uses that
     /// debtor-creditor line (two can't both spend it); a new debt uses the
-    /// debtor's one new debt a night.
-    pub fn line(&self) -> (usize, usize) {
-        if self.amount > 0.0 { (self.debtor, ANYONE) } else { (self.debtor, self.creditor) }
+    /// debtor's one new debt a night and the creditor's one new credit, so
+    /// one night can't carry anyone past the limit either way.
+    pub fn lines(&self) -> [(usize, usize); 2] {
+        if self.amount > 0.0 {
+            [(self.debtor, ANYONE), (ANYONE, self.creditor)]
+        } else {
+            [(self.debtor, self.creditor); 2]
+        }
     }
 }
 
@@ -47,6 +52,11 @@ pub struct Tab {
     /// anyone counts against what you owe anyone, so the limit is on your
     /// net. Off: every debt is between two people.
     pub mutual: bool,
+    /// Everyone on the same footing (user, 2026-10-23): the limit runs both
+    /// ways, so nobody piles up what they're owed either, like Keynes's
+    /// 1944 clearing union, which charged creditor countries as well as
+    /// debtors. Off: only debts are capped.
+    pub even: bool,
 }
 
 /// Longest ring of IOUs on the board (2-way debts net off by themselves).
@@ -55,7 +65,19 @@ pub const MAX_RING: usize = 4;
 impl Tab {
     /// An empty tab for `n` people.
     pub fn new(n: usize, limit: f64) -> Self {
-        Self { owed: vec![vec![0.0; n]; n], limit, rings: true, mutual: false }
+        Self { owed: vec![vec![0.0; n]; n], limit, rings: true, mutual: false, even: true }
+    }
+
+    /// What `k` is owed in all, as the limit sees it (with one balance
+    /// each: net of what they owe).
+    pub fn credit(&self, k: usize) -> f64 {
+        let owed = self.owed_to(k);
+        if self.mutual { (owed - self.owed[k].iter().sum::<f64>()).max(0.0) } else { owed }
+    }
+
+    /// Can `debtor` take on `amount` more, owed to `creditor`?
+    pub fn room(&self, debtor: usize, creditor: usize, amount: f64) -> bool {
+        self.owes(debtor) + amount <= self.limit && (!self.even || self.credit(creditor) + amount <= self.limit)
     }
 
     /// What `k` owes in all (with one balance each: net of what they're owed).
@@ -114,7 +136,7 @@ pub fn enumerate(w: &World) -> Vec<Cycle> {
             }
             // On the tab: `to` owes what it was worth to the giver.
             let gain = got - given - w.yuck_tax(to) - w.reach_tax(from, to);
-            if gain > 0.0 && tab.owes(to) + given <= tab.limit {
+            if gain > 0.0 && tab.room(to, from, given) {
                 let iou = Iou { debtor: to, creditor: from, amount: given };
                 out.push(tab_cycle(Kind::OnTab, vec![Leg { from, to, item }], vec![gain], vec![iou]));
             }

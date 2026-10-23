@@ -1003,6 +1003,25 @@ goods, so the tab only gets what no loop can reach.
 - **For the game:** the tab is warm and small, and it gives the washer work
   again on carried nights (93% against 100% on the dry street).
 
+**Everyone on the same footing (user, 2026-10-23):** "all the humans should
+be on the same playing field". Nobody only ever collects. The limit runs
+both ways: you can't owe more than it, and you can't be owed more than it.
+Once you're owed the limit, nobody can put more on your tab; you spend your
+credit first. That's Keynes's 1944 clearing-union idea, which charged
+creditor countries as well as debtors. One new debt and one new credit a
+person a night (`Tab::even`, on by default).
+- **Measured (limit 10, 60 nights):** it costs almost nothing (19.6 Goo +
+  Karma against 20.0). Upddayett now owes 7 and is owed 10; Brisko owes 4
+  and is owed 8.
+- **What it can't fix: the cast.** Crunchton and Zestina still only owe,
+  and they gain the least (+32 and +27 Goo in 60 nights, against +208 for
+  Upddayett and +217 for Gravo). Fewer people want their things: on a
+  neutral night their things draw 9 Goo of wants each, while they want
+  14. Upddayett's Goo and kale come back in a night; their records and
+  cards take 4. A level field needs a level cast (open question for the
+  user: it changes every night's board, and the site's figures come from
+  real runs).
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone

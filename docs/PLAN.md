@@ -1049,6 +1049,27 @@ The user: the tab, go ahead. Rules and verdict in DESIGN "The tab".
 - **Next:** the user's call (DESIGN "The tab"): the game with carry-over
   and a small tab, and/or the real lever, supply (restock, finds).
 
+**Same footing (user, 2026-10-23):** "all the humans should be on the same
+playing field". `Tab::even` (default on; `--uneven` for the first rule):
+the limit also caps what anyone is owed (`Tab::credit`, `Tab::room`), and
+a new debt uses the creditor's one new credit a night as well as the
+debtor's one new debt (`Iou::lines`; without it two debtors in one night
+carried a creditor past the limit, which the test caught). Rerun, nights
+1-60 (the table above predates the creditor line):
+
+| Tab | Goo + Karma | On / back / rings (cleared) | Still owed | Upddayett owes / owed | Brisko owes / owed |
+| --- | --- | --- | --- | --- | --- |
+| 10, uneven | 20.0 | 72 / 25 / 1 (12) | 45 | 0 / 24 | 2 / 8 |
+| 10, even | 19.6 | 44 / 16 / 1 (12) | 38 | 7 / 10 | 4 / 8 |
+| 10, even, one balance each | 20.0 | 52 / 15 / 1 (12) | 45 | balance +10 | balance +6 |
+| 5, even | 19.3 | 29 / 13 / 2 (12) | 14 | 1 / 4 | 0 / 4 |
+| 20, even | 20.6 | 69 / 20 / 1 (12) | 71 | 9 / 20 | 2 / 16 |
+| no limit | 22.3 | 123 / 32 / 0 | 175 | 2 / 68 | 0 / 48 |
+
+Crunchton and Zestina owe and are never owed in every row: the cast, not
+the tab (their things draw 9 Goo of wants on a neutral night, they want 14;
+DESIGN "Everyone on the same footing").
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

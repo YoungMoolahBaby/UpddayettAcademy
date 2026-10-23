@@ -120,6 +120,8 @@ struct Opts {
     no_rings: bool,
     /// `street --tab`: one balance each (mutual credit) instead of person-to-person debts (`--mutual`).
     mutual: bool,
+    /// `street --tab`: cap only debts, not what anyone is owed (`--uneven`, the first rule).
+    uneven: bool,
 }
 
 fn parse() -> Opts {
@@ -170,6 +172,7 @@ fn parse() -> Opts {
         tab: None,
         no_rings: false,
         mutual: false,
+        uneven: false,
         train: (11..=22).collect(),
     };
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -235,6 +238,7 @@ fn parse() -> Opts {
             "--tab" => o.tab = Some(num(val())),
             "--no-rings" => o.no_rings = true,
             "--mutual" => o.mutual = true,
+            "--uneven" => o.uneven = true,
             "--train" => o.train = night_list(&val()),
             m if !m.starts_with("--") => o.mode = m.to_string(),
             other => panic!("unknown option {other}"),
@@ -1307,6 +1311,7 @@ fn street_mode(o: &Opts) {
         let mut tab = trade::tab::Tab::new(s.goo.len(), limit);
         tab.rings = !o.no_rings;
         tab.mutual = o.mutual;
+        tab.even = !o.uneven;
         s.tab = Some(tab);
     }
     println!("street: nights {first}..{last} carry over (each night takes its best set), beside the same nights rolled fresh");
