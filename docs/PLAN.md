@@ -1094,7 +1094,9 @@ both owing and owed on 20+ of 60 tab nights. The night rolls are unchanged
   night at the 20-strip cap with 1-8 candidates left off (was 11-14 trades).
   `versus --nights 61..80 --smart --runs 48`: Normal 63% (was 83%), smart
   (run 5) 77% (was 95%); misses cost 0.0-1.8 Goo (Normal) and 0.0-1.2
-  (smart). Run 5 was trained on the old boards.
+  (smart). Run 5 was trained on the old boards. `row --nights 61..80 --runs
+  48`: the row of 4 washers 82.6% (Normal 62.7%; on the old cast the row had
+  96.8% on nights 141-200).
 - **Stale until redrawn:** the site's and MACHINE.md's figures and numbers
   (night 1's board, the programs, the ladder, the lessons) are from the old
   cast; so are the older results in this file.
