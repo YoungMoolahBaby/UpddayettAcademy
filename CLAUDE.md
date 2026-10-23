@@ -59,7 +59,7 @@ Read first:
   200 nights; `--give upd:phone` gives an item away (`upd:mesh` brings a mesh handheld to give); `--gifts N` / `--chain N` change the gift strips
   (experiments).
 - Nights that carry over (`src/trade/street.rs`, PLAN "Nights that carry over, probed"): `trade_cli street --nights 1..60
-  [--bench] [--wear N] [--restock F]` walks the nights with what changed hands staying changed, beside the same nights fresh
+  [--bench] [--wear N] [--restock F] [--tab L [--no-rings] [--mutual]]` walks the nights with what changed hands staying changed, beside the same nights fresh; `--tab` opens the counter's tab (`src/trade/tab.rs`, PLAN "The tab, probed")
   (seconds; `--bench` spins the washer on both, ~2 min for 12 nights).
 - The smart wash (Step 4, `src/trade/smart.rs`): `trade_cli versus [--nights 61..80] [--seed S]` pits Normal
   against the learned program per night (~2 min for 10 nights x 48 spins); `bench --smart` benches it;

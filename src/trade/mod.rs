@@ -17,6 +17,7 @@ pub mod salties;
 pub mod smart;
 pub mod spring;
 pub mod street;
+pub mod tab;
 pub mod tv;
 pub mod world;
 pub mod yuck;
@@ -176,6 +177,8 @@ pub struct Tally {
     pub karma: f64,
     pub relief: f64,
     pub flourishing: f64,
+    /// Goo of debt cancelled on the tab (rings of IOUs).
+    pub cleared: f64,
 }
 
 impl TradeComputer {
@@ -187,9 +190,14 @@ impl TradeComputer {
     /// at most `max_chain` recipients.
     pub fn with_board(world: World, beta: f64, penalty: f64, max_gifts: usize, max_chain: usize) -> Self {
         // Trades take the board first (best first), keeping at least
-        // MIN_GIFT_SLOTS strips for gifts; gifts fill the rest.
+        // MIN_GIFT_SLOTS strips for gifts; gifts fill the rest. With the
+        // tab open, its candidates count as trades.
         let all_gifts = cycles::enumerate_gifts(&world, max_chain);
         let mut trades = cycles::enumerate(&world, MAX_LOOP);
+        if world.tab.is_some() {
+            trades.extend(tab::enumerate(&world));
+            trades.sort_by(|a, b| b.value().partial_cmp(&a.value()).unwrap());
+        }
         let total = all_gifts.len() + trades.len();
         trades.truncate(MAX_BITS - MIN_GIFT_SLOTS.min(all_gifts.len()).min(max_gifts));
         let mut gifts = pick_gifts(all_gifts, (MAX_BITS - trades.len()).min(max_gifts));
@@ -481,6 +489,7 @@ impl TradeComputer {
             t.goo += c.goo();
             t.relief += c.relief;
             t.flourishing += c.flourishing;
+            t.cleared += c.cleared();
         }
         t.karma = t.relief + t.flourishing;
         t

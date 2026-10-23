@@ -981,6 +981,28 @@ owing.
   back, and does the washer beat an exact solver at clearing (paired, same
   boards, like run 5 vs run 3), or is it just the story?
 
+**Built and probed (2026-10-23; `src/trade/tab.rs`, PLAN "The tab,
+probed").** A thing goes on the tab at what it was worth to the giver;
+paying back is a thing the one owed wants, and both come out ahead; rings
+of 3-4 IOUs cancel their smallest debt; two-way debts net by themselves; a
+limit on what anyone owes; one new debt a person a night.
+
+**What it found: the tab can't make things exist.** Over 60 carried nights
+it wins back 1-4 Goo of the 30 the dry street lost (limit 10: 19.8 against
+18.6; no limit: 22.6, with 318 Goo piling up unpaid). Rings almost never
+form (one in 60 nights): debts all run one way, to the two people whose
+things everyone wants (Upddayett, Brisko), who want nothing back from their
+debtors. One balance each (mutual credit, Sardex-style) changes nothing
+(20.1). The loss was never liquidity: it's things away, things kept, people
+fed. And the washer's 2-4-way trade loops already are a clearing house, for
+goods, so the tab only gets what no loop can reach.
+- **For the business idea:** clearing needs circles. Check how circular a
+  network's debts are before pitching clearing to it. A street (or an
+  industry) where debt flows to a few suppliers has nothing to cancel.
+  Matching multi-way trades is where the value was.
+- **For the game:** the tab is warm and small, and it gives the washer work
+  again on carried nights (93% against 100% on the dry street).
+
 ### Candidate ideas (not decided)
 
 - **The laundry counter is the escrow** (built in Step 3.4). A 4-way swap only works if everyone

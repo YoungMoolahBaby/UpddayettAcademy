@@ -132,6 +132,9 @@ pub struct World {
     /// how far apart they've grown. Gifts aren't charged, like yuck. Empty =
     /// everyone in the one laundromat, no distance.
     pub reach: Vec<Vec<f64>>,
+    /// The counter's tab (DESIGN "The tab"), if it's open: who owes whom,
+    /// and the limit. Its candidates join the trades on the board.
+    pub tab: Option<super::tab::Tab>,
 }
 
 /// Values are whole Goo: easier to read, and near-ties (36.6 vs 36.7) that
@@ -159,7 +162,7 @@ fn rule(use_: Use, npc: &Npc, i: usize, night: &Night) -> (f64, Tag) {
 
 impl World {
     fn empty() -> Self {
-        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![], yuck: vec![], reach: vec![] }
+        Self { npcs: vec![], items: vec![], wants: vec![], night: Night::calm(0), value: vec![], yuck: vec![], reach: vec![], tab: None }
     }
 
     fn npc(&mut self, name: &'static str, sleeps_out: bool, has_animals: bool, has_phone: bool) -> usize {

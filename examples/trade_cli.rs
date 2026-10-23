@@ -115,6 +115,11 @@ struct Opts {
     wear: Option<u32>,
     /// `street`: x each thing's nights away (`--restock F`, default 1).
     restock: f64,
+    /// `street`: open the tab, up to this many Goo each (`--tab L`); `--no-rings` keeps rings of IOUs off the board.
+    tab: Option<f64>,
+    no_rings: bool,
+    /// `street --tab`: one balance each (mutual credit) instead of person-to-person debts (`--mutual`).
+    mutual: bool,
 }
 
 fn parse() -> Opts {
@@ -162,6 +167,9 @@ fn parse() -> Opts {
         nights: (1, 10),
         wear: None,
         restock: 1.0,
+        tab: None,
+        no_rings: false,
+        mutual: false,
         train: (11..=22).collect(),
     };
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -224,6 +232,9 @@ fn parse() -> Opts {
             "--nights" => o.nights = night_range(&val()),
             "--wear" => o.wear = Some(num(val()) as u32),
             "--restock" => o.restock = num(val()),
+            "--tab" => o.tab = Some(num(val())),
+            "--no-rings" => o.no_rings = true,
+            "--mutual" => o.mutual = true,
             "--train" => o.train = night_list(&val()),
             m if !m.starts_with("--") => o.mode = m.to_string(),
             other => panic!("unknown option {other}"),
@@ -1292,9 +1303,23 @@ fn street_mode(o: &Opts) {
     let mut s = Street::new(first);
     s.wear = o.wear;
     s.restock = o.restock;
+    if let Some(limit) = o.tab {
+        let mut tab = trade::tab::Tab::new(s.goo.len(), limit);
+        tab.rings = !o.no_rings;
+        tab.mutual = o.mutual;
+        s.tab = Some(tab);
+    }
     println!("street: nights {first}..{last} carry over (each night takes its best set), beside the same nights rolled fresh");
-    println!("night  weather  hungry  away  board (fresh)   best Goo + Karma (fresh){}", if o.bench { "   washer hit (fresh)" } else { "" });
+    if let Some(tab) = &s.tab {
+        println!("the tab is open: up to {} Goo each{}, rings {}", tab.limit, if tab.mutual { " (one balance each)" } else { "" }, if tab.rings { "on the board" } else { "off" });
+    }
+    println!(
+        "night  weather  hungry  away  board (fresh)   best Goo + Karma (fresh){}{}",
+        if o.bench { "   washer hit (fresh)" } else { "" },
+        if s.tab.is_some() { "   tab: on/back/rings, cleared, owed" } else { "" }
+    );
     let (mut sums, mut n) = ([0.0f64; 8], 0.0);
+    let mut kinds = [0usize; 3];
     let mut empty = 0;
     for night in first..=last {
         let fresh = board_for(o, trade::world::laundromat(night));
@@ -1312,8 +1337,18 @@ fn street_mode(o: &Opts) {
         } else {
             String::new()
         };
+        let tab = if let Some(owed) = s.tab.as_ref().map(|t| t.total()) {
+            use trade::Kind;
+            let chosen = qubo::chosen(best, tc.cycles.len());
+            let count = |k: Kind| chosen.iter().filter(|&&i| tc.cycles[i].kind == k).count();
+            let c = [count(Kind::OnTab), count(Kind::PayBack), count(Kind::Clear)];
+            (0..3).for_each(|k| kinds[k] += c[k]);
+            format!("   {}/{}/{}  {:>3.0}  {owed:>4.0}", c[0], c[1], c[2], t.cleared)
+        } else {
+            String::new()
+        };
         println!(
-            "{night:>5}  {:<7}  {:>2} ({:>1})  {away:>4}  {:>5} ({:>2})       {:>3.0} + {:>2.0}  ({:>3.0} + {:>2.0}){bench}",
+            "{night:>5}  {:<7}  {:>2} ({:>1})  {away:>4}  {:>5} ({:>2})       {:>3.0} + {:>2.0}  ({:>3.0} + {:>2.0}){bench}{tab}",
             if tc.world.night.cold { "cold" } else { "mild" },
             hungry(&tc.world),
             hungry(&fresh.world),
@@ -1345,13 +1380,27 @@ fn street_mode(o: &Opts) {
     if o.bench {
         println!("washer hit rate: carried {:.0}%, fresh {:.0}%", 100.0 * sums[6] / n, 100.0 * sums[7] / n);
     }
+    if let Some(tab) = &s.tab {
+        println!(
+            "the tab: {} things on it, {} paid back, {} rings cleared {:.0} Goo; {:.0} Goo still owed",
+            kinds[0],
+            kinds[1],
+            kinds[2],
+            s.cleared,
+            tab.total()
+        );
+    }
     let w = s.world();
     let worth = s.worth(&w);
     println!("after {} nights:", n);
     for (k, npc) in w.npcs.iter().enumerate() {
         let kept: Vec<&str> = s.kept[k].iter().map(|x| x.item).collect();
+        let tab = s.tab.as_ref().map_or(String::new(), |t| {
+            let raw: f64 = t.owed[k].iter().sum();
+            if t.mutual { format!("  balance {:>+3.0}", t.owed_to(k) - raw) } else { format!("  owes {:>2.0}, owed {:>2.0}", raw, t.owed_to(k)) }
+        });
         println!(
-            "  {:<24} +{:>4.0} Goo  {:>4.0} Karma  worth {:>4.0}  kept: {}",
+            "  {:<24} +{:>4.0} Goo  {:>4.0} Karma  worth {:>4.0}{tab}  kept: {}",
             npc.name,
             s.goo[k],
             s.karma[k],

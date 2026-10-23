@@ -79,11 +79,14 @@ arcs the user named, then smaller items.
   tab need it (user, 2026-10-23).
   - [x] library and probe (`src/trade/street.rs`, `trade_cli street`): the
     street dries up to a third (7 strips, 19 of 49 Goo + Karma)
-  - [ ] the user's call on the dry street: the tab, faster restock, or both
+  - [x] the user's call on the dry street: the tab (2026-10-23)
   - [ ] the game: Next night carries over; a way to start fresh
 - [ ] **The tab** (DESIGN "The tab"): IOUs on the counter, the washer clears
   the rings. Warm, never a debt collector (user, 2026-10-23).
-  - [ ] probe: how much of the dry street it wins back; washer vs exact at clearing
+  - [x] probe (`src/trade/tab.rs`, `trade_cli street --tab L`): wins back
+    1-4 of the 30 Goo; rings almost never form (debt runs one way); the
+    tab can't make things exist
+  - [ ] the user's call: the game with a small tab, and/or more supply
   - [ ] the game
 
 ## Waiting on something

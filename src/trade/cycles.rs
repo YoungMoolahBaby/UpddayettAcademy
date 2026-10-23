@@ -1,6 +1,9 @@
 //! Candidates for the drum: trades (closed giving loops where everybody comes
-//! out ahead) and gift chains (a donation passed along an open path).
+//! out ahead) and gift chains (a donation passed along an open path). With
+//! the tab open ([`super::tab`]) also: things on the tab, paying the tab
+//! back, and rings of IOUs that cancel.
 
+use super::tab::Iou;
 use super::world::{Tag, World};
 
 /// `from` hands `item` to `to`.
@@ -18,6 +21,14 @@ pub enum Kind {
     /// A donor gives something away; each recipient may pass something of
     /// theirs on (only if they still come out ahead); the last one keeps it.
     Gift,
+    /// One thing handed over now, on the recipient's tab ([`super::tab`]):
+    /// they owe the giver what it was worth to the giver.
+    OnTab,
+    /// Someone pays their tab back with a thing the one they owe wants.
+    PayBack,
+    /// A ring of IOUs cancels (Gravo owes Ranchelle, Ranchelle owes Brisko,
+    /// Brisko owes Gravo): nothing changes hands.
+    Clear,
 }
 
 /// One candidate: one strip on the board.
@@ -32,6 +43,9 @@ pub struct Cycle {
     /// Gifts only: Karma for purpose or pleasure (1.5x when the person's
     /// needs are covered tonight, else 1x).
     pub flourishing: f64,
+    /// What it does to the tab: debt added (on the tab) or taken off (paid
+    /// back, cleared). Empty for trades and gifts.
+    pub tab: Vec<Iou>,
 }
 
 /// Flourishing weight for someone whose basic needs are covered tonight.
@@ -46,11 +60,21 @@ pub const FLOURISH: f64 = 1.5;
 pub const MAX_CHAIN: usize = 1;
 
 impl Cycle {
-    /// What the drum maximizes: Goo for a trade, Karma for a gift.
+    /// What the drum maximizes: Goo for a trade (and on the tab or paying
+    /// it back), Karma for a gift, the Goo of debt cancelled for a ring.
     pub fn value(&self) -> f64 {
         match self.kind {
-            Kind::Trade => self.goo(),
+            Kind::Trade | Kind::OnTab | Kind::PayBack => self.goo(),
             Kind::Gift => self.karma(),
+            Kind::Clear => self.cleared(),
+        }
+    }
+
+    /// Goo of debt a ring cancels (0 for anything else).
+    pub fn cleared(&self) -> f64 {
+        match self.kind {
+            Kind::Clear => self.tab.iter().map(|x| -x.amount).sum(),
+            _ => 0.0,
         }
     }
 
@@ -79,12 +103,25 @@ impl Cycle {
         self.legs.iter().any(|l| l.to == npc && l.item == item)
     }
 
-    /// Two candidates conflict when they move the same item.
+    /// Two candidates conflict when they move the same item, or touch the
+    /// same line of the tab ([`Iou::line`]).
     pub fn conflicts(&self, other: &Cycle) -> bool {
         self.legs.iter().any(|a| other.legs.iter().any(|b| a.item == b.item))
+            || self.tab.iter().any(|a| other.tab.iter().any(|b| a.line() == b.line()))
     }
 
     pub fn describe(&self, w: &World) -> String {
+        let name = |k: usize| w.npcs[k].name;
+        match (self.kind, self.legs.first(), self.tab.first()) {
+            (Kind::OnTab, Some(l), Some(x)) => {
+                return format!("{} gives the {} to {}, on the tab ({} owes {:.0} Goo)", name(l.from), w.items[l.item].name, name(l.to), name(l.to), x.amount);
+            }
+            (Kind::PayBack, Some(l), Some(x)) => {
+                return format!("{} pays {} back with the {} ({:.0} Goo off the tab)", name(l.from), name(l.to), w.items[l.item].name, -x.amount);
+            }
+            (Kind::Clear, _, Some(x)) => return format!("the tab ring {} cancels, {:.0} Goo each", self.short(w), -x.amount),
+            _ => {}
+        }
         let parts: Vec<String> = self
             .legs
             .iter()
@@ -92,8 +129,8 @@ impl Cycle {
             .collect();
         let s = parts.join(", ");
         match self.kind {
-            Kind::Trade => s,
             Kind::Gift => format!("{s}, who keeps it"),
+            _ => s,
         }
     }
 
@@ -116,8 +153,16 @@ impl Cycle {
         ))
     }
 
-    /// "Upddayett -> Ranchelle -> Upddayett"
+    /// "Upddayett -> Ranchelle -> Upddayett" (a ring of IOUs: who owes whom)
     pub fn short(&self, w: &World) -> String {
+        if self.kind == Kind::Clear {
+            let mut s = w.npcs[self.tab[0].debtor].name.to_string();
+            for x in &self.tab {
+                s.push_str(" -> ");
+                s.push_str(w.npcs[x.creditor].name);
+            }
+            return s;
+        }
         let mut s = w.npcs[self.legs[0].from].name.to_string();
         for l in &self.legs {
             s.push_str(" -> ");
@@ -192,7 +237,7 @@ fn score(w: &World, legs: &[Leg]) -> Option<Cycle> {
         }
         gains.push(g);
     }
-    Some(Cycle { kind: Kind::Trade, legs: legs.to_vec(), gains, relief: 0.0, flourishing: 0.0 })
+    Some(Cycle { kind: Kind::Trade, legs: legs.to_vec(), gains, relief: 0.0, flourishing: 0.0, tab: vec![] })
 }
 
 /// Enumerates gift chains of 1..=max_people recipients from every gift item,
@@ -255,5 +300,5 @@ fn score_chain(w: &World, legs: &[Leg]) -> Option<Cycle> {
             (_, wt) => flourishing += wt * g,
         }
     }
-    Some(Cycle { kind: Kind::Gift, legs: legs.to_vec(), gains, relief, flourishing })
+    Some(Cycle { kind: Kind::Gift, legs: legs.to_vec(), gains, relief, flourishing, tab: vec![] })
 }

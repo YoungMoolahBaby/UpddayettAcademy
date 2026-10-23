@@ -1013,6 +1013,42 @@ tab), warm tone for the tab. Rules in DESIGN "Nights that carry over".
   trades that can't happen because a thing is away go on the tab. Measure
   what it wins back. Then the game (Next night carries over).
 
+## The tab, probed (2026-10-23)
+
+The user: the tab, go ahead. Rules and verdict in DESIGN "The tab".
+- **Library:** `src/trade/tab.rs`. `Tab { owed[debtor][creditor], limit,
+  rings, mutual }`; `World::tab` (None = closed); `tab::enumerate` adds
+  three kinds of strips to the trades (`Kind::OnTab`, `PayBack`, `Clear`;
+  `Cycle::tab` holds the IOUs; candidates touching the same tab line
+  conflict, a new debt uses the debtor's one line a night). `Tab::apply`
+  moves the tab and nets two-way debts. `Street::tab` carries it;
+  `Tally::cleared`. Tests: a ring cancels its smallest debt and two-way
+  debts net; the limit and one new debt a night; over 40 nights nobody
+  goes past the limit and Goo still adds up (pay-backs split the gain
+  between payer and paid).
+- **Probe:** `trade_cli street --tab L [--no-rings] [--mutual]`.
+- **Result, nights 1-60** (Goo + Karma a night; the dry street is 18.6,
+  fresh nights 49.0):
+
+  | Tab | Goo + Karma | Board | On tab / paid back / rings (cleared) | Still owed |
+  | --- | --- | --- | --- | --- |
+  | Limit 5 | 19.0 | 7.8 | 20 / 4 / 1 (9 Goo) | 28 |
+  | Limit 10 | 19.8 | 10.2 | 68 / 27 / 1 (3 Goo) | 42 |
+  | Limit 10, no rings | 19.6 | 9.6 | 53 / 16 / 0 | 44 |
+  | Limit 10, one balance each | 20.1 | 10.3 | 74 / 26 / 1 (3 Goo) | 62 |
+  | Limit 20 | 20.5 | 10.6 | 82 / 24 / 0 | 77 |
+  | No limit | 22.6 | 12.1 | 142 / 25 / 0 | 318 |
+  | Limit 10, restock x0 | 31.3 (30.6 without) | 18.3 | 26 / 4 / 0 | 53 |
+
+  After 60 nights at limit 10 Upddayett is owed 20 and Brisko 8, and they
+  owe nothing; Zestina, Crunchton and Gravo sit at the limit. Debt runs to
+  the two people whose things everyone wants, so there are no circles.
+- **The washer, nights 1-12, 48 spins, limit 10:** carried boards with the
+  tab 93% (62% on night 7, 19 strips), fresh 82%, the dry street 100%.
+  Washer vs exact at clearing: not tested, since there are no rings to clear.
+- **Next:** the user's call (DESIGN "The tab"): the game with carry-over
+  and a small tab, and/or the real lever, supply (restock, finds).
+
 ## Backlog (2026-10-06; not planned yet, best first)
 
 CortenForge pieces the game doesn't use yet:

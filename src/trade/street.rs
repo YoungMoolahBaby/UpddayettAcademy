@@ -8,8 +8,9 @@
 //! The weather and the hunger coins still roll from the night's seed, so a
 //! street where nothing ever changes hands sees the same nights as before.
 
-use super::cycles::{self, Cycle};
+use super::cycles::{self, Cycle, Kind};
 use super::qubo;
+use super::tab::Tab;
 use super::world::{self, Use, World};
 
 /// Something a person was given and kept.
@@ -46,6 +47,10 @@ pub struct Street {
     pub wear: Option<u32>,
     /// How slowly things come back: each item's `back_in` times this (1 = as listed).
     pub restock: f64,
+    /// The counter's tab ([`super::tab`]), if it's open.
+    pub tab: Option<Tab>,
+    /// Goo of debt the tab's rings have cancelled, all nights so far.
+    pub cleared: f64,
 }
 
 impl Street {
@@ -63,6 +68,8 @@ impl Street {
             karma: vec![0.0; n],
             wear: None,
             restock: 1.0,
+            tab: None,
+            cleared: 0.0,
         }
     }
 
@@ -90,6 +97,7 @@ impl Street {
         for (item, &nights) in self.away.iter().enumerate() {
             w.items[item].away = nights > 0;
         }
+        w.tab = self.tab.clone();
         w.set_night(night);
     }
 
@@ -111,7 +119,17 @@ impl Street {
             let c = &cycles[i];
             for (leg, &gain) in c.legs.iter().zip(&c.gains) {
                 let it = &w.items[leg.item];
-                self.goo[leg.to] += gain;
+                match (c.kind, c.tab.first()) {
+                    // Paying back: the one owed gets what the thing is worth
+                    // to them less the debt it settles; the payer gets the
+                    // debt less what the thing was worth to them.
+                    (Kind::PayBack, Some(x)) => {
+                        let settled = -x.amount;
+                        self.goo[leg.to] += w.value[leg.to][leg.item] - settled;
+                        self.goo[leg.from] += settled - w.value[leg.from][leg.item];
+                    }
+                    _ => self.goo[leg.to] += gain,
+                }
                 if c.is_gift() {
                     self.karma[leg.to] += cycles::karma_weight(w, leg.to, leg.item).1 * gain;
                 }
@@ -128,6 +146,10 @@ impl Street {
                     *nights = (back_in as f64 * self.restock).round() as u32;
                 }
             }
+            if let Some(tab) = &mut self.tab {
+                tab.apply(c);
+            }
+            self.cleared += c.cleared();
         }
         self.night += 1;
     }
@@ -205,5 +227,24 @@ mod tests {
         }
         assert!((s.goo.iter().sum::<f64>() - goo).abs() < 1e-9);
         assert!((s.karma.iter().sum::<f64>() - karma).abs() < 1e-9);
+    }
+
+    #[test]
+    fn the_tab_stays_under_its_limit_and_goo_still_adds_up() {
+        let mut s = Street::new(1);
+        let n = s.goo.len();
+        s.tab = Some(Tab::new(n, 10.0));
+        let (mut goo, mut used) = (0.0, 0);
+        for _ in 0..40 {
+            let tc = board(s.world());
+            let best = tc.ground_state();
+            goo += tc.tally(best).goo;
+            used += qubo::chosen(best, tc.cycles.len()).iter().filter(|&&i| !tc.cycles[i].tab.is_empty()).count();
+            s.settle(&tc.world, &tc.cycles, best);
+            let tab = s.tab.as_ref().unwrap();
+            assert!((0..n).all(|k| tab.owes(k) <= 10.0 + 1e-9));
+        }
+        assert!(used > 0, "the tab never got used");
+        assert!((s.goo.iter().sum::<f64>() - goo).abs() < 1e-9);
     }
 }
