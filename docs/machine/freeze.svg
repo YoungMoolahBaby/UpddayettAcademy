@@ -63,18 +63,17 @@
 <rect x="560.0" y="60.0" width="380.0" height="280.0" rx="0" fill="none" stroke="#c5c9d1" stroke-width="1.5"/>
 <text x="750.0" y="374.0" font-size="12" fill="#1d2026" text-anchor="middle" font-weight="normal">drum kT during a Normal spin</text>
 <path d="M621.8,335.6 L626.5,328.0 L631.2,320.7 L636.0,313.6 L640.8,306.7 L645.5,300.0 L650.2,293.5 L655.0,287.3 L659.8,281.2 L664.5,275.3 L669.2,269.6 L674.0,264.0 L678.8,258.7 L683.5,253.5 L688.2,248.5 L693.0,243.6 L697.8,238.9 L702.5,234.3 L707.2,229.9 L712.0,225.6 L716.8,221.5 L721.5,217.5 L726.2,213.6 L731.0,209.9 L735.8,206.3 L740.5,202.8 L745.2,199.4 L750.0,196.1 L754.8,192.9 L759.5,189.9 L764.2,186.9 L769.0,184.1 L773.8,181.3 L778.5,178.7 L783.2,176.1 L788.0,173.6 L792.8,171.2 L797.5,168.9 L802.2,166.7 L807.0,164.6 L811.8,162.5 L816.5,160.5 L821.2,158.6 L826.0,156.8 L830.8,155.0 L835.5,153.3 L840.2,151.7 L845.0,150.1 L849.8,148.6 L854.5,147.1 L859.2,145.7 L864.0,144.4 L868.8,143.1 L873.5,141.9 L878.2,140.7 L883.0,139.6 L887.8,138.5 L892.5,137.5 L897.2,136.5 L902.0,135.6 L906.8,134.7 L911.5,133.9 L916.2,133.1 L921.0,132.3 L925.8,131.6 L930.5,130.9 L935.2,130.3 L940.0,129.7 " fill="none" stroke="#8a4fc2" stroke-width="1.5" stroke-opacity="0.5" stroke-linejoin="round"/>
-<circle cx="670.8" cy="317.4" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="702.5" cy="306.7" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="734.2" cy="260.8" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="765.8" cy="244.1" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="797.5" cy="209.6" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="829.2" cy="189.0" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="860.8" cy="170.8" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="892.5" cy="151.7" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<circle cx="924.2" cy="138.7" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
-<text x="568.0" y="78.0" font-size="13" fill="#1d2026" text-anchor="start" font-weight="bold">Night 1's board, 12 spins</text>
+<circle cx="702.5" cy="303.4" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="734.2" cy="276.6" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="765.8" cy="241.2" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="797.5" cy="211.8" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="829.2" cy="192.3" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="860.8" cy="173.8" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="892.5" cy="156.1" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<circle cx="924.2" cy="143.3" r="5.0" fill="#d8392b" stroke="#ffffff" stroke-width="1.5"/>
+<text x="568.0" y="78.0" font-size="13" fill="#1d2026" text-anchor="start" font-weight="bold">Night 3's board, 12 spins</text>
 <text x="568.0" y="96.0" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">Springs and fields tilt the dips, so a</text>
 <text x="568.0" y="112.0" font-size="11.5" fill="#1d2026" text-anchor="start" font-weight="normal">strip in its good dip hops even less.</text>
 <text x="80.0" y="395.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">Each tenfold drop in hopping takes only a modest drop in kT: the rate goes as e^(-hump / kT). Cool too fast and the strips freeze</text>
-<text x="80.0" y="412.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">wherever they happen to be (a quench). Cool slowly and they keep finding better dips on the way down (an anneal).</text>
+<text x="80.0" y="420.0" font-size="11.5" fill="#7a808c" text-anchor="start" font-weight="normal">wherever they happen to be (a quench). Cool slowly and they keep finding better dips on the way down (an anneal).</text>
 </svg>
